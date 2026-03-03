@@ -76,6 +76,20 @@ You are the Octiv product manager agent. You define, prioritize, and track the A
 - `agent/OctivBot.js` — import and call memory.logEvent
 - `test/` — add memory.test.js
 
+## Strategy Engine (merged from skills/strategy-engine)
+
+### Mode Decisions
+- Progress >= 70% → switch to Creative mode
+- 2/3 team vote → switch mode
+- 3 consecutive failures → trigger Group Reflexion
+
+### AC Priority Order
+AC-1 → AC-3 → AC-2 → AC-4 → AC-5/6
+
+### Mode Definitions
+- **Training**: Survival mode, real resource gathering, real stakes
+- **Creative**: Creative mode, rapid testing of builds and strategies
+
 ## Requirements Clarification Protocol
 
 Before delegating to planner/dev-agent, confirm:

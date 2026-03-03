@@ -1,7 +1,7 @@
 # Octiv Project Roadmap
 > **Goal**: Complete a sandbox where an AI agent team autonomously survives, builds, and manages resources on a PaperMC Minecraft server.
 >
-> **Spirit**: 眞善美孝永 — Truth, Goodness, Beauty, Serenity, Eternity
+> **Spirit**: Truth, Goodness, Beauty, Serenity, Eternity
 >
 > **Date**: 2026-03-03 | **Lead Dev**: Claude | **Commander**: Octiv
 
@@ -13,103 +13,109 @@
 |------|-------|-------------|
 | **Commander** | Octiv | Project direction, NotebookLM resource management |
 | **Lead Developer** | Claude (Cowork) | Code, architecture, debugging, roadmap |
-| **Dev Environment B** | Anti-Gravity (Google IDE + Gemini) | Parallel dev, NotebookLM integration, Gemini assistant |
+| **Dev Environment B** | Anti-Gravity (Google IDE + Gemini) | Parallel dev, NotebookLM integration |
 | **Agent Framework** | OpenClaw | Agent runtime, skill system, LLM bridge |
 
 ---
 
-## Current Status (v0.1 — 2 commits)
+## Current Status (Phase 1 Complete)
 
-### Implemented
+### Phase 1 Deliverables
 - [x] Project structure (agent/, skills/, config/, logs/)
 - [x] Docker Compose (Redis + PaperMC)
 - [x] Blackboard module (Redis Pub/Sub shared memory)
-- [x] bot.js single bot test (mineflayer connection, basic commands)
-- [x] team.js team orchestrator (Leader + Builder×3 + Safety)
-- [x] leader.js (mode decision, voting, Group Reflexion)
-- [x] builder.js (wood collection AC-1, tool crafting AC-3, ReAct loop)
-- [x] safety.js (threat detection AC-8, vm2 sandbox validation)
+- [x] OctivBot base class (spawn, health, heartbeat, exponential backoff)
+- [x] Team orchestrator (Leader + Builder x3 + Safety)
+- [x] Leader (mode decision, voting, Group Reflexion stub)
+- [x] Builder (AC-1 wood collection, AC-3 tool crafting, ReAct loop)
+- [x] Safety (AC-8 threat detection, vm2 sandbox validation)
+- [x] CI/CD (GitHub Actions, npm test on push)
+- [x] 13 Claude agents, 11 skills, 3 MCP servers, 3 hooks
 - [x] first-day-survival v1.3.1 skill definition (BMAD format)
-- [x] .env + OpenClaw agent configuration
-
-### Not Yet Implemented
-- [ ] AC-2: Shelter construction logic (missing from builder.js)
-- [ ] AC-4: Agent shelter gathering verification
-- [ ] AC-5: Self-Improvement actual implementation (failure → skill creation)
-- [ ] AC-6: Group Reflexion → system prompt injection
-- [ ] AC-7: memory.md write logic
-- [ ] Leader ↔ Builder ↔ Safety real integrated communication
-- [ ] LLM bridge (bridge:8765) connection
-- [ ] NotebookLM ↔ MCP integration
-- [ ] Dynamic skill library loading
-- [ ] HEARTBEAT dashboard
-- [ ] Tests (framework present, tests empty)
-
----
-
-## Phase 1 — Foundation
-> Goal: Confirm a single bot runs stably on the server
-
-### 1.1 Infrastructure Verification
-- [x] Docker Compose startup confirmed (Redis + PaperMC)
-- [x] Redis connection test (Blackboard → publish/get working)
-- [x] RCON command execution confirmed (server status query)
-
-### 1.2 Single Bot Stabilization
-- [x] bot.js connects → spawns → basic operation verified
-- [x] mineflayer + pathfinder movement/mining stability tested
-- [x] Error handling hardened (reconnect, timeout, exception handling)
-
-### 1.3 Blackboard Integration Test
-- [x] bot.js → publish status to Blackboard → verify in Redis
-- [x] Pub/Sub channel subscribe/publish verified
-- [x] AC progress update → query cycle tested
-
-### Milestone
-```
-✅ docker compose up → Redis PONG, MC server MOTD confirmed
-✅ node agent/bot.js → bot spawns, responds to !status !pos
-✅ octiv:agent:*:status keys found in Redis
-```
 
 ---
 
 ## Phase 2 — Core Gameplay
-> Goal: Complete AC-1 through AC-4 of the first-day-survival mission
+> Goal: Complete AC-1 through AC-4 + MCP layer + pathfinding
 
-### 2.1 AC-1: Wood Collection (16 logs)
-- Debug and stabilize builder.js collectWood()
-- Support multiple wood types (oak, spruce, birch, jungle)
-- Implement 60s timeout + trigger Reflexion on failure
+### 2.1 AC-1: Wood Collection (16 logs) — DONE
+- builder.js `collectWood()` with multiple wood types (oak, spruce, birch, jungle)
+- 60s timeout + trigger Reflexion on failure
+- Files: `agent/builder.js`, `test/bot.test.js`
 
-### 2.2 AC-2: Shelter Construction (3×3×3+)
+### 2.2 AC-2: Shelter Construction (3x3x3+) — NEXT
 - Block placement algorithm (site selection → floor → walls → roof)
 - Y-level safety check (flat ground, avoid water/lava)
-- Door placement + lighting
+- Door placement + torch lighting
+- Must complete within 10 Minecraft minutes (survival mode)
+- Publish `octiv:builder:shelter` with coordinates to Blackboard
+- **Acceptance Test**:
+  - [ ] `buildShelter()` in `agent/builder.js`
+  - [ ] 3x3x3 hollow structure with door opening
+  - [ ] Uses wood planks (crafted from collected logs)
+  - [ ] AC-2 status published to Blackboard
+  - [ ] `npm test` passes with shelter test
+- Files: `agent/builder.js`, `test/bot.test.js`
 
-### 2.3 AC-3: Tool Crafting
-- Stabilize craftBasicTools() (inventory check → place crafting table → craft)
-- Auto-collect loop when materials are insufficient
+### 2.3 AC-3: Tool Crafting — DONE
+- builder.js `craftBasicTools()` (inventory check → crafting table → craft)
+- Auto-collect loop when materials insufficient
+- Files: `agent/builder.js`
 
 ### 2.4 AC-4: Agent Gathering
-- Share shelter coordinates via Blackboard
-- All agents move to shelter + arrival verification
+- Share shelter coordinates via Blackboard (`octiv:builder:shelter`)
+- All agents pathfind to shelter + arrival verification
 - 1200 tick timer implementation
+- **Acceptance Test**:
+  - [ ] All 5 agents within 3 blocks of shelter
+  - [ ] Verified via Blackboard `octiv:team:gathered`
+  - [ ] Completes before 1200 ticks
+- Files: `agent/team.js`, `agent/builder.js`
+
+### 2.5 MCP Tool Server (NEW — from TXT 1.md US3)
+- `agent/mcp-server.js`: JSON-RPC 2.0 (`/mcp` POST endpoint)
+- Tools: `getStatus`, `moveTo`, `chopTree`, `inventory`
+- Blackboard <-> MCP context real-time sync
+- **Acceptance Test**:
+  - [ ] JSON-RPC 2.0 request/response working
+  - [ ] All 4 tools callable and return valid results
+  - [ ] Blackboard state reflected in MCP context
+- Files: `agent/mcp-server.js`, `test/mcp.test.js`
+
+### 2.6 Pathfinder Integration (NEW — from TXT 1.md US1)
+- `bot.loadPlugin(pathfinder)` + Movements configuration
+- GoalNear/GoalBlock for tree approach
+- **Acceptance Test**:
+  - [ ] Bot navigates to target within 50 blocks in <30s
+  - [ ] Handles obstacles (water, lava, cliffs)
+- Files: `agent/OctivBot.js`
+
+### 2.7 CollectBlock Integration (NEW — from TXT 1.md US2)
+- `mineflayer-collectblock` + tool plugin
+- Auto-equip best axe from inventory
+- Publish collection progress to Blackboard in real-time
+- **Acceptance Test**:
+  - [ ] Collects specified block type within radius
+  - [ ] Auto-equips appropriate tool
+  - [ ] Progress published to `octiv:builder:collecting`
+- Files: `agent/builder.js`, `package.json`
 
 ### Milestone
 ```
-✅ Builder collects 16 wood (within 60s)
-✅ 3×3×3 shelter auto-built
-✅ Crafting table + wooden pickaxe crafted
-✅ All agents gathered in shelter (verified via Blackboard)
+Builder collects 16 wood (within 60s)
+3x3x3 shelter auto-built
+Crafting table + wooden pickaxe crafted
+All agents gathered in shelter (verified via Blackboard)
+MCP Tool Server responds to JSON-RPC calls
+Pathfinder navigates 50 blocks in <30s
 ```
 
 ---
 
 ## Phase 3 — Team Orchestration
-> Goal: Real communication and role coordination between Leader-Builder-Safety
+> Goal: Real communication and role coordination between Leader-Builder-Safety + Multi-Agent MCP
 
-### 3.1 Leader ↔ Builder Integration
+### 3.1 Leader <-> Builder Integration
 - Leader distributes missions → Builder receives → executes
 - Training Mode / Creative Mode switch logic working
 - Voting system (2/3 majority) implemented
@@ -124,11 +130,41 @@
 - Reflexion result → team-wide strategy update
 - Reflexion history saved (Blackboard + memory.md)
 
+### 3.4 Multi-Agent MCP Orchestrator (NEW — from TXT 1.md US4-7)
+- `agent/mcp-orchestrator.js`: Agent Registry (Redis)
+- Tools: `assignTask`, `getAllAgents`, `broadcastCommand`
+- Blackboard-based Task Routing
+- **Acceptance Test**:
+  - [ ] Register/deregister agents dynamically
+  - [ ] Assign task to specific agent via MCP
+  - [ ] Broadcast command reaches all active agents
+- Files: `agent/mcp-orchestrator.js`, `test/multi-mcp.test.js`
+
+### 3.5 Role-Based Agent System (NEW — from TXT 3.md)
+- `agent/roles/WoodcutterAgent.js` — extends OctivBot, specialized wood gathering
+- `agent/roles/BuilderAgent.js` — extends OctivBot, specialized construction
+- `agent/roles/ExplorerAgent.js` — extends OctivBot, specialized scouting
+- Role registry in Redis: `octiv:agents:registry`
+- **Acceptance Test**:
+  - [ ] Each role agent has specialized behavior
+  - [ ] Registered in Redis with role metadata
+  - [ ] Discoverable via `getAllAgents` MCP tool
+- Files: `agent/roles/*.js`
+
+### 3.6 Blackboard <-> MCP Sync (NEW — from TXT 1.md US4)
+- `agent:{id}:status` → MCP context auto-sync
+- MCP Tool Call → Blackboard publish bidirectional
+- **Acceptance Test**:
+  - [ ] Agent status change reflected in MCP within 1s
+  - [ ] MCP command reflected in Blackboard within 1s
+
 ### Milestone
 ```
-✅ Leader switches "training" → "creative" mode
-✅ Safety threat detected → team-wide warning within 1s
-✅ Group Reflexion executed → strategy change applied
+Leader switches "training" → "creative" mode
+Safety threat detected → team-wide warning within 1s
+Group Reflexion executed → strategy change applied
+Multi-Agent MCP registers and routes tasks
+Role-based agents operate with specialized behaviors
 ```
 
 ---
@@ -147,7 +183,7 @@
 - Daily limit of 5 + discard if estimated_success_rate < 0.7
 
 ### 4.3 LLM Bridge Connection
-- bridge:8765 endpoint integration (GLM-4.7 / GPT / Gemini)
+- bridge:8765 endpoint integration
 - Cost guardrail ($0.01/attempt)
 - Fallback: use existing safe skill if LLM fails
 
@@ -155,38 +191,86 @@
 - Group Reflexion result → inject "[Learned Skill v1.3]"
 - Real-time system prompt update for all agents
 
+### 4.5 ReflexionEngine (NEW — from TXT 2.md)
+- `agent/ReflexionEngine.js`: Anthropic SDK (`@anthropic-ai/sdk`)
+- Redis config auto-reload (`octiv:config:llm`)
+- Dynamic model switching (Sonnet 4.6 default, Opus 4.6 escalation)
+- **Acceptance Test**:
+  - [ ] Generates valid skill JSON from failure context
+  - [ ] Switches model tier based on failure severity
+  - [ ] Config changes via Redis applied without restart
+- Files: `agent/ReflexionEngine.js`, `test/reflexion.test.js`
+
+### 4.6 Multi-LLM Router (NEW — from TXT 2.md)
+- LiteLLM integration: Claude → Groq Qwen3-Coder fallback
+- Cost optimization: Claude=accuracy, Groq=speed
+- `.env`: `ANTHROPIC_API_KEY`, `GROQ_API_KEY`
+- **Acceptance Test**:
+  - [ ] Routes to Claude by default
+  - [ ] Falls back to Groq on Claude failure/timeout
+  - [ ] Cost per call tracked and enforced
+
+### 4.7 OpenClaw MCP Config Tool (NEW — from TXT 2.md)
+- `setLLMConfig` Tool: model, temperature, max_tokens real-time change
+- Redis `octiv:config:llm` key for persistent storage
+- **Acceptance Test**:
+  - [ ] Config change via MCP reflected immediately
+  - [ ] Persists across agent restarts via Redis
+
 ### Milestone
 ```
-✅ Lava death → evacuate_lava_v1 skill auto-generated
-✅ vm2 validation passes → skills:emergency broadcast
-✅ New skill used immediately in next ReAct loop
+Lava death → evacuate_lava_v1 skill auto-generated
+vm2 validation passes → skills:emergency broadcast
+New skill used immediately in next ReAct loop
+ReflexionEngine switches models based on failure severity
+Multi-LLM Router falls back gracefully
 ```
 
 ---
 
-## Phase 5 — Knowledge Bridge
-> Goal: Connect NotebookLM resources via MCP, enable Claude ↔ Anti-Gravity bidirectional dev
+## Phase 5 — Knowledge Bridge + Discord
+> Goal: Connect NotebookLM via MCP, enable Claude <-> Anti-Gravity collaboration, Discord real-time monitoring
 
-### 5.1 NotebookLM ↔ MCP Integration
+### 5.1 NotebookLM <-> MCP Integration
 - NotebookLM MCP server setup (using existing notebooklm tool)
 - Search technical docs/strategy from notebook → reflect in agent behavior
 - Auto-sync project progress to NotebookLM
 
-### 5.2 Claude ↔ Anti-Gravity Collaboration Protocol
+### 5.2 Claude <-> Anti-Gravity Collaboration Protocol
 - Shared codebase: Git-based sync
 - File ownership rules documented
 - Unified commit convention (emoji + English description)
 
 ### 5.3 Gemini Skill Integration
-- skills/gemini → real Gemini API connection
-- Fast Q&A, summarization, strategy assist
-- Cost optimization (Gemini = fast tasks, GPT/GLM = complex reasoning)
+- Gemini API connection for fast Q&A, summarization
+- Cost optimization (Gemini = fast tasks, Claude = complex reasoning)
+
+### 5.4 Discord Bot Integration (NEW)
+- `agent/discord-bot.js`: discord.js v14
+- **Channels**:
+  - `#octiv-status` — real-time team status (embeds)
+  - `#octiv-alerts` — threats, failures, reflexion alerts (@here)
+  - `#octiv-commands` — bot commands
+- **Blackboard → Discord Bridge**:
+  - Subscribe `octiv:*:status` → Discord status embed
+  - Safety threat → Discord immediate alert
+  - AC completion → Discord auto-report
+- **Commands**: `!status`, `!assign <agent> <task>`, `!reflexion`, `!team`
+- **Acceptance Test**:
+  - [ ] Bot connects to Discord and joins guild
+  - [ ] Blackboard status changes appear in #octiv-status
+  - [ ] Safety threats trigger @here alert in #octiv-alerts
+  - [ ] `!status` returns current team state
+- Files: `agent/discord-bot.js`, `config/discord.json`, `test/discord.test.js`
+- Dependencies: `discord.js@14`
 
 ### Milestone
 ```
-✅ Search "optimal wood collection strategy" in NotebookLM → result returned
-✅ Code written by Claude → available in Anti-Gravity immediately via Git
-✅ Gemini skill responds correctly to agent Q&A
+Search "optimal wood collection strategy" in NotebookLM → result returned
+Code written by Claude → available in Anti-Gravity immediately via Git
+Discord bot posts real-time agent status
+Safety alert → Discord @here notification within 2s
+!status command returns team state embed
 ```
 
 ---
@@ -204,16 +288,28 @@
 - Threat events → commander alert (Discord/channel)
 - Daily mission report auto-generation
 
-### 6.3 Memory System
-- Automatic memory.md logging (AC-7)
+### 6.3 Memory System (AC-7)
+- Automatic memory.md logging
 - Daily notes (memory/YYYY-MM-DD.md)
 - MEMORY.md long-term memory curation
 
+### 6.4 Explorer System (NEW — from TXT 3.md Phase 6)
+- `agent/roles/ExplorerAgent.js`: spiral search + danger avoidance
+- mineflayer-map + custom pathfinding
+- Blackboard world map real-time sharing
+- 200-block radius exploration
+- **Acceptance Test**:
+  - [ ] Explores in expanding spiral pattern
+  - [ ] Avoids lava/water/cliff hazards
+  - [ ] Shares discovered locations via Blackboard
+- Files: `agent/roles/ExplorerAgent.js`
+
 ### Milestone
 ```
-✅ http://localhost:3000 in browser → dashboard displayed
-✅ Safety warning → Discord alert within 1s
-✅ Mission ends → auto-recorded to memory.md
+http://localhost:3000 in browser → dashboard displayed
+Safety warning → Discord alert within 1s
+Mission ends → auto-recorded to memory.md
+Explorer maps 200-block radius without dying
 ```
 
 ---
@@ -236,18 +332,37 @@
 - Multi-server support
 - Plugin system (KubeJS integration)
 
+### 7.4 Redis Pipeline Optimization (NEW — from TXT 4.md)
+- `redis.multi().exec()` batch processing (77% latency reduction)
+- Lua Script embedded Pipeline (atomicity guarantee)
+- WATCH + Optimistic Locking for concurrent updates
+- **Acceptance Test**:
+  - [ ] Batch operations use MULTI/EXEC
+  - [ ] Lua scripts handle atomic read-modify-write
+  - [ ] Concurrent updates resolved via optimistic locking
+- Files: `agent/blackboard.js`
+
+### 7.5 Redis Cluster (NEW — from TXT 4.md, when needed)
+- ioredis Cluster client (Hash Slot, Auto Failover)
+- Exponential Backoff + Full Jitter reconnection
+- Production transition only (current single-node maintained)
+- **Acceptance Test**:
+  - [ ] Cluster client connects to 3+ nodes
+  - [ ] Failover completes within 5s
+  - [ ] Reconnection with full jitter avoids thundering herd
+
 ---
 
 ## Schedule
 
 | Phase | Name | Duration | Prerequisites |
 |-------|------|----------|---------------|
-| **1** | Foundation | 1–2 days | Docker, Node.js environment |
-| **2** | Core Gameplay | 3–5 days | Phase 1 complete |
-| **3** | Team Orchestration | 3–5 days | Phase 2 complete |
-| **4** | Self-Improvement | 5–7 days | Phase 3 + LLM bridge |
-| **5** | Knowledge Bridge | 3–5 days | NotebookLM resources ready |
-| **6** | Monitoring | 3–5 days | Can run parallel after Phase 3 |
+| **1** | Foundation | Done | Docker, Node.js environment |
+| **2** | Core Gameplay | 3-5 days | Phase 1 complete |
+| **3** | Team Orchestration | 3-5 days | Phase 2 complete |
+| **4** | Self-Improvement | 5-7 days | Phase 3 + LLM bridge |
+| **5** | Knowledge Bridge + Discord | 3-5 days | NotebookLM resources ready |
+| **6** | Monitoring | 3-5 days | Can run parallel after Phase 3 |
 | **7** | Scale & Extend | Ongoing | After Phase 4 complete |
 
 ---
@@ -255,11 +370,11 @@
 ## Working Principles
 
 1. **Session start**: Read ROADMAP.md + recent git log → identify current Phase
-2. **Commit convention**: `emoji Phase-N: English description` (e.g. `🎮 P2: stabilize AC-1 wood collection`)
+2. **Commit convention**: `emoji Phase-N: English description`
 3. **Test first**: Write tests before implementing new features
 4. **Cost awareness**: Always enforce cost guardrails on LLM calls
 5. **Report duty**: Report status to commander when a Phase is complete
 
 ---
 
-> _"眞善美孝永 — Read accurately, act safely, build beautifully, report peacefully, sustain eternally."_
+> _"Read accurately, act safely, build beautifully, report peacefully, sustain eternally."_

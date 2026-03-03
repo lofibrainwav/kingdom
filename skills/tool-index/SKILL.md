@@ -1,15 +1,13 @@
 ---
 name: tool-index
-description: Master index of ALL tools available in the Octiv project — agents, skills, MCP servers, CLI tools, npm scripts, Docker commands. Use when unsure which tool to use for a task. Your Swiss Army knife directory.
+description: Master index of ALL tools available in the Octiv project — agents, skills, MCP servers, CLI tools, npm scripts, Docker commands. Use when unsure which tool to use for a task.
 ---
 
 # Octiv Tool Index — Complete Reference
 
-> Like a pharmacist's labeled drawers: everything has a place, everything is labeled, nothing is wasted.
-
 ---
 
-## 🤖 Agents (Claude Subagents)
+## Agents (13 Claude Subagents)
 
 ### Orchestration
 | Agent | When | Model |
@@ -19,7 +17,7 @@ description: Master index of ALL tools available in the Octiv project — agents
 ### Planning & Requirements
 | Agent | When | Output |
 |-------|------|--------|
-| `pm-agent` | Start new AC, prioritize work | AC brief |
+| `pm-agent` | Start new AC, prioritize work, strategy decisions | AC brief |
 | `planner` | Implementation plan for any feature | Step-by-step plan |
 | `architect` | New module, system design change | Architecture doc |
 
@@ -27,7 +25,7 @@ description: Master index of ALL tools available in the Octiv project — agents
 | Agent | When | Output |
 |-------|------|--------|
 | `dev-agent` | Write actual code | Working code + tests passing |
-| `tdd-guide` | Need tests before code | Failing tests → impl guide |
+| `tdd-guide` | Need tests before code | Failing tests + impl guide |
 
 ### Quality & Security
 | Agent | When | Output |
@@ -50,45 +48,43 @@ description: Master index of ALL tools available in the Octiv project — agents
 
 ---
 
-## 🔧 Skills (Slash Commands)
+## Skills (11 Slash Commands)
 
 ### Memory (Session Continuity)
-| Skill | When | Time |
-|-------|------|------|
-| `/session-memory` | **Session START** — always first | ~10s |
-| `/save-memory` | **Session END** — always last | ~15s |
-| `/remember` | Mid-session insight to preserve | ~5s |
+| Skill | When |
+|-------|------|
+| `/session-memory` | **Session START** — always first |
+| `/save-memory` | **Session END** — always last |
+| `/remember` | Mid-session insight to preserve |
 
-### Verification (kimoring pattern)
-| Skill | When | Checks |
-|-------|------|--------|
-| `/verify-implementation` | Before PR — full audit | All verify-* skills |
-| `/verify-redis` | After Redis/Blackboard changes | Port, prefix, handlers |
-| `/verify-agents` | After agent/*.js changes | Patterns, heartbeat, AC |
-| `/manage-skills` | After new code patterns | Auto-updates verify skills |
+### Verification
+| Skill | When |
+|-------|------|
+| `/verify-implementation` | Before PR — full audit |
+| `/verify-redis` | After Redis/Blackboard changes |
+| `/verify-agents` | After agent/*.js changes |
+| `/manage-skills` | After new code patterns |
 
 ### Development
 | Skill | When |
 |-------|------|
 | `/tdd-workflow` | Before any new feature |
 | `/security-review` | Before committing sensitive code |
-| `/coding-standards` | When code quality unclear |
-| `/backend-patterns` | API, Redis, caching design |
 
 ### Project Reference
 | Skill | When |
 |-------|------|
 | `/health-monitor` | Diagnose Redis/PaperMC/agent issues |
 | `/mcporter` | Minecraft bot control reference |
+| `/dev-tool-belt` | Tests, Docker, git, GitHub CLI |
+| `/weather` | Minecraft weather commands |
+| `/first-day-survival` | AC definitions and mission spec |
 | `/automated-debugging` | Crash investigation guide |
-| `/strategy-engine` | AC priority and mode decisions |
-| `/dev-tool-belt` | Tests, Docker, git commands |
-| `/github` | PR, issues, CI status |
 | `/tool-index` | **This file** — find any tool |
 
 ---
 
-## 🔌 MCP Servers (Always-on Tools)
+## MCP Servers (Always-on Tools)
 
 | MCP | Command | When to Use |
 |-----|---------|-------------|
@@ -98,7 +94,7 @@ description: Master index of ALL tools available in the Octiv project — agents
 
 ---
 
-## 🛠 CLI Tools
+## CLI Tools
 
 ### npm scripts (project)
 | Command | What it does |
@@ -118,7 +114,6 @@ description: Master index of ALL tools available in the Octiv project — agents
 | `docker compose down` | Stop everything |
 | `docker compose ps` | Check status |
 | `docker compose logs -f` | Follow logs |
-| `docker compose logs minecraft` | Minecraft server logs only |
 | `docker compose up -d redis` | Start Redis only |
 
 ### Redis CLI
@@ -147,16 +142,7 @@ description: Master index of ALL tools available in the Octiv project — agents
 
 ---
 
-## 🏗 GitHub Actions (CI/CD)
-
-| Trigger | What runs | Location |
-|---------|-----------|---------|
-| Push to main | `npm test` with Redis 6380 | `.github/workflows/ci.yml` |
-| PR to main | Same as above | Same |
-
----
-
-## 📦 Key Dependencies
+## Key Dependencies
 
 | Package | Version | Purpose |
 |---------|---------|---------|
@@ -164,10 +150,11 @@ description: Master index of ALL tools available in the Octiv project — agents
 | `mineflayer-pathfinder` | ^2.4.5 | Pathfinding for bots |
 | `redis` | ^5.11.0 | Redis client (Blackboard) |
 | `vm2` | ^3.10.5 | Sandbox for dynamic skill code |
+| `discord.js` | ^14 | Discord bot (Phase 5.4) |
 
 ---
 
-## 🗂 Key File Locations
+## Key File Locations
 
 | File | Purpose |
 |------|---------|
@@ -175,12 +162,12 @@ description: Master index of ALL tools available in the Octiv project — agents
 | `agent/blackboard.js` | Redis pub/sub hub |
 | `agent/builder.js` | AC-1, AC-3 implementation |
 | `agent/safety.js` | AC-8 threat detection |
+| `agent/discord-bot.js` | Discord integration (Phase 5.4) |
 | `test/*.test.js` | Test suite |
-| `.claude/agents/` | All Claude agents |
-| `skills/` | Project skills |
-| `~/.claude/skills/` | Global skills |
-| `memory/MEMORY.md` | Persistent context |
+| `.claude/agents/` | All Claude agents (13) |
+| `skills/` | Project skills (11) |
 | `CLAUDE.md` | Session workflow guide |
+| `ROADMAP.md` | 7-phase project roadmap |
 
 ---
 

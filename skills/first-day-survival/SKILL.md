@@ -7,9 +7,9 @@ description: |
   Full Hierarchical Collaboration support with reinforced protection against fatal failures.
 user-invocable: true
 requires:
-  bins: [node, jq, redis-cli, vm2]
-  env: [BLACKBOARD_REDIS_URL, SKILL_LIBRARY_PATH, OPENCLAW_LLM_ENDPOINT]
-  apis: [mineflayer, kubejs, vm2-sandbox]
+  bins: [node, jq, redis-cli]
+  env: [BLACKBOARD_REDIS_URL]
+  apis: [mineflayer, vm2-sandbox]
 ---
 
 ## User Story (BMAD Format)

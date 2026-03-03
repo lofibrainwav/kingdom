@@ -24,11 +24,32 @@
 1. `/verify-implementation` — confirm everything passes
 2. `github-agent` — commit + push all changes
 3. `/save-memory` — persist to MEMORY.md + session-log
-4. Tell user: "Memory saved ✅ Next session picks up from [X]"
+4. Tell user: "Memory saved. Next session picks up from [X]"
 
 ---
 
-## Quick Tool Directory → use `/tool-index` for full reference
+## Orchestration Patterns (bkit 5)
+
+Choose the right pattern for the task at hand:
+
+| Pattern | When | Flow |
+|---------|------|------|
+| **Leader** (default) | AC implementation | pm → planner → tdd → dev → review → commit |
+| **Council** | Design decisions | architect + security + dev → synthesize |
+| **Swarm** | Large-scale parallel work | parallel dev + tdd, then review |
+| **Pipeline** | Sequential dependencies | debug → dev → verify → commit |
+| **Watchdog** | Safety-critical changes | dev + debug monitor + security monitor |
+
+### Pattern Selection Guide
+- AC task (AC-1~8) → **Leader**
+- Bug fix / test failure → **Pipeline**
+- Architecture decision → **Council**
+- Multiple independent files → **Swarm**
+- vm2 / RCON / external input → **Watchdog**
+
+---
+
+## Quick Tool Directory — use `/tool-index` for full reference
 
 ### When unsure → `octiv-orchestrator`
 
@@ -36,7 +57,7 @@
 | Agent | One-liner |
 |-------|-----------|
 | `octiv-orchestrator` | **START HERE** for complex tasks |
-| `pm-agent` | AC status, requirements, priorities |
+| `pm-agent` | AC status, requirements, priorities, strategy |
 | `planner` | Implementation step breakdown |
 | `architect` | System design decisions |
 | `dev-agent` | Write actual code |
@@ -49,7 +70,7 @@
 | `notebooklm-agent` | Knowledge base queries |
 | `obsidian-agent` | Vault notes |
 
-### Skills (quick reference)
+### Skills (11 total)
 | Skill | When |
 |-------|------|
 | `/tool-index` | Find any tool |
@@ -62,8 +83,7 @@
 | `/manage-skills` | After new patterns |
 | `/tdd-workflow` | Before new feature |
 | `/health-monitor` | Infrastructure issues |
-| `/mcporter` | Minecraft bot reference |
-| `/dev-tool-belt` | npm/Docker/git commands |
+| `/dev-tool-belt` | Tests/Docker/git/GitHub CLI |
 
 ### MCP Servers
 | MCP | Purpose |
@@ -84,20 +104,20 @@
 ## AC Status
 | AC | Description | Status |
 |----|-------------|--------|
-| AC-1 | Collect 16 wood logs | ✅ |
-| AC-2 | Build 3×3×3 shelter | ❌ **NEXT** |
-| AC-3 | Craft basic tools | ✅ |
-| AC-4 | All agents gather in shelter | ❌ |
-| AC-5 | Self-improvement on failure | ❌ |
-| AC-6 | Group Reflexion → prompt inject | ❌ |
-| AC-7 | Memory logging to disk | ❌ |
-| AC-8 | Threat detection | ✅ |
+| AC-1 | Collect 16 wood logs | done |
+| AC-2 | Build 3x3x3 shelter | **NEXT** |
+| AC-3 | Craft basic tools | done |
+| AC-4 | All agents gather in shelter | todo |
+| AC-5 | Self-improvement on failure | todo |
+| AC-6 | Group Reflexion → prompt inject | todo |
+| AC-7 | Memory logging to disk | todo |
+| AC-8 | Threat detection | done |
 
 ---
 
 ## Key Infrastructure
 - **Redis**: `localhost:6380` (Docker: 6379→6380)
 - **PaperMC**: `localhost:25565` (offline-mode)
-- **RCON**: `localhost:25575` / pw: `octiv_rcon_2026`
+- **RCON**: `localhost:25575` / pw in `.env`
 - **CI**: `.github/workflows/ci.yml`
 - **Repo**: https://github.com/octivofficial/mvp (main)

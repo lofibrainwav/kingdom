@@ -1,0 +1,6 @@
+{
+  "statusChannel": "",
+  "alertsChannel": "",
+  "commandsChannel": "",
+  "_note": "Fill in Discord channel IDs. Token and Guild ID go in .env as DISCORD_TOKEN and DISCORD_GUILD_ID."
+}
