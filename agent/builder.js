@@ -7,6 +7,7 @@ const { pathfinder, Movements, goals } = require('mineflayer-pathfinder');
 const { Blackboard } = require('./blackboard');
 
 const { GoalNear, GoalBlock } = goals;
+const collectBlock = require('mineflayer-collectblock');
 const { Vec3 } = require('vec3');
 
 class BuilderAgent {
@@ -38,6 +39,7 @@ class BuilderAgent {
     });
 
     this.bot.loadPlugin(pathfinder);
+    this.bot.loadPlugin(collectBlock.plugin);
 
     this.bot.once('spawn', () => this._onSpawn());
     this.bot.on('chat', (user, msg) => this._onChat(user, msg));
@@ -212,6 +214,41 @@ class BuilderAgent {
       position: { x, y, z },
     });
     console.log(`[${this.id}] AC-4 done: arrived at shelter`);
+  }
+
+  // Phase 2.7: Collect blocks using mineflayer-collectblock with auto-equip
+  async collectBlocks(blockName, count = 1) {
+    console.log(`[${this.id}] collecting ${count}x ${blockName}`);
+    const mcData = require('minecraft-data')(this.bot.version);
+    const blockType = mcData.blocksByName[blockName];
+    if (!blockType) throw new Error(`Unknown block: ${blockName}`);
+
+    // Auto-equip best tool
+    const tools = this.bot.inventory.items().filter(i =>
+      i.name.includes('pickaxe') || i.name.includes('axe') || i.name.includes('shovel')
+    );
+    if (tools.length > 0) {
+      await this.bot.equip(tools[0], 'hand');
+    }
+
+    const targets = this.bot.findBlocks({
+      matching: blockType.id,
+      maxDistance: this.adaptations.searchRadius,
+      count,
+    });
+
+    if (targets.length === 0) throw new Error(`No ${blockName} found nearby`);
+
+    const blocks = targets.map(pos => this.bot.blockAt(pos)).filter(Boolean);
+    await this.bot.collectBlock.collect(blocks);
+
+    await this.board.publish(`builder:collecting`, {
+      agentId: this.id,
+      block: blockName,
+      collected: blocks.length,
+    });
+    console.log(`[${this.id}] collected ${blocks.length}x ${blockName}`);
+    return blocks.length;
   }
 
   _setupPathfinder() {
