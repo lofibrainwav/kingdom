@@ -11,6 +11,7 @@ class LeaderAgent {
     this.board = new Blackboard();
     this.votes = [];
     this.mode = 'training'; // training | creative
+    this.consecutiveTeamFailures = 0;
   }
 
   async init() {
@@ -49,6 +50,51 @@ class LeaderAgent {
       trigger: 'consecutive_failures',
       failureLog,
     });
+  }
+
+  // AC-6: Collect reflexion logs from all builders, synthesize improvements
+  async triggerGroupReflexion() {
+    console.log('[Leader] triggering Group Reflexion');
+    const allErrors = [];
+    for (let i = 1; i <= this.teamSize; i++) {
+      const key = `octiv:agent:builder-0${i}:reflexion`;
+      const entries = await this.board.client.lRange(key, 0, -1);
+      for (const raw of entries) {
+        try { allErrors.push(JSON.parse(raw)); } catch {}
+      }
+    }
+
+    // Count error types
+    const errorCounts = {};
+    for (const entry of allErrors) {
+      const errMsg = entry.error || 'unknown';
+      errorCounts[errMsg] = (errorCounts[errMsg] || 0) + 1;
+    }
+
+    // Find most common failure
+    const sorted = Object.entries(errorCounts).sort((a, b) => b[1] - a[1]);
+    const topError = sorted[0]?.[0] || 'none';
+
+    const result = {
+      commonErrors: errorCounts,
+      recommendation: `Focus on resolving: ${topError}`,
+      agentCount: this.teamSize,
+      totalEntries: allErrors.length,
+    };
+
+    await this.board.publish('leader:reflexion:result', result);
+    this.consecutiveTeamFailures = 0;
+    console.log(`[Leader] Group Reflexion complete: ${allErrors.length} entries from ${this.teamSize} agents`);
+    return result;
+  }
+
+  // Check if team failures warrant Group Reflexion
+  async checkReflexionTrigger() {
+    if (this.consecutiveTeamFailures >= 3) {
+      await this.triggerGroupReflexion();
+      return true;
+    }
+    return false;
   }
 
   async shutdown() {

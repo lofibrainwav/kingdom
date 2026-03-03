@@ -115,6 +115,33 @@ class SafetyAgent {
     }
   }
 
+  // AC-6: Prompt injection detection
+  filterPromptInjection(text) {
+    const patterns = [
+      /ignore\s+(previous|prior|above)\s+(instructions|prompts)/i,
+      /system\s+prompt/i,
+      /you\s+are\s+now/i,
+      /forget\s+(your\s+)?instructions/i,
+      /new\s+instructions\s*:/i,
+      /\n\s*\n\s*Human\s*:/i,
+      /\n\s*\n\s*Assistant\s*:/i,
+      /disregard\s+(all\s+)?(previous|prior)/i,
+      /override\s+(your\s+)?(rules|instructions)/i,
+    ];
+
+    for (const pattern of patterns) {
+      if (pattern.test(text)) {
+        return {
+          safe: false,
+          reason: `prompt_injection: ${pattern.source}`,
+          sanitized: '',
+        };
+      }
+    }
+
+    return { safe: true, reason: null, sanitized: text };
+  }
+
   async shutdown() {
     await this.board.disconnect();
   }
