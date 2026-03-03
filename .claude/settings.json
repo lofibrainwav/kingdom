@@ -90,7 +90,11 @@
       "Bash(git reset --hard*)",
       "Bash(*rcon* op *)",
       "Bash(*rcon* ban *)",
-      "Bash(*rcon* stop*)"
+      "Bash(*rcon* stop*)",
+      "Bash(*rcon* whitelist *)",
+      "Bash(*rcon* kick *)",
+      "Bash(*rcon* deop *)",
+      "Bash(*rcon* kill *)"
     ]
   }
 }

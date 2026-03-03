@@ -18,7 +18,7 @@ const { ZettelkastenHooks } = require('./zettelkasten-hooks');
 
 const TEAM_SIZE = 3; // number of builder agents
 
-async function monitorGathering(board, teamSize) {
+function monitorGathering(board, teamSize, intervalMs = 5000) {
   const checkInterval = setInterval(async () => {
     try {
       let arrivedCount = 0;
@@ -41,7 +41,8 @@ async function monitorGathering(board, teamSize) {
     } catch (err) {
       // Ignore polling errors
     }
-  }, 5000);
+  }, intervalMs);
+  return checkInterval;
 }
 
 async function main() {
@@ -221,4 +222,8 @@ async function main() {
   }, 30000);
 }
 
-main().catch(console.error);
+if (require.main === module) {
+  main().catch(console.error);
+}
+
+module.exports = { monitorGathering, main };
