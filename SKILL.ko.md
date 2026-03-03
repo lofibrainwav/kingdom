@@ -20,7 +20,7 @@ PaperMC 1.21.1 마인크래프트 서버(localhost:25565)에서 AI 봇을 자율
 
 ## 서버 접속 정보
 - **Minecraft**: `localhost:25565` (offline-mode)
-- **RCON**: `localhost:25575` / pw: `octiv_rcon_2026`
+- **RCON**: `localhost:25575` / pw: `${RCON_PASSWORD}` (see .env)
 
 ## 에이전트 운용 원칙 (眞善美孝永)
 1. **眞** — 게임 상태를 정확히 읽고 판단

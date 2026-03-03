@@ -38,7 +38,7 @@ services:
       LEVEL: octiv-world
       MOTD: "Octiv | AI Agent Sandbox"
       ENABLE_RCON: "true"
-      RCON_PASSWORD: octiv_rcon_2026
+      RCON_PASSWORD: ${RCON_PASSWORD:-changeme}
       RCON_PORT: "25575"
       ALLOW_FLIGHT: "true"
       SPAWN_PROTECTION: "0"

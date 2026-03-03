@@ -27,7 +27,7 @@ Octiv/
 openclaw --agent octiv gateway
 
 # 3. Verify via RCON
-# password: octiv_rcon_2026, port: 25575
+# password: <RCON_PASSWORD> (set in .env), port: 25575
 ```
 
 ## Skills

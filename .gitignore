@@ -5,6 +5,7 @@ node_modules/
 .env
 
 # PaperMC server runtime files (only jar is version-controlled)
+server/server.properties
 server/octiv-world/
 server/cache/
 server/libraries/
@@ -34,6 +35,13 @@ vault/
 # Documentation (local only)
 TXT/
 
+# Claude Code worktrees (full repo copies, very heavy for git status)
+.claude/worktrees/
+.claude/settings.local.json
+
+# MCP config (local only)
+.mcp.json
+
 # IDE settings
 .vscode/
 .smart-env/
@@ -45,6 +53,11 @@ TXT/
 setup-obsidian-v3.3-final.sh
 *.kanban.md
 Untitled Kanban.md
+
+# Generated files (local only)
+Octiv_Claude_Desktop_Setup_Guide.docx
+setup-claude.sh
+claude_desktop_config.json
 
 # npm
 package-lock.json

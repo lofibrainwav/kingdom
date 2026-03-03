@@ -222,10 +222,9 @@ class OctivDiscordBot {
 
   async _cmdStatus(msg) {
     try {
-      const keys = await this.redis.keys('octiv:agent:*:status');
+      // Use SCAN instead of KEYS to avoid blocking Redis in production
       const statuses = [];
-
-      for (const key of keys) {
+      for await (const key of this.redis.scanIterator({ MATCH: 'octiv:agent:*:status', COUNT: 50 })) {
         const raw = await this.redis.get(key);
         if (raw) {
           try {
@@ -287,11 +286,19 @@ class OctivDiscordBot {
 
   async _cmdTeam(msg) {
     try {
-      const registryRaw = await this.redis.get('octiv:agents:registry');
+      // Registry is stored as a Redis Hash (hSet), so use hGetAll
+      const registryHash = await this.redis.hGetAll('octiv:agents:registry');
       let agents;
 
-      if (registryRaw) {
-        agents = JSON.parse(registryRaw);
+      if (registryHash && Object.keys(registryHash).length > 0) {
+        agents = Object.entries(registryHash).map(([id, raw]) => {
+          try {
+            const data = JSON.parse(raw);
+            return { id, role: data.role || 'unknown' };
+          } catch {
+            return { id, role: 'unknown' };
+          }
+        });
       } else {
         agents = [
           { id: 'OctivBot_leader-01', role: 'leader' },

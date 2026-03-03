@@ -55,7 +55,9 @@ class LeaderAgent {
   async decideMode(agentId) {
     const acData = await this.board.getACProgress(agentId);
     const total = Object.keys(acData).length;
-    const done = Object.values(acData).filter(v => JSON.parse(v).status === 'done').length;
+    const done = Object.values(acData).filter(v => {
+      try { return JSON.parse(v).status === 'done'; } catch { return false; }
+    }).length;
     const progress = total > 0 ? done / total : 0;
 
     this.mode = (progress >= 0.7 || this.votes.length >= Math.ceil(this.teamSize * 2 / 3))

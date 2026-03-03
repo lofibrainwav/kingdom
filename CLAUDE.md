@@ -105,12 +105,12 @@ Choose the right pattern for the task at hand:
 | AC | Description | Status |
 |----|-------------|--------|
 | AC-1 | Collect 16 wood logs | done |
-| AC-2 | Build 3x3x3 shelter | **NEXT** |
+| AC-2 | Build 3x3x3 shelter | done |
 | AC-3 | Craft basic tools | done |
-| AC-4 | All agents gather in shelter | todo |
-| AC-5 | Self-improvement on failure | todo |
-| AC-6 | Group Reflexion → prompt inject | todo |
-| AC-7 | Memory logging to disk | todo |
+| AC-4 | All agents gather in shelter | done |
+| AC-5 | Self-improvement on failure | done |
+| AC-6 | Group Reflexion → prompt inject | done |
+| AC-7 | Memory logging to disk | done |
 | AC-8 | Threat detection | done |
 
 ---

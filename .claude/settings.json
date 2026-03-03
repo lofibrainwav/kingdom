@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "MEM=/Users/octiv/.claude/projects/-Users-octiv-Octiv-MVP/memory/MEMORY.md; echo \"[Octiv] $(git -C /Users/octiv/Octiv_MVP log --oneline -1 2>/dev/null) | mem:$([ -f $MEM ] && wc -l < $MEM || echo '?')L\""
+            "command": "MEM=/Users/octiv/.claude/projects/-Users-octiv-Octiv-MVP/memory/MEMORY.md; echo \"[Octiv] $(git -C /Users/octiv/Octiv_MVP log --oneline -1 2>/dev/null) | mem:$([ -f $MEM ] && wc -l < $MEM || echo '?')L | redis:$(redis-cli -p 6380 ping 2>/dev/null || echo 'DOWN') | docker:$(docker ps --format '{{.Names}}' 2>/dev/null | tr '\\n' ',' || echo 'DOWN')\""
           }
         ]
       }
@@ -17,7 +17,15 @@
         "hooks": [
           {
             "type": "command",
-            "command": "INPUT=$(cat); echo \"$INPUT\" | grep -q 'git commit' && { cd /Users/octiv/Octiv_MVP && echo '[PreCommit] Running blackboard tests...' && node --test --test-timeout=10000 test/blackboard.test.js 2>&1 | tail -5; } || true"
+            "command": "INPUT=$(cat); echo \"$INPUT\" | grep -q 'git commit' && { PROJ=$(git rev-parse --show-toplevel 2>/dev/null || echo /Users/octiv/Octiv_MVP); cd \"$PROJ\" && echo '[PreCommit] Syntax check...' && node -c agent/builder.js && node -c agent/leader.js && node -c agent/safety.js && node -c agent/team.js && node -c agent/blackboard.js && node -c agent/mcp-server.js && node -c agent/mcp-orchestrator.js && echo '[PreCommit] All syntax checks passed'; } || true"
+          },
+          {
+            "type": "command",
+            "command": "INPUT=$(cat); echo \"$INPUT\" | grep -qiE 'FLUSH(DB|ALL)' && { echo '[BLOCKED] Redis flush operation denied'; exit 1; } || true"
+          },
+          {
+            "type": "command",
+            "command": "INPUT=$(cat); echo \"$INPUT\" | grep -q 'rcon' && echo \"$INPUT\" | grep -qE '(op |ban |stop |whitelist )' && { echo '[BLOCKED] Dangerous RCON command denied'; exit 1; } || true"
           }
         ]
       }
@@ -28,7 +36,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "MEM_DIR=/Users/octiv/.claude/projects/-Users-octiv-Octiv-MVP/memory; TS=$(date '+%Y-%m-%d %H:%M'); echo \"## Auto-save before compaction — $TS\" >> $MEM_DIR/session-log.md && echo \"- Last commit: $(git -C /Users/octiv/Octiv_MVP log --oneline -1 2>/dev/null)\" >> $MEM_DIR/session-log.md && echo \"- Modified: $(git -C /Users/octiv/Octiv_MVP diff --name-only 2>/dev/null | tr '\\n' ', ')\" >> $MEM_DIR/session-log.md && echo '[PreCompact] Memory auto-saved to session-log.md'"
+            "command": "MEM_DIR=/Users/octiv/.claude/projects/-Users-octiv-Octiv-MVP/memory; TS=$(date '+%Y-%m-%d %H:%M'); echo \"## Auto-save before compaction — $TS\" >> $MEM_DIR/session-log.md && echo \"- Last commit: $(git -C /Users/octiv/Octiv_MVP log --oneline -1 2>/dev/null)\" >> $MEM_DIR/session-log.md && echo \"- Modified: $(git -C /Users/octiv/Octiv_MVP diff --name-only 2>/dev/null | tr '\\n' ', ')\" >> $MEM_DIR/session-log.md && echo \"- AC Status: $(redis-cli -p 6380 hgetall octiv:ac:progress 2>/dev/null | tr '\\n' ' ' || echo 'redis down')\" >> $MEM_DIR/session-log.md && echo '[PreCompact] Memory + AC status auto-saved'"
           }
         ]
       }
@@ -36,7 +44,42 @@
   },
   "permissions": {
     "allow": [
-      "Bash(~/.zshrc:*)"
+      "Bash(npm test*)",
+      "Bash(npm run *)",
+      "Bash(node --test*)",
+      "Bash(git status*)",
+      "Bash(git log*)",
+      "Bash(git diff*)",
+      "Bash(git add *)",
+      "Bash(git commit*)",
+      "Bash(git push*)",
+      "Bash(git clone*)",
+      "Bash(git remote*)",
+      "Bash(git -C *)",
+      "Bash(docker compose *)",
+      "Bash(docker ps*)",
+      "Bash(docker logs*)",
+      "Bash(redis-cli -p 6380 *)",
+      "Bash(claude mcp *)",
+      "Bash(gh *)",
+      "Bash(head *)",
+      "Bash(timeout *)",
+      "Bash(cat *)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:docs.openclaw.ai)",
+      "WebSearch"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(*FLUSHDB*)",
+      "Bash(*FLUSHALL*)",
+      "Bash(git push --force*)",
+      "Bash(git reset --hard*)",
+      "Bash(*rcon* op *)",
+      "Bash(*rcon* ban *)",
+      "Bash(*rcon* stop*)"
     ]
   }
 }

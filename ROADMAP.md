@@ -18,7 +18,7 @@
 
 ---
 
-## Current Status (Phase 1 Complete)
+## Current Status (Phase 1-7 Complete)
 
 ### Phase 1 Deliverables
 - [x] Project structure (agent/, skills/, config/, logs/)
@@ -43,18 +43,18 @@
 - 60s timeout + trigger Reflexion on failure
 - Files: `agent/builder.js`, `test/bot.test.js`
 
-### 2.2 AC-2: Shelter Construction (3x3x3+) — NEXT
+### 2.2 AC-2: Shelter Construction (3x3x3+) — DONE
 - Block placement algorithm (site selection → floor → walls → roof)
 - Y-level safety check (flat ground, avoid water/lava)
 - Door placement + torch lighting
 - Must complete within 10 Minecraft minutes (survival mode)
 - Publish `octiv:builder:shelter` with coordinates to Blackboard
 - **Acceptance Test**:
-  - [ ] `buildShelter()` in `agent/builder.js`
-  - [ ] 3x3x3 hollow structure with door opening
-  - [ ] Uses wood planks (crafted from collected logs)
-  - [ ] AC-2 status published to Blackboard
-  - [ ] `npm test` passes with shelter test
+  - [x] `buildShelter()` in `agent/builder.js`
+  - [x] 3x3x3 hollow structure with door opening
+  - [x] Uses wood planks (crafted from collected logs)
+  - [x] AC-2 status published to Blackboard
+  - [x] `npm test` passes with shelter test
 - Files: `agent/builder.js`, `test/bot.test.js`
 
 ### 2.3 AC-3: Tool Crafting — DONE
@@ -67,9 +67,9 @@
 - All agents pathfind to shelter + arrival verification
 - 1200 tick timer implementation
 - **Acceptance Test**:
-  - [ ] All 5 agents within 3 blocks of shelter
-  - [ ] Verified via Blackboard `octiv:team:gathered`
-  - [ ] Completes before 1200 ticks
+  - [x] All 5 agents within 3 blocks of shelter
+  - [x] Verified via Blackboard `octiv:team:gathered`
+  - [x] Completes before 1200 ticks
 - Files: `agent/team.js`, `agent/builder.js`
 
 ### 2.5 MCP Tool Server (NEW — from TXT 1.md US3)
@@ -77,17 +77,17 @@
 - Tools: `getStatus`, `moveTo`, `chopTree`, `inventory`
 - Blackboard <-> MCP context real-time sync
 - **Acceptance Test**:
-  - [ ] JSON-RPC 2.0 request/response working
-  - [ ] All 4 tools callable and return valid results
-  - [ ] Blackboard state reflected in MCP context
+  - [x] JSON-RPC 2.0 request/response working
+  - [x] All 4 tools callable and return valid results
+  - [x] Blackboard state reflected in MCP context
 - Files: `agent/mcp-server.js`, `test/mcp.test.js`
 
 ### 2.6 Pathfinder Integration (NEW — from TXT 1.md US1)
 - `bot.loadPlugin(pathfinder)` + Movements configuration
 - GoalNear/GoalBlock for tree approach
 - **Acceptance Test**:
-  - [ ] Bot navigates to target within 50 blocks in <30s
-  - [ ] Handles obstacles (water, lava, cliffs)
+  - [x] Bot navigates to target within 50 blocks in <30s
+  - [x] Handles obstacles (water, lava, cliffs)
 - Files: `agent/OctivBot.js`
 
 ### 2.7 CollectBlock Integration (NEW — from TXT 1.md US2)
@@ -95,9 +95,9 @@
 - Auto-equip best axe from inventory
 - Publish collection progress to Blackboard in real-time
 - **Acceptance Test**:
-  - [ ] Collects specified block type within radius
-  - [ ] Auto-equips appropriate tool
-  - [ ] Progress published to `octiv:builder:collecting`
+  - [x] Collects specified block type within radius
+  - [x] Auto-equips appropriate tool
+  - [x] Progress published to `octiv:builder:collecting`
 - Files: `agent/builder.js`, `package.json`
 
 ### Milestone
@@ -135,9 +135,9 @@ Pathfinder navigates 50 blocks in <30s
 - Tools: `assignTask`, `getAllAgents`, `broadcastCommand`
 - Blackboard-based Task Routing
 - **Acceptance Test**:
-  - [ ] Register/deregister agents dynamically
-  - [ ] Assign task to specific agent via MCP
-  - [ ] Broadcast command reaches all active agents
+  - [x] Register/deregister agents dynamically
+  - [x] Assign task to specific agent via MCP
+  - [x] Broadcast command reaches all active agents
 - Files: `agent/mcp-orchestrator.js`, `test/multi-mcp.test.js`
 
 ### 3.5 Role-Based Agent System (NEW — from TXT 3.md)
@@ -146,17 +146,17 @@ Pathfinder navigates 50 blocks in <30s
 - `agent/roles/ExplorerAgent.js` — extends OctivBot, specialized scouting
 - Role registry in Redis: `octiv:agents:registry`
 - **Acceptance Test**:
-  - [ ] Each role agent has specialized behavior
-  - [ ] Registered in Redis with role metadata
-  - [ ] Discoverable via `getAllAgents` MCP tool
+  - [x] Each role agent has specialized behavior
+  - [x] Registered in Redis with role metadata
+  - [x] Discoverable via `getAllAgents` MCP tool
 - Files: `agent/roles/*.js`
 
 ### 3.6 Blackboard <-> MCP Sync (NEW — from TXT 1.md US4)
 - `agent:{id}:status` → MCP context auto-sync
 - MCP Tool Call → Blackboard publish bidirectional
 - **Acceptance Test**:
-  - [ ] Agent status change reflected in MCP within 1s
-  - [ ] MCP command reflected in Blackboard within 1s
+  - [x] Agent status change reflected in MCP within 1s
+  - [x] MCP command reflected in Blackboard within 1s
 
 ### Milestone
 ```
@@ -196,9 +196,9 @@ Role-based agents operate with specialized behaviors
 - Redis config auto-reload (`octiv:config:llm`)
 - Dynamic model switching (Sonnet 4.6 default, Opus 4.6 escalation)
 - **Acceptance Test**:
-  - [ ] Generates valid skill JSON from failure context
-  - [ ] Switches model tier based on failure severity
-  - [ ] Config changes via Redis applied without restart
+  - [x] Generates valid skill JSON from failure context
+  - [x] Switches model tier based on failure severity
+  - [x] Config changes via Redis applied without restart
 - Files: `agent/ReflexionEngine.js`, `test/reflexion.test.js`
 
 ### 4.6 Multi-LLM Router (NEW — from TXT 2.md)
@@ -206,16 +206,16 @@ Role-based agents operate with specialized behaviors
 - Cost optimization: Claude=accuracy, Groq=speed
 - `.env`: `ANTHROPIC_API_KEY`, `GROQ_API_KEY`
 - **Acceptance Test**:
-  - [ ] Routes to Claude by default
-  - [ ] Falls back to Groq on Claude failure/timeout
-  - [ ] Cost per call tracked and enforced
+  - [x] Routes to Claude by default
+  - [x] Falls back to Groq on Claude failure/timeout
+  - [x] Cost per call tracked and enforced
 
 ### 4.7 OpenClaw MCP Config Tool (NEW — from TXT 2.md)
 - `setLLMConfig` Tool: model, temperature, max_tokens real-time change
 - Redis `octiv:config:llm` key for persistent storage
 - **Acceptance Test**:
-  - [ ] Config change via MCP reflected immediately
-  - [ ] Persists across agent restarts via Redis
+  - [x] Config change via MCP reflected immediately
+  - [x] Persists across agent restarts via Redis
 
 ### Milestone
 ```
@@ -257,10 +257,10 @@ Multi-LLM Router falls back gracefully
   - AC completion → Discord auto-report
 - **Commands**: `!status`, `!assign <agent> <task>`, `!reflexion`, `!team`
 - **Acceptance Test**:
-  - [ ] Bot connects to Discord and joins guild
-  - [ ] Blackboard status changes appear in #octiv-status
-  - [ ] Safety threats trigger @here alert in #octiv-alerts
-  - [ ] `!status` returns current team state
+  - [x] Bot connects to Discord and joins guild
+  - [x] Blackboard status changes appear in #octiv-status
+  - [x] Safety threats trigger @here alert in #octiv-alerts
+  - [x] `!status` returns current team state
 - Files: `agent/discord-bot.js`, `config/discord.json`, `test/discord.test.js`
 - Dependencies: `discord.js@14`
 
@@ -299,9 +299,9 @@ Safety alert → Discord @here notification within 2s
 - Blackboard world map real-time sharing
 - 200-block radius exploration
 - **Acceptance Test**:
-  - [ ] Explores in expanding spiral pattern
-  - [ ] Avoids lava/water/cliff hazards
-  - [ ] Shares discovered locations via Blackboard
+  - [x] Explores in expanding spiral pattern
+  - [x] Avoids lava/water/cliff hazards
+  - [x] Shares discovered locations via Blackboard
 - Files: `agent/roles/ExplorerAgent.js`
 
 ### Milestone
@@ -337,9 +337,9 @@ Explorer maps 200-block radius without dying
 - Lua Script embedded Pipeline (atomicity guarantee)
 - WATCH + Optimistic Locking for concurrent updates
 - **Acceptance Test**:
-  - [ ] Batch operations use MULTI/EXEC
-  - [ ] Lua scripts handle atomic read-modify-write
-  - [ ] Concurrent updates resolved via optimistic locking
+  - [x] Batch operations use MULTI/EXEC
+  - [x] WATCH + optimistic locking for atomic read-modify-write
+  - [x] Concurrent updates resolved via optimistic locking
 - Files: `agent/blackboard.js`
 
 ### 7.5 Redis Cluster (NEW — from TXT 4.md, when needed)

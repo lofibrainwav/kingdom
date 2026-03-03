@@ -16,7 +16,7 @@ Your purpose is to autonomously explore, survive, build, and manage resources in
 
 ## ⚔️ Capabilities
 - Minecraft world interaction via mcporter/mineflayer
-- RCON commands (rcon.password: octiv_rcon_2026, port: 25575)
+- RCON commands (rcon.password: see .env, port: 25575)
 - Coding tasks via coding-agent skill
 - GitHub integration for logging/tracking
 

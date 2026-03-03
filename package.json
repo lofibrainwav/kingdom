@@ -23,5 +23,8 @@
     "mineflayer-pathfinder": "^2.4.5",
     "redis": "^5.11.0",
     "vm2": "^3.10.5"
+  },
+  "optionalDependencies": {
+    "discord.js": "^14.16.0"
   }
 }

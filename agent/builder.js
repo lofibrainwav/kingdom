@@ -15,6 +15,7 @@ class BuilderAgent {
     this.id = config.id || 'builder-01';
     this.board = new Blackboard();
     this.bot = null;
+    this.mcData = null; // cached minecraft-data instance
     this.reactIterations = 0;
     this.actionHistory = [];
     this.acProgress = { 1: false, 2: false, 3: false, 4: false, 5: false };
@@ -41,7 +42,10 @@ class BuilderAgent {
     this.bot.loadPlugin(pathfinder);
     this.bot.loadPlugin(collectBlock.plugin);
 
-    this.bot.once('spawn', () => this._onSpawn());
+    this.bot.once('spawn', () => {
+      this.mcData = require('minecraft-data')(this.bot.version);
+      this._onSpawn();
+    });
     this.bot.on('chat', (user, msg) => this._onChat(user, msg));
     this.bot.on('health', () => this._onHealthChange());
     this.bot.on('error', (err) => console.error(`[${this.id}] error:`, err.message));
@@ -60,16 +64,16 @@ class BuilderAgent {
   // AC-1: Collect 16 wood logs
   async collectWood(count = 16) {
     console.log(`[${this.id}] starting wood collection (target: ${count})`);
-    const mcData = require('minecraft-data')(this.bot.version);
-    const logIds = ['oak_log', 'spruce_log', 'birch_log'].map(n => mcData.blocksByName[n]?.id).filter(Boolean);
+    const logIds = ['oak_log', 'spruce_log', 'birch_log'].map(n => this.mcData.blocksByName[n]?.id).filter(Boolean);
+
+    // Set up pathfinder once for entire collection loop
+    this._setupPathfinder();
 
     let collected = 0;
     while (collected < count) {
       const log = this.bot.findBlock({ matching: logIds, maxDistance: this.adaptations.searchRadius });
       if (!log) { await this.bot.waitForTicks(20); continue; }
 
-      const movements = new Movements(this.bot);
-      this.bot.pathfinder.setMovements(movements);
       await this.bot.pathfinder.goto(new GoalBlock(log.position.x, log.position.y, log.position.z));
       await this.bot.dig(log);
       collected++;
@@ -94,7 +98,6 @@ class BuilderAgent {
   // AC-2: Build 3x3x3 shelter
   async buildShelter() {
     console.log(`[${this.id}] starting shelter construction`);
-    const mcData = require('minecraft-data')(this.bot.version);
 
     // 1. Craft planks from logs
     await this._craftPlanks();
@@ -141,14 +144,16 @@ class BuilderAgent {
 
   // Craft oak_planks from oak_log in inventory
   async _craftPlanks() {
-    const mcData = require('minecraft-data')(this.bot.version);
-    const planksRecipe = mcData.itemsByName.oak_planks;
-    if (!planksRecipe) return;
+    const planksItem = this.mcData.itemsByName.oak_planks;
+    if (!planksItem) return;
     const logItem = this.bot.inventory.items().find(i => i.name === 'oak_log');
     if (!logItem) return;
+    // bot.craft() expects a recipe, not an item — look up recipes for oak_planks
+    const recipes = this.bot.recipesFor(planksItem.id, null, 1, null);
+    if (!recipes || recipes.length === 0) return;
     const count = Math.min(logItem.count, 9); // up to 9 logs → 36 planks
     for (let i = 0; i < count; i++) {
-      await this.bot.craft(planksRecipe, 1, null);
+      await this.bot.craft(recipes[0], 1, null);
     }
   }
 
@@ -219,8 +224,7 @@ class BuilderAgent {
   // Phase 2.7: Collect blocks using mineflayer-collectblock with auto-equip
   async collectBlocks(blockName, count = 1) {
     console.log(`[${this.id}] collecting ${count}x ${blockName}`);
-    const mcData = require('minecraft-data')(this.bot.version);
-    const blockType = mcData.blocksByName[blockName];
+    const blockType = this.mcData.blocksByName[blockName];
     if (!blockType) throw new Error(`Unknown block: ${blockName}`);
 
     // Auto-equip best tool
@@ -251,9 +255,12 @@ class BuilderAgent {
     return blocks.length;
   }
 
+  // Optimization: reuse Movements instance across calls
   _setupPathfinder() {
-    const movements = new Movements(this.bot);
-    this.bot.pathfinder.setMovements(movements);
+    if (!this.movements) {
+      this.movements = new Movements(this.bot);
+    }
+    this.bot.pathfinder.setMovements(this.movements);
   }
 
   // AC-5: Self-improvement on failure

@@ -20,7 +20,7 @@ Autonomously operate AI bots on a PaperMC 1.21.1 Minecraft server (localhost:255
 
 ## Server Connection
 - **Minecraft**: `localhost:25565` (offline-mode)
-- **RCON**: `localhost:25575` / pw: `octiv_rcon_2026`
+- **RCON**: `localhost:25575` / pw: `${RCON_PASSWORD}` (see .env)
 
 ## Agent Operating Principles (眞善美孝永)
 1. **Truth (眞)** — Read game state accurately, make logic-driven decisions

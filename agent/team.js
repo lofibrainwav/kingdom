@@ -39,7 +39,7 @@ async function main() {
   console.log('🎮 Octiv Agent Team starting');
   console.log('═══════════════════════════════════════');
   console.log('  PaperMC: localhost:25565 (offline)');
-  console.log('  Redis:   localhost:6379');
+  console.log('  Redis:   localhost:6380');
   console.log('  Team:    Leader + Builder x3 + Safety');
   console.log('═══════════════════════════════════════');
   console.log('');
