@@ -31,7 +31,36 @@ class SafetyAgent {
 
   async init() {
     await this.board.connect();
+    this.subscriber = this.board.client.duplicate();
+    await this.subscriber.connect();
+    this._startMonitoring();
     console.log('[Safety] initialized, AC-8 monitoring started');
+  }
+
+  // 3.2: Subscribe to all builder health/status channels
+  _startMonitoring() {
+    this.subscriber.pSubscribe('octiv:agent:builder-*:health', async (message) => {
+      try {
+        const data = JSON.parse(message);
+        const mockBot = {
+          entity: { position: { x: 0, y: 64, z: 0 }, velocity: { x: 0, y: 0, z: 0 } },
+          health: data.health || 20,
+          findBlock: () => null,
+          registry: { blocksByName: {} },
+        };
+        const threat = this.detectThreat(mockBot);
+        if (threat) {
+          await this.handleThreat(threat, data.agentId || 'unknown');
+        }
+      } catch {}
+    });
+
+    this.subscriber.pSubscribe('octiv:agent:builder-*:react', async (message) => {
+      try {
+        const data = JSON.parse(message);
+        this.reactIterations = data.iteration || 0;
+      } catch {}
+    });
   }
 
   // AC-8.1: Threat detection
@@ -143,6 +172,10 @@ class SafetyAgent {
   }
 
   async shutdown() {
+    if (this.subscriber) {
+      await this.subscriber.pUnsubscribe();
+      await this.subscriber.disconnect();
+    }
     await this.board.disconnect();
   }
 }

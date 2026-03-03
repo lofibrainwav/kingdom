@@ -23,6 +23,10 @@ class MCPServer {
 
   async start() {
     await this.board.connect();
+    // 3.6: Blackboard → MCP sync subscriber
+    this.subscriber = this.board.client.duplicate();
+    await this.subscriber.connect();
+    this._startSync();
     this.server = http.createServer((req, res) => this._handleRequest(req, res));
     return new Promise((resolve) => {
       this.server.listen(this.port, () => {
@@ -32,7 +36,27 @@ class MCPServer {
     });
   }
 
+  // 3.6: Bidirectional Blackboard <-> MCP context sync
+  _startSync() {
+    this.syncedState = {};
+    this.subscriber.pSubscribe('octiv:agent:*:status', (message, channel) => {
+      try {
+        const data = JSON.parse(message);
+        const agentId = channel.split(':')[2];
+        this.syncedState[agentId] = { ...data, syncedAt: Date.now() };
+      } catch {}
+    });
+  }
+
+  getSyncedState() {
+    return this.syncedState;
+  }
+
   async stop() {
+    if (this.subscriber) {
+      await this.subscriber.pUnsubscribe();
+      await this.subscriber.disconnect();
+    }
     if (this.server) {
       await new Promise((resolve) => this.server.close(resolve));
     }

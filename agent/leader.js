@@ -16,7 +16,39 @@ class LeaderAgent {
 
   async init() {
     await this.board.connect();
+    this._startMissionLoop();
     console.log('[Leader] initialized, team size:', this.teamSize);
+  }
+
+  // 3.1: Distribute missions to builders based on AC progress
+  async distributeMission(agentId) {
+    const acData = await this.board.getACProgress(agentId);
+    const done = new Set();
+    for (const [key, val] of Object.entries(acData)) {
+      try { if (JSON.parse(val).status === 'done') done.add(key); } catch {}
+    }
+
+    let mission;
+    if (!done.has('AC-1')) mission = { ac: 1, action: 'collectWood', params: { count: 16 } };
+    else if (!done.has('AC-3')) mission = { ac: 3, action: 'craftBasicTools', params: {} };
+    else if (!done.has('AC-2')) mission = { ac: 2, action: 'buildShelter', params: {} };
+    else if (!done.has('AC-4')) mission = { ac: 4, action: 'gatherAtShelter', params: {} };
+    else mission = { ac: 0, action: 'idle', params: {} };
+
+    await this.board.publish(`command:${agentId}:mission`, mission);
+    return mission;
+  }
+
+  // 3.1: Periodic mission distribution loop
+  _startMissionLoop() {
+    this._missionTimer = setInterval(async () => {
+      try {
+        for (let i = 1; i <= this.teamSize; i++) {
+          await this.distributeMission(`builder-0${i}`);
+        }
+        await this.decideMode('builder-01');
+      } catch {}
+    }, 10000);
   }
 
   // Decide mode based on AC progress
@@ -98,6 +130,7 @@ class LeaderAgent {
   }
 
   async shutdown() {
+    if (this._missionTimer) clearInterval(this._missionTimer);
     await this.board.disconnect();
   }
 }
