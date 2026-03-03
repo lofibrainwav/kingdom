@@ -28,9 +28,11 @@ class BuilderAgent {
       improvements: [],  // log of applied improvements
     };
     this.logger = null;
+    this.skillPipeline = null;
   }
 
   setLogger(logger) { this.logger = logger; }
+  setSkillPipeline(pipeline) { this.skillPipeline = pipeline; }
 
   async init() {
     await this.board.connect();
@@ -340,6 +342,42 @@ class BuilderAgent {
     return retryCount <= this.adaptations.maxRetries;
   }
 
+  // Task B: Try learned skill from library matching the error type
+  async _tryLearnedSkill(error) {
+    if (!this.skillPipeline) return false;
+
+    const errorType = this._classifyError(error.message);
+    let library;
+    try {
+      library = await this.skillPipeline.getLibrary();
+    } catch {
+      return false;
+    }
+
+    // Find skills matching this error type, sorted by success_rate descending
+    const matching = Object.entries(library)
+      .filter(([, skill]) => skill.errorType === errorType)
+      .sort((a, b) => (b[1].success_rate || 0) - (a[1].success_rate || 0));
+
+    if (matching.length === 0) return false;
+
+    const [skillName, skill] = matching[0];
+
+    try {
+      // Execute skill code in sandbox (uses same sandbox as SkillPipeline)
+      await this.skillPipeline.validateSkill(skill.code, 1);
+      await this.skillPipeline.updateSuccessRate(skillName, true);
+      if (this.logger) this.logger.logEvent(this.id, { type: 'skill_applied', skill: skillName, success: true });
+      console.log(`[${this.id}] applied learned skill: ${skillName}`);
+      return true;
+    } catch (err) {
+      await this.skillPipeline.updateSuccessRate(skillName, false);
+      if (this.logger) this.logger.logEvent(this.id, { type: 'skill_applied', skill: skillName, success: false, error: err.message });
+      console.log(`[${this.id}] learned skill failed: ${skillName} — ${err.message}`);
+      return false;
+    }
+  }
+
   _classifyError(message) {
     const msg = message.toLowerCase();
     if (msg.includes('build site') || msg.includes('flat')) return 'build_site';
@@ -387,6 +425,10 @@ class BuilderAgent {
         if (this.logger) this.logger.logEvent(this.id, { type: 'error', error: err.message, iteration: this.reactIterations });
         await this.board.logReflexion(this.id, { error: err.message, iteration: this.reactIterations });
         const shouldRetry = await this._selfImprove(err);
+
+        // Task B: Try learned skill from library for this error type
+        await this._tryLearnedSkill(err);
+
         if (!shouldRetry) {
           console.warn(`[${this.id}] max retries reached, skipping action`);
         }

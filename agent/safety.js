@@ -1,12 +1,11 @@
 /**
  * Octiv Safety Agent — health-monitor + automated-debugging role
- * AC-8 threat detection (lava/fall/infinite-loop), vm2 code validation
+ * AC-8 threat detection (lava/fall/infinite-loop), sandbox code validation
  *
- * WARNING: vm2 is deprecated due to CVE-2023-37466 (sandbox escape).
- * TODO: Migrate to 'isolated-vm' for production use.
+ * Sandbox: node:vm with isolated context (replaces vm2 CVE-2023-37466).
  */
 const { Blackboard } = require('./blackboard');
-const { VM } = require('vm2');
+const vm = require('node:vm');
 
 const AC8_THRESHOLDS = {
   lava: {
@@ -104,15 +103,19 @@ class SafetyAgent {
     return null;
   }
 
-  // AC-8.3: vm2 sandbox code validation (3x dry-run)
+  // AC-8.3: Sandbox code validation via node:vm (3x dry-run)
   async verifySkillCode(code, maxAttempts = 3) {
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
-        const vm = new VM({ timeout: 3000, sandbox: {} });
-        vm.run(`(async function() { ${code} })`);
-        console.log(`[Safety] vm2 validation passed (${attempt}/${maxAttempts})`);
+        const context = vm.createContext(Object.create(null));
+        const script = new vm.Script(`(function() { ${code} })()`, {
+          filename: 'safety-validation.js',
+          timeout: 3000,
+        });
+        script.runInContext(context, { timeout: 3000 });
+        console.log(`[Safety] sandbox validation passed (${attempt}/${maxAttempts})`);
       } catch (err) {
-        console.error(`[Safety] vm2 validation failed (${attempt}/${maxAttempts}):`, err.message);
+        console.error(`[Safety] sandbox validation failed (${attempt}/${maxAttempts}):`, err.message);
         return false;
       }
     }

@@ -10,6 +10,7 @@ const { MemoryLogger } = require('./memory-logger');
 const { SkillPipeline } = require('./skill-pipeline');
 const { ReflexionEngine } = require('./ReflexionEngine');
 const { ExplorerAgent } = require('./roles/ExplorerAgent');
+const { createApiClients } = require('./api-clients');
 
 const TEAM_SIZE = 3; // number of builder agents
 
@@ -55,8 +56,11 @@ async function main() {
   // AC-7: Persistent disk logging — shared across all agents
   const logger = new MemoryLogger();
 
-  // Learning pipeline: ReflexionEngine → SkillPipeline → Leader
-  const reflexion = new ReflexionEngine();
+  // Task A: Create API clients from environment (Anthropic primary, Groq fallback)
+  const apiClients = createApiClients();
+
+  // Learning pipeline: ReflexionEngine (with real API clients) → SkillPipeline → Leader
+  const reflexion = new ReflexionEngine(apiClients);
   await reflexion.init();
   const pipeline = new SkillPipeline(reflexion);
   await pipeline.init();
@@ -86,6 +90,7 @@ async function main() {
     await new Promise(r => setTimeout(r, 2000)); // 2s interval
     const builder = new BuilderAgent({ id: `builder-0${i}` });
     builder.setLogger(logger);
+    builder.setSkillPipeline(pipeline); // Task B: enable skill feedback loop
     await builder.init();
     builders.push(builder);
     console.log(`✅ Builder-0${i} started`);
@@ -103,6 +108,12 @@ async function main() {
       const data = JSON.parse(message);
       logger.logEvent('team', { type: 'emergency', ...data });
       console.warn(`[Team] ⚠️  Emergency: ${data.failureType || data.newSkill || 'unknown'}`);
+
+      // Task C: Increment leader failure counter on safety threats
+      if (data.failureType) {
+        leader.consecutiveTeamFailures++;
+        await leader.checkReflexionTrigger();
+      }
 
       // If safety triggered skill creation, attempt to generate a skill
       if (data.triggerSkillCreation && data.failureType) {

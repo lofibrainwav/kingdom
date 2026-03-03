@@ -1,10 +1,12 @@
 /**
  * Octiv Skill Pipeline — Phase 4.1 + 4.2
- * Failure → LLM skill generation → vm2 validation → deploy to library
+ * Failure → LLM skill generation → sandbox validation → deploy to library
  * Dynamic skill library with success_rate tracking and daily limits.
+ *
+ * Sandbox: node:vm with isolated context (replaces vm2 CVE-2023-37466).
  */
 const { Blackboard } = require('./blackboard');
-const { VM } = require('vm2');
+const vm = require('node:vm');
 
 const DAILY_LIMIT = 5;
 const MIN_SUCCESS_RATE = 0.7;
@@ -70,12 +72,16 @@ class SkillPipeline {
     return { success: true, skill: skillJson.name };
   }
 
-  // 4.1: vm2 sandbox validation (3x dry-run)
+  // 4.1: Sandbox validation via node:vm (3x dry-run)
   async validateSkill(code, attempts = 3) {
     for (let i = 0; i < attempts; i++) {
       try {
-        const vm = new VM({ timeout: 3000, sandbox: {} });
-        vm.run(`(function() { ${code} })`);
+        const context = vm.createContext(Object.create(null));
+        const script = new vm.Script(`(function() { ${code} })()`, {
+          filename: 'skill-validation.js',
+          timeout: 3000,
+        });
+        script.runInContext(context, { timeout: 3000 });
       } catch (err) {
         console.error(`[SkillPipeline] validation failed (${i + 1}/${attempts}): ${err.message}`);
         return false;

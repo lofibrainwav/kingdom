@@ -1,0 +1,330 @@
+/**
+ * Phase 0 Tests — API Clients, Skill Feedback Loop, Reflexion Trigger,
+ *                  Quality Filter, node:vm Sandbox Migration
+ * Usage: node --test --test-force-exit test/phase0.test.js
+ */
+const { describe, it, before, after, mock } = require('node:test');
+const assert = require('node:assert/strict');
+
+// ── Task A: API Client Factory ────────────────────────────────
+describe('ApiClients — Factory (Task A)', () => {
+  it('Should return empty clients when no env vars set', () => {
+    // Save and clear env vars
+    const savedAnthropic = process.env.ANTHROPIC_API_KEY;
+    const savedGroq = process.env.GROQ_API_KEY;
+    delete process.env.ANTHROPIC_API_KEY;
+    delete process.env.GROQ_API_KEY;
+
+    // Clear require cache to reload with new env
+    delete require.cache[require.resolve('../agent/api-clients')];
+    const { createApiClients } = require('../agent/api-clients');
+    const clients = createApiClients();
+
+    assert.equal(clients.anthropic, undefined, 'No anthropic client without API key');
+    assert.equal(clients.groq, undefined, 'No groq client without API key');
+
+    // Restore env vars
+    if (savedAnthropic) process.env.ANTHROPIC_API_KEY = savedAnthropic;
+    if (savedGroq) process.env.GROQ_API_KEY = savedGroq;
+    delete require.cache[require.resolve('../agent/api-clients')];
+  });
+
+  it('Should create anthropic client when API key is set', () => {
+    const savedAnthropic = process.env.ANTHROPIC_API_KEY;
+    process.env.ANTHROPIC_API_KEY = 'test-key-for-factory-test';
+
+    delete require.cache[require.resolve('../agent/api-clients')];
+    const { createApiClients } = require('../agent/api-clients');
+    const clients = createApiClients();
+
+    assert.ok(clients.anthropic, 'Anthropic client should exist');
+    assert.equal(typeof clients.anthropic.call, 'function', 'Should have call method');
+
+    if (savedAnthropic) process.env.ANTHROPIC_API_KEY = savedAnthropic;
+    else delete process.env.ANTHROPIC_API_KEY;
+    delete require.cache[require.resolve('../agent/api-clients')];
+  });
+});
+
+// ── Task B: Skill Feedback Loop ───────────────────────────────
+describe('BuilderAgent — Skill Feedback Loop (Task B)', () => {
+  let BuilderAgent, SkillPipeline;
+  let redisClient;
+
+  before(async () => {
+    const { createClient } = require('redis');
+    redisClient = createClient({ url: 'redis://localhost:6380' });
+    await redisClient.connect();
+    BuilderAgent = require('../agent/builder').BuilderAgent;
+    SkillPipeline = require('../agent/skill-pipeline').SkillPipeline;
+  });
+
+  after(async () => {
+    const keys = await redisClient.keys('octiv:skills:*');
+    if (keys.length > 0) await redisClient.del(keys);
+    await redisClient.disconnect();
+  });
+
+  it('Should have setSkillPipeline method', () => {
+    const builder = new BuilderAgent({ id: 'test-feedback' });
+    assert.equal(typeof builder.setSkillPipeline, 'function');
+  });
+
+  it('Should query and apply learned skill on error', async () => {
+    const pipeline = new SkillPipeline(null);
+    await pipeline.init();
+
+    // Deploy a skill matching 'inventory' error type
+    await pipeline.deploySkill({
+      name: 'fix_inventory_v1',
+      code: 'const fixed = true;',
+      description: 'Fix inventory errors',
+      errorType: 'inventory',
+    });
+
+    const builder = new BuilderAgent({ id: 'test-feedback' });
+    await builder.board.connect();
+    builder.skillPipeline = pipeline;
+
+    const result = await builder._tryLearnedSkill(new Error('No oak_planks in inventory'));
+
+    assert.equal(result, true, 'Should successfully apply matching skill');
+
+    // Verify success_rate was updated
+    const lib = await pipeline.getLibrary();
+    assert.equal(lib.fix_inventory_v1.uses, 1);
+    assert.equal(lib.fix_inventory_v1.successes, 1);
+
+    await builder.board.disconnect();
+    await pipeline.shutdown();
+  });
+
+  it('Should return false when no matching skill exists', async () => {
+    const pipeline = new SkillPipeline(null);
+    await pipeline.init();
+
+    const builder = new BuilderAgent({ id: 'test-no-match' });
+    await builder.board.connect();
+    builder.skillPipeline = pipeline;
+
+    const result = await builder._tryLearnedSkill(new Error('Pathfinding timeout'));
+
+    assert.equal(result, false, 'Should return false when no skill matches');
+
+    await builder.board.disconnect();
+    await pipeline.shutdown();
+  });
+
+  it('Should return false when no pipeline is set', async () => {
+    const builder = new BuilderAgent({ id: 'test-no-pipeline' });
+    const result = await builder._tryLearnedSkill(new Error('some error'));
+    assert.equal(result, false);
+  });
+});
+
+// ── Task C: checkReflexionTrigger Wiring ──────────────────────
+describe('LeaderAgent — Failure Counter & Reflexion Trigger (Task C)', () => {
+  let LeaderAgent;
+  let redisClient;
+
+  before(async () => {
+    const { createClient } = require('redis');
+    redisClient = createClient({ url: 'redis://localhost:6380' });
+    await redisClient.connect();
+    LeaderAgent = require('../agent/leader').LeaderAgent;
+
+    // Pre-seed reflexion logs
+    for (let i = 1; i <= 3; i++) {
+      const key = `octiv:agent:builder-0${i}:reflexion`;
+      await redisClient.del(key);
+      await redisClient.lPush(key, JSON.stringify({
+        ts: Date.now(), error: 'lava', type: 'threat',
+      }));
+    }
+  });
+
+  after(async () => {
+    for (let i = 1; i <= 3; i++) {
+      await redisClient.del(`octiv:agent:builder-0${i}:reflexion`);
+    }
+    const keys = await redisClient.keys('octiv:leader:*');
+    if (keys.length > 0) await redisClient.del(keys);
+    await redisClient.disconnect();
+  });
+
+  it('Should increment consecutiveTeamFailures and trigger at 3', async () => {
+    const leader = new LeaderAgent(3);
+    await leader.init();
+
+    assert.equal(leader.consecutiveTeamFailures, 0);
+
+    leader.consecutiveTeamFailures++;
+    let triggered = await leader.checkReflexionTrigger();
+    assert.equal(triggered, false, 'Should not trigger at 1');
+
+    leader.consecutiveTeamFailures++;
+    triggered = await leader.checkReflexionTrigger();
+    assert.equal(triggered, false, 'Should not trigger at 2');
+
+    leader.consecutiveTeamFailures++;
+    triggered = await leader.checkReflexionTrigger();
+    assert.equal(triggered, true, 'Should trigger at 3');
+
+    // After Group Reflexion, counter resets to 0
+    assert.equal(leader.consecutiveTeamFailures, 0, 'Counter should reset after reflexion');
+
+    await leader.shutdown();
+  });
+});
+
+// ── Task D: Quality Filter ────────────────────────────────────
+describe('LeaderAgent — Quality Filter (Task D)', () => {
+  let LeaderAgent, SkillPipeline;
+  let redisClient;
+
+  before(async () => {
+    const { createClient } = require('redis');
+    redisClient = createClient({ url: 'redis://localhost:6380' });
+    await redisClient.connect();
+    LeaderAgent = require('../agent/leader').LeaderAgent;
+    SkillPipeline = require('../agent/skill-pipeline').SkillPipeline;
+  });
+
+  after(async () => {
+    const keys = await redisClient.keys('octiv:leader:*');
+    if (keys.length > 0) await redisClient.del(keys);
+    const keys2 = await redisClient.keys('octiv:command:*');
+    if (keys2.length > 0) await redisClient.del(keys2);
+    const keys3 = await redisClient.keys('octiv:skills:*');
+    if (keys3.length > 0) await redisClient.del(keys3);
+    await redisClient.disconnect();
+  });
+
+  it('Should reject skill with low success rate (<50% after 3+ uses)', async () => {
+    const pipeline = new SkillPipeline(null);
+    await pipeline.init();
+
+    // Deploy skill with low success rate
+    await pipeline.deploySkill({
+      name: 'bad_skill_v1',
+      code: 'const x = 1;',
+      description: 'bad skill',
+      errorType: 'test',
+    });
+    // Simulate 3 failures
+    await pipeline.updateSuccessRate('bad_skill_v1', false);
+    await pipeline.updateSuccessRate('bad_skill_v1', false);
+    await pipeline.updateSuccessRate('bad_skill_v1', false);
+
+    // Re-deploy since it may have been discarded (success_rate < 0.7 triggers discard at 3 uses)
+    await pipeline.deploySkill({
+      name: 'bad_skill_v2',
+      code: 'const x = 1;',
+      description: 'bad skill v2',
+      errorType: 'test',
+    });
+    // Manually set low rate
+    const { Blackboard } = require('../agent/blackboard');
+    const board = new Blackboard();
+    await board.connect();
+    await board.saveSkill('bad_skill_v2', {
+      name: 'bad_skill_v2',
+      code: 'const x = 1;',
+      uses: 5,
+      successes: 1,
+      success_rate: 0.2,
+    });
+
+    const leader = new LeaderAgent(3);
+    leader.setSkillPipeline(pipeline);
+    await leader.init();
+
+    const result = await leader.injectLearnedSkill('bad_skill_v2', 'v1');
+    assert.equal(result.rejected, 'low_success_rate', 'Should reject low success rate skill');
+
+    await board.disconnect();
+    await leader.shutdown();
+    await pipeline.shutdown();
+  });
+
+  it('Should reject duplicate skill injection', async () => {
+    const leader = new LeaderAgent(3);
+    await leader.init();
+
+    await leader.injectLearnedSkill('unique_skill', 'v1');
+    const result = await leader.injectLearnedSkill('unique_skill', 'v1');
+
+    assert.equal(result.rejected, 'duplicate', 'Should reject duplicate');
+
+    await leader.shutdown();
+  });
+
+  it('Should enforce max 10 skills limit', async () => {
+    const leader = new LeaderAgent(3);
+    await leader.init();
+
+    // Inject 10 skills
+    for (let i = 0; i < 10; i++) {
+      await leader.injectLearnedSkill(`skill_${i}`, 'v1');
+    }
+
+    // 11th should be rejected
+    const result = await leader.injectLearnedSkill('skill_overflow', 'v1');
+    assert.equal(result.rejected, 'max_skills_reached', 'Should reject at 10+ skills');
+
+    await leader.shutdown();
+  });
+});
+
+// ── Task E: node:vm Sandbox Migration ─────────────────────────
+describe('Sandbox Migration — node:vm (Task E)', () => {
+  let SkillPipeline, SafetyAgent;
+
+  before(() => {
+    SkillPipeline = require('../agent/skill-pipeline').SkillPipeline;
+    SafetyAgent = require('../agent/safety').SafetyAgent;
+  });
+
+  it('SkillPipeline should validate safe code via node:vm', async () => {
+    const pipeline = new SkillPipeline(null);
+    await pipeline.init();
+
+    const valid = await pipeline.validateSkill('const x = 1 + 2; const y = x * 3;');
+    assert.equal(valid, true);
+
+    await pipeline.shutdown();
+  });
+
+  it('SkillPipeline should reject syntax errors via node:vm', async () => {
+    const pipeline = new SkillPipeline(null);
+    await pipeline.init();
+
+    const valid = await pipeline.validateSkill('function( { broken }');
+    assert.equal(valid, false);
+
+    await pipeline.shutdown();
+  });
+
+  it('SafetyAgent should validate safe code via node:vm', async () => {
+    const safety = new SafetyAgent();
+    const valid = await safety.verifySkillCode('const safe = true;');
+    assert.equal(valid, true);
+  });
+
+  it('SafetyAgent should reject invalid code via node:vm', async () => {
+    const safety = new SafetyAgent();
+    const valid = await safety.verifySkillCode('const x = {;');
+    assert.equal(valid, false);
+  });
+
+  it('Should not expose process/require in sandbox context', async () => {
+    const pipeline = new SkillPipeline(null);
+    await pipeline.init();
+
+    // Code that tries to access process — should fail because context is isolated
+    const valid = await pipeline.validateSkill('if (typeof process !== "undefined") throw new Error("leaked");');
+    assert.equal(valid, true, 'process should not be accessible in sandbox');
+
+    await pipeline.shutdown();
+  });
+});

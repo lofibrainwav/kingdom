@@ -149,11 +149,38 @@ class LeaderAgent {
   }
 
   // 4.4: Inject learned skill into team system prompt via Blackboard
+  // Task D: Quality filter — check success_rate, duplicates, max count
   async injectLearnedSkill(skillName, version = 'v1') {
+    // Quality gate: check skill success_rate from library
+    if (this.skillPipeline) {
+      try {
+        const library = await this.skillPipeline.getLibrary();
+        const skill = library[skillName];
+        if (skill && skill.uses >= 3 && skill.success_rate < 0.5) {
+          console.log(`[Leader] skipped low-quality skill: ${skillName} (rate: ${skill.success_rate.toFixed(2)})`);
+          return { tag: null, totalSkills: 0, rejected: 'low_success_rate' };
+        }
+      } catch {
+        // Library unavailable — proceed without filter
+      }
+    }
+
     const tag = `[Learned Skill ${version}] ${skillName}`;
     const current = await this.board.get('leader:system_prompt') || {};
     const skills = current.skills || [];
-    if (!skills.includes(tag)) skills.push(tag);
+
+    // Duplicate check
+    if (skills.includes(tag)) {
+      return { tag, totalSkills: skills.length, rejected: 'duplicate' };
+    }
+
+    // Max skill count limit (10 skills max to avoid prompt bloat)
+    if (skills.length >= 10) {
+      console.log(`[Leader] skill limit reached (${skills.length}/10), skipping: ${skillName}`);
+      return { tag: null, totalSkills: skills.length, rejected: 'max_skills_reached' };
+    }
+
+    skills.push(tag);
 
     await this.board.publish('leader:system_prompt', { author: 'leader', skills, updatedAt: Date.now() });
     // Broadcast to all builders
