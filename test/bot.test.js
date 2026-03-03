@@ -527,3 +527,103 @@ describe('BuilderAgent — Shelter Gathering (AC-4)', () => {
         await builder.board.disconnect();
     });
 });
+
+// ── AC-5 Self-Improvement Tests ─────────────────────────────────
+describe('BuilderAgent — Self-Improvement (AC-5)', () => {
+    let BuilderAgent;
+    let redisClient;
+
+    before(async () => {
+        const { createClient } = require('redis');
+        redisClient = createClient({ url: 'redis://localhost:6380' });
+        await redisClient.connect();
+        BuilderAgent = require('../agent/builder').BuilderAgent;
+    });
+
+    after(async () => {
+        const keys = await redisClient.keys('octiv:agent:builder-improve*');
+        if (keys.length > 0) await redisClient.del(keys);
+        await redisClient.disconnect();
+    });
+
+    async function createImproveBuilder() {
+        const builder = new BuilderAgent({ id: 'builder-improve' });
+        await builder.board.connect();
+        const mockBot = createMockBot({
+            position: new Vec3(100, 64, -200),
+        });
+        mockBot.entity.position = new Vec3(100, 64, -200);
+        builder.bot = mockBot;
+        builder._setupPathfinder = () => {};
+        return builder;
+    }
+
+    it('Should expand build site radius after build_site failure', async () => {
+        const builder = await createImproveBuilder();
+        const originalRadius = builder.adaptations.buildSiteRadius;
+
+        await builder._selfImprove(new Error('No suitable build site found'));
+
+        assert.ok(builder.adaptations.buildSiteRadius > originalRadius,
+            `Radius should increase from ${originalRadius}, got ${builder.adaptations.buildSiteRadius}`);
+
+        await builder.board.disconnect();
+    });
+
+    it('Should increase wait ticks after pathfinding failure', async () => {
+        const builder = await createImproveBuilder();
+        const originalWait = builder.adaptations.waitTicks;
+
+        await builder._selfImprove(new Error('Path goal unreachable'));
+
+        assert.ok(builder.adaptations.waitTicks > originalWait,
+            `Wait ticks should increase from ${originalWait}, got ${builder.adaptations.waitTicks}`);
+
+        await builder.board.disconnect();
+    });
+
+    it('Should expand search radius after inventory failure', async () => {
+        const builder = await createImproveBuilder();
+        const originalRadius = builder.adaptations.searchRadius;
+
+        await builder._selfImprove(new Error('No oak_planks in inventory'));
+
+        assert.ok(builder.adaptations.searchRadius > originalRadius,
+            `Search radius should increase from ${originalRadius}, got ${builder.adaptations.searchRadius}`);
+
+        await builder.board.disconnect();
+    });
+
+    it('Should mark AC-5 as done and publish improvement', async () => {
+        const builder = await createImproveBuilder();
+
+        await builder._selfImprove(new Error('No suitable build site found'));
+
+        assert.equal(builder.acProgress[5], true, 'AC-5 should be marked done');
+
+        const acRaw = await redisClient.hGet('octiv:agent:builder-improve:ac', 'AC-5');
+        assert.ok(acRaw, 'AC-5 should be in Redis');
+        const ac = JSON.parse(acRaw);
+        assert.equal(ac.status, 'done');
+
+        const impRaw = await redisClient.get('octiv:agent:builder-improve:improvement:latest');
+        assert.ok(impRaw, 'Improvement should be published');
+        const imp = JSON.parse(impRaw);
+        assert.equal(imp.type, 'expand_build_radius');
+
+        await builder.board.disconnect();
+    });
+
+    it('Should return false when max retries exceeded', async () => {
+        const builder = await createImproveBuilder();
+        builder.adaptations.maxRetries = 2;
+
+        await builder._selfImprove(new Error('No suitable build site found'));
+        await builder._selfImprove(new Error('No suitable build site found'));
+        const shouldRetry = await builder._selfImprove(new Error('No suitable build site found'));
+
+        assert.equal(shouldRetry, false, 'Should not retry after max retries');
+
+        await builder.board.disconnect();
+    });
+});

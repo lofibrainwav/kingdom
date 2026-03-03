@@ -16,7 +16,15 @@ class BuilderAgent {
     this.bot = null;
     this.reactIterations = 0;
     this.actionHistory = [];
-    this.acProgress = { 1: false, 2: false, 3: false, 4: false };
+    this.acProgress = { 1: false, 2: false, 3: false, 4: false, 5: false };
+    this.adaptations = {
+      searchRadius: 32,
+      buildSiteRadius: 16,
+      waitTicks: 20,
+      retries: {},       // per-action retry counts
+      maxRetries: 3,
+      improvements: [],  // log of applied improvements
+    };
   }
 
   async init() {
@@ -55,7 +63,7 @@ class BuilderAgent {
 
     let collected = 0;
     while (collected < count) {
-      const log = this.bot.findBlock({ matching: logIds, maxDistance: 32 });
+      const log = this.bot.findBlock({ matching: logIds, maxDistance: this.adaptations.searchRadius });
       if (!log) { await this.bot.waitForTicks(20); continue; }
 
       const movements = new Movements(this.bot);
@@ -145,7 +153,7 @@ class BuilderAgent {
   // Find flat 3x3 site: solid ground + air above (radius 16)
   async _findBuildSite() {
     const botPos = this.bot.entity.position.floored();
-    for (let r = 1; r <= 16; r++) {
+    for (let r = 1; r <= this.adaptations.buildSiteRadius; r++) {
       for (let dx = -r; dx <= r; dx++) {
         for (let dz = -r; dz <= r; dz++) {
           if (Math.abs(dx) !== r && Math.abs(dz) !== r) continue; // perimeter only
@@ -211,6 +219,62 @@ class BuilderAgent {
     this.bot.pathfinder.setMovements(movements);
   }
 
+  // AC-5: Self-improvement on failure
+  async _selfImprove(error) {
+    const errorType = this._classifyError(error.message);
+    const retryKey = errorType;
+    this.adaptations.retries[retryKey] = (this.adaptations.retries[retryKey] || 0) + 1;
+    const retryCount = this.adaptations.retries[retryKey];
+
+    let improvement = null;
+
+    if (errorType === 'build_site' && this.adaptations.buildSiteRadius < 64) {
+      this.adaptations.buildSiteRadius = Math.min(64, this.adaptations.buildSiteRadius + 8);
+      improvement = { type: 'expand_build_radius', value: this.adaptations.buildSiteRadius };
+    } else if (errorType === 'pathfinding' && this.adaptations.waitTicks < 100) {
+      this.adaptations.waitTicks = Math.min(100, this.adaptations.waitTicks + 10);
+      improvement = { type: 'increase_wait', value: this.adaptations.waitTicks };
+    } else if (errorType === 'inventory') {
+      this.adaptations.searchRadius = Math.min(128, this.adaptations.searchRadius + 16);
+      improvement = { type: 'expand_search_radius', value: this.adaptations.searchRadius };
+    } else if (errorType === 'unknown') {
+      this.adaptations.waitTicks = Math.min(100, this.adaptations.waitTicks + 5);
+      improvement = { type: 'increase_wait', value: this.adaptations.waitTicks };
+    }
+
+    if (improvement) {
+      improvement.retry = retryCount;
+      improvement.error = error.message;
+      this.adaptations.improvements.push(improvement);
+
+      await this.board.publish(`agent:${this.id}:improvement`, improvement);
+      await this.board.logReflexion(this.id, {
+        type: 'self_improve',
+        errorType,
+        improvement,
+        iteration: this.reactIterations,
+      });
+      console.log(`[${this.id}] AC-5 self-improve: ${improvement.type} → ${improvement.value}`);
+
+      // Mark AC-5 done on first successful adaptation
+      if (!this.acProgress[5]) {
+        this.acProgress[5] = true;
+        await this.board.updateAC(this.id, 5, 'done');
+      }
+    }
+
+    return retryCount <= this.adaptations.maxRetries;
+  }
+
+  _classifyError(message) {
+    const msg = message.toLowerCase();
+    if (msg.includes('build site') || msg.includes('flat')) return 'build_site';
+    if (msg.includes('path') || msg.includes('goal') || msg.includes('movement')) return 'pathfinding';
+    if (msg.includes('inventory') || msg.includes('no oak') || msg.includes('no item')) return 'inventory';
+    if (msg.includes('shelter') || msg.includes('coordinates')) return 'shelter';
+    return 'unknown';
+  }
+
   // Monitor health changes
   async _onHealthChange() {
     await this.board.publish(`agent:${this.id}:health`, {
@@ -246,7 +310,11 @@ class BuilderAgent {
       } catch (err) {
         console.error(`[${this.id}] ReAct error:`, err.message);
         await this.board.logReflexion(this.id, { error: err.message, iteration: this.reactIterations });
-        await this.bot.waitForTicks(20);
+        const shouldRetry = await this._selfImprove(err);
+        if (!shouldRetry) {
+          console.warn(`[${this.id}] max retries reached, skipping action`);
+        }
+        await this.bot.waitForTicks(this.adaptations.waitTicks);
       }
     }
   }
