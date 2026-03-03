@@ -85,14 +85,16 @@ Choose the right pattern for the task at hand:
 | `/simplify plan <task>` | Plan Combo → plan.md in one shot |
 | `/simplify fix <file>` | Quick fix with auto-verify |
 | `/simplify ship` | Test → lint → commit → push |
+| `/simplify debug <error>` | Systematic debug with auto-verify |
 | `/batch test,lint,status` | Run multiple ops in parallel |
 | `/loop tdd <feature>` | Red-Green-Refactor cycle until pass |
 | `/loop fix <file>` | Auto-fix loop until clean (max 5 iter) |
 | `/loop refactor <file>` | Iterative improvement with verify |
-| `/rc` | Remote control status / Discord bridge |
+| `/loop deploy` | Build → test → deploy cycle |
+| `/rc` | Remote control status / Discord bridge (not yet implemented) |
 | `/auto-memory status` | Show all memory layer stats |
 
-### Skills (11 total)
+### Skills (16 total)
 | Skill | When |
 |-------|------|
 | `/tool-index` | Find any tool |
@@ -104,8 +106,13 @@ Choose the right pattern for the task at hand:
 | `/verify-agents` | After agent/*.js changes |
 | `/manage-skills` | After new patterns |
 | `/tdd-workflow` | Before new feature (or use `/loop tdd`) |
+| `/security-review` | After auth, input handling, API changes |
 | `/health-monitor` | Infrastructure issues (or use `/batch health`) |
 | `/dev-tool-belt` | Tests/Docker/git/GitHub CLI |
+| `/mcporter` | MCP server management |
+| `/weather` | Minecraft weather/time queries |
+| `/first-day-survival` | First night survival strategy |
+| `/automated-debugging` | Systematic bug investigation |
 
 ### MCP Servers — Scope Strategy
 
