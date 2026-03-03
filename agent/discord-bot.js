@@ -17,9 +17,9 @@
  */
 
 const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
-const { createClient } = require('redis');
 const { readFileSync } = require('fs');
 const { join } = require('path');
+const { Blackboard, PREFIX } = require('./blackboard');
 const { SafetyAgent } = require('./safety');
 
 // Load channel config
@@ -51,18 +51,16 @@ class OctivDiscordBot {
       ]
     });
 
-    this.redis = null;
+    this.board = null;
     this.subscriber = null;
     this.channels = {};
   }
 
   async start() {
-    // Connect Redis
-    this.redis = createClient({ url: this.redisUrl });
-    this.subscriber = this.redis.duplicate();
-
-    await this.redis.connect();
-    await this.subscriber.connect();
+    // Connect via Blackboard abstraction
+    this.board = new Blackboard(this.redisUrl);
+    await this.board.connect();
+    this.subscriber = await this.board.createSubscriber();
 
     // Connect Discord
     await this.client.login(this.token);
@@ -78,8 +76,8 @@ class OctivDiscordBot {
   }
 
   async stop() {
-    if (this.subscriber) await this.subscriber.quit();
-    if (this.redis) await this.redis.quit();
+    if (this.subscriber) await this.subscriber.disconnect();
+    if (this.board) await this.board.disconnect();
     if (this.client) this.client.destroy();
     console.log('[Discord] Disconnected');
   }
@@ -109,7 +107,7 @@ class OctivDiscordBot {
 
   _subscribeBlackboard() {
     // Agent status updates -> #octiv-status
-    this.subscriber.pSubscribe('octiv:*:status', (message, channel) => {
+    this.subscriber.pSubscribe(PREFIX + '*:status', (message, channel) => {
       try {
         const data = JSON.parse(message);
         this._postStatusEmbed(channel, data);
@@ -119,7 +117,7 @@ class OctivDiscordBot {
     });
 
     // Safety threats -> #octiv-alerts
-    this.subscriber.subscribe('octiv:safety:threat', (message) => {
+    this.subscriber.subscribe(PREFIX + 'safety:threat', (message) => {
       try {
         const data = JSON.parse(message);
         this._postAlertEmbed('threat', data);
@@ -129,7 +127,7 @@ class OctivDiscordBot {
     });
 
     // Reflexion events -> #octiv-alerts
-    this.subscriber.subscribe('octiv:leader:reflexion', (message) => {
+    this.subscriber.subscribe(PREFIX + 'leader:reflexion', (message) => {
       try {
         const data = JSON.parse(message);
         this._postAlertEmbed('reflexion', data);
@@ -138,15 +136,7 @@ class OctivDiscordBot {
       }
     });
 
-    // AC completion -> #octiv-status
-    this.subscriber.pSubscribe('octiv:ac:*', (message, channel) => {
-      try {
-        const data = JSON.parse(message);
-        this._postACEmbed(channel, data);
-      } catch (err) {
-        console.error('[Discord] Failed to parse AC message:', err.message);
-      }
-    });
+    // L-3: Removed dead octiv:ac:* subscription (no publisher exists)
 
     console.log('[Discord] Blackboard subscriptions active');
   }
@@ -184,21 +174,6 @@ class OctivDiscordBot {
     this.channels.alerts.send({ content, embeds: [embed] }).catch(logSendError);
   }
 
-  _postACEmbed(channel, data) {
-    if (!this.channels.status) return;
-
-    const embed = new EmbedBuilder()
-      .setTitle(`AC Update: ${data.ac || channel}`)
-      .setColor(data.status === 'done' ? 0x00ff00 : 0x3498db)
-      .addFields(
-        { name: 'Status', value: data.status || 'unknown', inline: true },
-        { name: 'Agent', value: data.agentId || 'unknown', inline: true }
-      )
-      .setTimestamp();
-
-    this.channels.status.send({ embeds: [embed] }).catch(logSendError);
-  }
-
   // --- Discord Commands ---
 
   async _handleCommand(msg) {
@@ -223,14 +198,14 @@ class OctivDiscordBot {
 
   async _cmdStatus(msg) {
     try {
-      // Use SCAN instead of KEYS to avoid blocking Redis in production
+      // Get agent registry and build status from Blackboard
+      const registry = await this.board.getHash('agents:registry');
       const statuses = [];
-      for await (const key of this.redis.scanIterator({ MATCH: 'octiv:agent:*:status', COUNT: 50 })) {
-        const raw = await this.redis.get(key);
-        if (raw) {
-          try {
-            statuses.push(JSON.parse(raw));
-          } catch { /* skip malformed */ }
+
+      if (registry && Object.keys(registry).length > 0) {
+        for (const id of Object.keys(registry)) {
+          const status = await this.board.get(`agent:${id}:status`);
+          if (status) statuses.push(status);
         }
       }
 
@@ -272,7 +247,11 @@ class OctivDiscordBot {
     }
 
     try {
-      await this.redis.publish('octiv:commands:assign', JSON.stringify({ agentId, task: check.sanitized }));
+      await this.board.publish('commands:assign', {
+        author: 'discord-bot',
+        agentId,
+        task: check.sanitized,
+      });
       msg.reply(`Task "${check.sanitized}" assigned to ${agentId}`);
     } catch (err) {
       msg.reply(`Error assigning task: ${err.message}`);
@@ -281,10 +260,11 @@ class OctivDiscordBot {
 
   async _cmdReflexion(msg) {
     try {
-      await this.redis.publish('octiv:commands:reflexion', JSON.stringify({
+      await this.board.publish('commands:reflexion', {
+        author: 'discord-bot',
         trigger: 'manual',
-        requestedBy: msg.author.tag
-      }));
+        requestedBy: msg.author.tag,
+      });
       msg.reply('Group Reflexion triggered.');
     } catch (err) {
       msg.reply(`Error triggering reflexion: ${err.message}`);
@@ -293,8 +273,7 @@ class OctivDiscordBot {
 
   async _cmdTeam(msg) {
     try {
-      // Registry is stored as a Redis Hash (hSet), so use hGetAll
-      const registryHash = await this.redis.hGetAll('octiv:agents:registry');
+      const registryHash = await this.board.getHash('agents:registry');
       let agents;
 
       if (registryHash && Object.keys(registryHash).length > 0) {

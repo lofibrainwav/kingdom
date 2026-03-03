@@ -237,6 +237,14 @@ class Blackboard {
   }
 
   /**
+   * Get a single field from a hash (e.g., one skill from 'zettelkasten:notes')
+   */
+  async getHashField(key, field) {
+    const raw = await this.client.hGet(PREFIX + key, field);
+    return raw ? JSON.parse(raw) : null;
+  }
+
+  /**
    * Delete a field from a hash
    */
   async deleteHashField(key, field) {

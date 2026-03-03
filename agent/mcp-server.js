@@ -72,9 +72,21 @@ class MCPServer {
       return;
     }
 
+    const MAX_BODY = 1024 * 1024; // 1MB
     let body = '';
-    req.on('data', chunk => { body += chunk; });
+    let aborted = false;
+
+    req.on('data', chunk => {
+      body += chunk;
+      if (body.length > MAX_BODY) {
+        aborted = true;
+        res.writeHead(413, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Payload too large (max 1MB)' }));
+        req.destroy();
+      }
+    });
     req.on('end', async () => {
+      if (aborted) return;
       res.writeHead(200, { 'Content-Type': 'application/json' });
       try {
         const rpc = JSON.parse(body);
@@ -108,10 +120,30 @@ class MCPServer {
     return { jsonrpc: '2.0', error: { code, message }, id: id || null };
   }
 
+  // Input validation helpers
+  _validateAgentId(agentId) {
+    if (!agentId || typeof agentId !== 'string') {
+      throw new Error('Required: agentId (non-empty string)');
+    }
+    if (!/^[a-z0-9:_-]+$/.test(agentId)) {
+      throw new Error('Invalid agentId: must be lowercase alphanumeric with : _ -');
+    }
+  }
+
+  _validateCoordinate(value, name) {
+    if (value == null) throw new Error(`Required: ${name}`);
+    if (!Number.isFinite(value)) throw new Error(`${name} must be a finite number`);
+    const MC_LIMIT = 30_000_000;
+    if (value < -MC_LIMIT || value > MC_LIMIT) {
+      throw new Error(`${name} out of Minecraft range (±${MC_LIMIT})`);
+    }
+  }
+
   // Tool: Get team/agent status from Blackboard
   async _getStatus(params) {
     const agentId = params.agentId;
     if (agentId) {
+      this._validateAgentId(agentId);
       const status = await this.board.get(`agent:${agentId}:status`);
       const ac = await this.board.getACProgress(agentId);
       return { agentId, status, ac };
@@ -123,9 +155,10 @@ class MCPServer {
   // Tool: Command agent to move to coordinates
   async _moveTo(params) {
     const { agentId, x, y, z } = params;
-    if (!agentId || x == null || y == null || z == null) {
-      throw new Error('Required: agentId, x, y, z');
-    }
+    this._validateAgentId(agentId);
+    this._validateCoordinate(x, 'x');
+    this._validateCoordinate(y, 'y');
+    this._validateCoordinate(z, 'z');
     await this.board.publish(`command:${agentId}:move-to`, { author: 'mcp-server', x, y, z });
     return { agentId, command: 'moveTo', target: { x, y, z }, status: 'dispatched' };
   }
@@ -133,7 +166,7 @@ class MCPServer {
   // Tool: Command agent to chop nearest tree
   async _chopTree(params) {
     const { agentId } = params;
-    if (!agentId) throw new Error('Required: agentId');
+    this._validateAgentId(agentId);
     await this.board.publish(`command:${agentId}:chop-tree`, { author: 'mcp-server', action: 'chopTree' });
     return { agentId, command: 'chopTree', status: 'dispatched' };
   }
@@ -162,7 +195,7 @@ class MCPServer {
   // Tool: Get agent inventory
   async _inventory(params) {
     const { agentId } = params;
-    if (!agentId) throw new Error('Required: agentId');
+    this._validateAgentId(agentId);
     const inv = await this.board.get(`agent:${agentId}:inventory`);
     return { agentId, inventory: inv || {} };
   }

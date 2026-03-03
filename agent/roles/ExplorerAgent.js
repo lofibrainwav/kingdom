@@ -53,7 +53,7 @@ class ExplorerAgent extends BaseRole {
 
     // Publish to Blackboard
     await this.board.publish(`agent:${this.id}:explored`, { author: this.id, ...discovery });
-    const channelKey = key.replace(',', '_');
+    const channelKey = key.replace(/,/g, '_');
     await this.board.publish(`world:map:${channelKey}`, {
       author: this.id,
       position: waypoint,

@@ -55,12 +55,11 @@ setup-obsidian-v3.3-final.sh
 Untitled Kanban.md
 
 # Generated files (local only)
-Octiv_Claude_Desktop_Setup_Guide.docx
+*.docx
 setup-claude.sh
 claude_desktop_config.json
 
 # npm
-package-lock.json
 npm-debug.log*
 
 # Logs

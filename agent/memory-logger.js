@@ -3,6 +3,7 @@
  * Writes JSONL files per agent for post-mortem analysis and cross-session learning.
  */
 const fs = require('fs');
+const fsp = require('fs').promises;
 const path = require('path');
 
 const LOG_DIR = path.join(__dirname, '..', 'logs');
@@ -15,27 +16,35 @@ class MemoryLogger {
     }
   }
 
-  logEvent(agentId, event) {
+  async logEvent(agentId, event) {
     const entry = JSON.stringify({ ts: Date.now(), agentId, ...event }) + '\n';
     const filePath = path.join(this.logDir, `${agentId}.jsonl`);
-    fs.appendFileSync(filePath, entry);
+    await fsp.appendFile(filePath, entry);
   }
 
-  getHistory(agentId) {
+  async getHistory(agentId) {
     const filePath = path.join(this.logDir, `${agentId}.jsonl`);
-    if (!fs.existsSync(filePath)) return [];
-    return fs.readFileSync(filePath, 'utf-8')
-      .trim().split('\n').filter(Boolean)
-      .map(line => JSON.parse(line));
+    try {
+      const data = await fsp.readFile(filePath, 'utf-8');
+      return data.trim().split('\n').filter(Boolean).map(line => JSON.parse(line));
+    } catch (err) {
+      if (err.code === 'ENOENT') return [];
+      throw err;
+    }
   }
 
-  getByType(agentId, type) {
-    return this.getHistory(agentId).filter(e => e.type === type);
+  async getByType(agentId, type) {
+    const history = await this.getHistory(agentId);
+    return history.filter(e => e.type === type);
   }
 
-  clear(agentId) {
+  async clear(agentId) {
     const filePath = path.join(this.logDir, `${agentId}.jsonl`);
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    try {
+      await fsp.unlink(filePath);
+    } catch (err) {
+      if (err.code !== 'ENOENT') throw err;
+    }
   }
 }
 

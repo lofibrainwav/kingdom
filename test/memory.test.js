@@ -19,15 +19,15 @@ describe('MemoryLogger — Disk Persistence (AC-7)', () => {
         logger = new MemoryLogger(tmpDir);
     });
 
-    after(() => {
+    after(async () => {
         if (fs.existsSync(tmpDir)) {
             fs.rmSync(tmpDir, { recursive: true });
         }
     });
 
-    it('Should create JSONL file and append entries', () => {
-        logger.logEvent('test-agent', { type: 'ac_progress', ac: 1, status: 'done' });
-        logger.logEvent('test-agent', { type: 'ac_progress', ac: 2, status: 'done' });
+    it('Should create JSONL file and append entries', async () => {
+        await logger.logEvent('test-agent', { type: 'ac_progress', ac: 1, status: 'done' });
+        await logger.logEvent('test-agent', { type: 'ac_progress', ac: 2, status: 'done' });
 
         const filePath = path.join(tmpDir, 'test-agent.jsonl');
         assert.ok(fs.existsSync(filePath), 'Log file should exist');
@@ -36,13 +36,13 @@ describe('MemoryLogger — Disk Persistence (AC-7)', () => {
         assert.equal(lines.length, 2, 'Should have 2 log entries');
     });
 
-    it('Should return all logged events via getHistory', () => {
-        logger.clear('history-agent');
-        logger.logEvent('history-agent', { type: 'start', msg: 'spawned' });
-        logger.logEvent('history-agent', { type: 'error', msg: 'failed' });
-        logger.logEvent('history-agent', { type: 'improve', msg: 'adapted' });
+    it('Should return all logged events via getHistory', async () => {
+        await logger.clear('history-agent');
+        await logger.logEvent('history-agent', { type: 'start', msg: 'spawned' });
+        await logger.logEvent('history-agent', { type: 'error', msg: 'failed' });
+        await logger.logEvent('history-agent', { type: 'improve', msg: 'adapted' });
 
-        const history = logger.getHistory('history-agent');
+        const history = await logger.getHistory('history-agent');
         assert.equal(history.length, 3);
         assert.equal(history[0].type, 'start');
         assert.equal(history[1].type, 'error');
@@ -50,29 +50,29 @@ describe('MemoryLogger — Disk Persistence (AC-7)', () => {
         assert.equal(history[0].agentId, 'history-agent');
     });
 
-    it('Should filter events by type via getByType', () => {
-        logger.clear('filter-agent');
-        logger.logEvent('filter-agent', { type: 'error', msg: 'path failed' });
-        logger.logEvent('filter-agent', { type: 'improve', msg: 'radius +8' });
-        logger.logEvent('filter-agent', { type: 'error', msg: 'no site' });
+    it('Should filter events by type via getByType', async () => {
+        await logger.clear('filter-agent');
+        await logger.logEvent('filter-agent', { type: 'error', msg: 'path failed' });
+        await logger.logEvent('filter-agent', { type: 'improve', msg: 'radius +8' });
+        await logger.logEvent('filter-agent', { type: 'error', msg: 'no site' });
 
-        const errors = logger.getByType('filter-agent', 'error');
+        const errors = await logger.getByType('filter-agent', 'error');
         assert.equal(errors.length, 2);
-        const improvements = logger.getByType('filter-agent', 'improve');
+        const improvements = await logger.getByType('filter-agent', 'improve');
         assert.equal(improvements.length, 1);
     });
 
-    it('Should clear agent log file', () => {
-        logger.logEvent('clear-agent', { type: 'test' });
+    it('Should clear agent log file', async () => {
+        await logger.logEvent('clear-agent', { type: 'test' });
         const filePath = path.join(tmpDir, 'clear-agent.jsonl');
         assert.ok(fs.existsSync(filePath));
 
-        logger.clear('clear-agent');
+        await logger.clear('clear-agent');
         assert.ok(!fs.existsSync(filePath), 'File should be deleted');
     });
 
-    it('Should return empty array for non-existent agent', () => {
-        const history = logger.getHistory('no-such-agent');
+    it('Should return empty array for non-existent agent', async () => {
+        const history = await logger.getHistory('no-such-agent');
         assert.deepEqual(history, []);
     });
 });
