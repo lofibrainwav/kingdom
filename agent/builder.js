@@ -186,6 +186,26 @@ class BuilderAgent {
     }
   }
 
+  // AC-4: Navigate to shelter and report arrival
+  async gatherAtShelter() {
+    console.log(`[${this.id}] heading to shelter`);
+    const shelterData = await this.board.get('builder:shelter');
+    if (!shelterData?.position) throw new Error('No shelter coordinates found');
+
+    const { x, y, z } = shelterData.position;
+    this._setupPathfinder();
+    // Navigate to shelter interior (center of floor, one block up)
+    await this.bot.pathfinder.goto(new GoalNear(x + 1, y + 1, z + 1, 2));
+
+    this.acProgress[4] = true;
+    await this.board.updateAC(this.id, 4, 'done');
+    await this.board.publish(`builder:arrived`, {
+      agentId: this.id,
+      position: { x, y, z },
+    });
+    console.log(`[${this.id}] AC-4 done: arrived at shelter`);
+  }
+
   _setupPathfinder() {
     const movements = new Movements(this.bot);
     this.bot.pathfinder.setMovements(movements);
@@ -217,6 +237,8 @@ class BuilderAgent {
           await this.craftBasicTools();
         } else if (!this.acProgress[2]) {
           await this.buildShelter();
+        } else if (!this.acProgress[4]) {
+          await this.gatherAtShelter();
         } else {
           // All ACs done — idle
           await this.bot.waitForTicks(40);

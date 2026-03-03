@@ -446,3 +446,84 @@ describe('BuilderAgent — Shelter Construction (AC-2)', () => {
         await builder.board.disconnect();
     });
 });
+
+// ── AC-4 Shelter Gathering Tests ────────────────────────────────
+describe('BuilderAgent — Shelter Gathering (AC-4)', () => {
+    let BuilderAgent;
+    let redisClient;
+
+    before(async () => {
+        const { createClient } = require('redis');
+        redisClient = createClient({ url: 'redis://localhost:6380' });
+        await redisClient.connect();
+        BuilderAgent = require('../agent/builder').BuilderAgent;
+    });
+
+    after(async () => {
+        const keys = await redisClient.keys('octiv:*builder*');
+        if (keys.length > 0) await redisClient.del(keys);
+        const acKeys = await redisClient.keys('octiv:agent:builder*');
+        if (acKeys.length > 0) await redisClient.del(acKeys);
+        await redisClient.disconnect();
+    });
+
+    async function createGatherBuilder(id = 'builder-test') {
+        const builder = new BuilderAgent({ id });
+        await builder.board.connect();
+        const mockBot = createMockBot({
+            position: new Vec3(100, 64, -200),
+        });
+        mockBot.entity.position = new Vec3(100, 64, -200);
+        mockBot.inventory.items = mock.fn(() => []);
+        builder.bot = mockBot;
+        builder._setupPathfinder = () => {};
+        // Pre-seed shelter coords in Blackboard
+        await builder.board.publish('builder:shelter', {
+            position: { x: 50, y: 64, z: -100 },
+            size: { x: 3, y: 4, z: 3 },
+        });
+        return { builder, mockBot };
+    }
+
+    it('Should navigate to shelter coordinates via pathfinder', async () => {
+        const { builder, mockBot } = await createGatherBuilder();
+
+        await builder.gatherAtShelter();
+
+        assert.equal(mockBot.pathfinder.goto.mock.calls.length, 1,
+            'pathfinder.goto should be called once');
+        const goal = mockBot.pathfinder.goto.mock.calls[0].arguments[0];
+        assert.equal(goal.x, 51); // x + 1 (center)
+        assert.equal(goal.y, 65); // y + 1 (above floor)
+        assert.equal(goal.z, -99); // z + 1 (center)
+
+        await builder.board.disconnect();
+    });
+
+    it('Should mark AC-4 as done in Redis', async () => {
+        const { builder } = await createGatherBuilder();
+
+        await builder.gatherAtShelter();
+
+        const acRaw = await redisClient.hGet('octiv:agent:builder-test:ac', 'AC-4');
+        assert.ok(acRaw, 'AC-4 should be stored in Redis');
+        const ac = JSON.parse(acRaw);
+        assert.equal(ac.status, 'done');
+
+        await builder.board.disconnect();
+    });
+
+    it('Should publish arrival event to Blackboard', async () => {
+        const { builder } = await createGatherBuilder();
+
+        await builder.gatherAtShelter();
+
+        const raw = await redisClient.get('octiv:builder:arrived:latest');
+        assert.ok(raw, 'Arrival event should be published');
+        const data = JSON.parse(raw);
+        assert.equal(data.agentId, 'builder-test');
+        assert.deepEqual(data.position, { x: 50, y: 64, z: -100 });
+
+        await builder.board.disconnect();
+    });
+});

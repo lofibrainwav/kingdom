@@ -9,6 +9,31 @@ const { Blackboard } = require('./blackboard');
 
 const TEAM_SIZE = 3; // number of builder agents
 
+async function monitorGathering(board, teamSize) {
+  const checkInterval = setInterval(async () => {
+    try {
+      let arrivedCount = 0;
+      for (let i = 1; i <= teamSize; i++) {
+        const ac = await board.getACProgress(`builder-0${i}`);
+        if (ac && ac['AC-4']) {
+          const parsed = JSON.parse(ac['AC-4']);
+          if (parsed.status === 'done') arrivedCount++;
+        }
+      }
+      if (arrivedCount >= teamSize) {
+        clearInterval(checkInterval);
+        await board.publish('team:ac4', {
+          status: 'done',
+          message: `All ${teamSize} builders gathered at shelter`,
+        });
+        console.log(`🏠 AC-4 complete: all ${teamSize} builders at shelter`);
+      }
+    } catch (err) {
+      // Ignore polling errors
+    }
+  }, 5000);
+}
+
 async function main() {
   console.log('');
   console.log('🎮 Octiv Agent Team starting');
@@ -56,6 +81,9 @@ async function main() {
   console.log('');
   console.log('✅ Full team running. Press Ctrl+C to stop.');
   console.log('');
+
+  // Monitor AC-4: all builders gathered at shelter
+  monitorGathering(board, TEAM_SIZE);
 
   // Graceful shutdown handler
   process.on('SIGINT', async () => {
