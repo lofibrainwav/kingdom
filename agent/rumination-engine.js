@@ -17,8 +17,6 @@
  *   - Event-driven: after group reflexion
  *   - Manual: leader requests deep rumination
  */
-const fs = require('fs');
-const path = require('path');
 const { Blackboard } = require('./blackboard');
 
 const RUMINATION_INTERVAL = 5 * 60 * 1000; // 5 minutes
