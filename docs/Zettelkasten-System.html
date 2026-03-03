@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Octiv Skill Zettelkasten Architecture</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0a0a0f; color: #e0e0e0; overflow-x: hidden; }
+
+  .header { text-align: center; padding: 40px 20px 20px; }
+  .header h1 { font-size: 2.2em; background: linear-gradient(135deg, #60a5fa, #a78bfa, #f472b6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .header p { color: #888; margin-top: 8px; font-size: 1.1em; }
+
+  .tabs { display: flex; justify-content: center; gap: 8px; padding: 20px; flex-wrap: wrap; }
+  .tab { padding: 10px 24px; border-radius: 20px; border: 1px solid #333; background: transparent; color: #aaa; cursor: pointer; font-size: 0.95em; transition: all 0.3s; }
+  .tab:hover { border-color: #60a5fa; color: #60a5fa; }
+  .tab.active { background: #60a5fa; color: #fff; border-color: #60a5fa; }
+
+  .panel { max-width: 1100px; margin: 0 auto; padding: 20px; display: none; }
+  .panel.active { display: block; }
+
+  .card { background: #14141f; border: 1px solid #222; border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+  .card h2 { font-size: 1.3em; margin-bottom: 16px; color: #60a5fa; }
+  .card h3 { font-size: 1.1em; margin: 16px 0 8px; color: #a78bfa; }
+
+  .flow-diagram { display: flex; flex-direction: column; gap: 12px; align-items: center; padding: 20px 0; }
+  .flow-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: center; }
+  .flow-box { padding: 12px 20px; border-radius: 10px; font-size: 0.9em; text-align: center; min-width: 140px; }
+  .flow-arrow { color: #60a5fa; font-size: 1.5em; }
+  .fb-blue { background: #1e3a5f; border: 1px solid #2563eb; color: #93c5fd; }
+  .fb-purple { background: #2d1b4e; border: 1px solid #7c3aed; color: #c4b5fd; }
+  .fb-green { background: #1a3c2a; border: 1px solid #059669; color: #6ee7b7; }
+  .fb-red { background: #3c1a1a; border: 1px solid #dc2626; color: #fca5a5; }
+  .fb-gold { background: #3c2e0a; border: 1px solid #d97706; color: #fcd34d; }
+
+  .tier-table { width: 100%; border-collapse: collapse; }
+  .tier-table th, .tier-table td { padding: 10px 16px; text-align: left; border-bottom: 1px solid #222; }
+  .tier-table th { color: #888; font-weight: 500; font-size: 0.85em; text-transform: uppercase; }
+
+  .stomach-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .stomach-grid { grid-template-columns: 1fr; } }
+  .stomach { padding: 20px; border-radius: 10px; }
+  .stomach .num { font-size: 2em; opacity: 0.3; }
+  .stomach .name { font-size: 1.1em; font-weight: 600; margin: 4px 0; }
+  .stomach .kr { font-size: 0.9em; opacity: 0.7; }
+  .stomach .desc { font-size: 0.85em; margin-top: 8px; line-height: 1.5; }
+  .s1 { background: linear-gradient(135deg, #1a2a1a, #0d1f0d); border: 1px solid #2d5a2d; }
+  .s2 { background: linear-gradient(135deg, #2a1a1a, #1f0d0d); border: 1px solid #5a2d2d; }
+  .s3 { background: linear-gradient(135deg, #1a1a2a, #0d0d1f); border: 1px solid #2d2d5a; }
+  .s4 { background: linear-gradient(135deg, #2a2a1a, #1f1f0d); border: 1px solid #5a5a2d; }
+
+  .got-strategies { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .got-strategies { grid-template-columns: 1fr; } }
+  .strategy { padding: 20px; background: #1a1a2a; border: 1px solid #333; border-radius: 10px; }
+  .strategy .icon { font-size: 2em; margin-bottom: 8px; }
+  .strategy h4 { margin-bottom: 8px; color: #c4b5fd; }
+  .strategy p { font-size: 0.85em; line-height: 1.6; color: #999; }
+
+  .hook-list { list-style: none; }
+  .hook-list li { padding: 12px 16px; border-left: 3px solid #333; margin-bottom: 8px; background: #111; border-radius: 0 8px 8px 0; }
+  .hook-list li code { background: #222; padding: 2px 6px; border-radius: 4px; font-size: 0.85em; color: #60a5fa; }
+  .hook-list li .arrow { color: #a78bfa; margin: 0 8px; }
+
+  .file-tree { font-family: 'Fira Code', monospace; font-size: 0.9em; line-height: 2; }
+  .file-tree .dir { color: #60a5fa; }
+  .file-tree .file { color: #6ee7b7; }
+  .file-tree .desc { color: #666; font-style: italic; }
+
+  .redis-keys { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+  .redis-keys th, .redis-keys td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #1a1a1a; }
+  .redis-keys th { color: #888; }
+  .redis-keys code { background: #1a1a2a; padding: 2px 6px; border-radius: 4px; color: #f472b6; }
+
+  .quote { border-left: 3px solid #a78bfa; padding: 16px 20px; margin: 20px 0; background: #111; border-radius: 0 8px 8px 0; font-style: italic; color: #bbb; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Octiv Skill Zettelkasten</h1>
+  <p>되새김질 + 곰국 + RPG XP = Craftsman System</p>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('overview')">Overview</button>
+  <button class="tab" onclick="showTab('rumination')">되새김질 Engine</button>
+  <button class="tab" onclick="showTab('xp')">XP / Tiers</button>
+  <button class="tab" onclick="showTab('got')">GoT Reasoner</button>
+  <button class="tab" onclick="showTab('hooks')">Auto-Memory</button>
+  <button class="tab" onclick="showTab('vault')">Obsidian Vault</button>
+</div>
+
+<!-- OVERVIEW -->
+<div class="panel active" id="panel-overview">
+  <div class="card">
+    <h2>System Architecture</h2>
+    <div class="quote">
+      소는 위가 4개. 여물을 되새김질해서 영양분을 뽑고, 뼈까지 곰국을 끓여 몸을 튼튼하게 한다. 경험이 쌓이면 경험치가 되고, RPG처럼 더 강력한 무기와 마법을 쓸 수 있게 되는 것. 이게 우리의 바이브.
+    </div>
+    <div class="flow-diagram">
+      <div class="flow-row">
+        <div class="flow-box fb-red">Builder fails / uses skill</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box fb-blue">Rumination Engine<br><small>4-stomach digestion</small></div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box fb-purple">Skill Zettelkasten<br><small>atomic notes + XP</small></div>
+      </div>
+      <span class="flow-arrow" style="transform: rotate(90deg);">→</span>
+      <div class="flow-row">
+        <div class="flow-box fb-green">Links strengthen<br><small>co-occurrence tracking</small></div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box fb-gold">Compound Skills<br><small>auto-merge when strong</small></div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box fb-purple">GoT Reasoner<br><small>graph analysis</small></div>
+      </div>
+      <span class="flow-arrow" style="transform: rotate(90deg);">→</span>
+      <div class="flow-row">
+        <div class="flow-box fb-green">Leader injects to team</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box fb-gold">Agents get stronger</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box fb-blue">Obsidian vault sync</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>4 New Engine Files</h2>
+    <table class="tier-table">
+      <tr><th>File</th><th>Role</th><th>Lines</th></tr>
+      <tr><td><code>skill-zettelkasten.js</code></td><td>Atomic notes + XP + links + compounds + vault sync</td><td>~340</td></tr>
+      <tr><td><code>rumination-engine.js</code></td><td>4-stomach digestion + deep rumination (gomguk mode)</td><td>~250</td></tr>
+      <tr><td><code>got-reasoner.js</code></td><td>GoT graph reasoning: synergies, builds, gaps, evolution</td><td>~310</td></tr>
+      <tr><td><code>zettelkasten-hooks.js</code></td><td>Auto-wiring: builder + leader + pipeline → Zettelkasten</td><td>~230</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- RUMINATION -->
+<div class="panel" id="panel-rumination">
+  <div class="card">
+    <h2>되새김질 Engine — 4 Stomachs</h2>
+    <div class="stomach-grid">
+      <div class="stomach s1">
+        <div class="num">01</div>
+        <div class="name">Rumen (반추위)</div>
+        <div class="kr">Raw Experience Intake</div>
+        <div class="desc">Builder의 모든 행동(성공/실패)이 buffer에 들어온다. <code>feed()</code>와 <code>feedFailure()</code>로 구분. 실패는 nutrition multiplier 1.5x — 뼈는 영양가가 더 높다.</div>
+      </div>
+      <div class="stomach s2">
+        <div class="num">02</div>
+        <div class="name">Reticulum (벌집위)</div>
+        <div class="kr">Pattern Filtering</div>
+        <div class="desc">error type별로 경험을 분류. 같은 에러에 어떤 skill들이 사용됐는지, 성공/실패 빈도 추적. co-occurrence (함께 쓰인 스킬) 감지.</div>
+      </div>
+      <div class="stomach s3">
+        <div class="num">03</div>
+        <div class="name">Omasum (겹주름위)</div>
+        <div class="kr">Insight Extraction</div>
+        <div class="desc">3가지 인사이트 추출: effective_skill (잘 되는 스킬), co_occurrence (시너지 조합), failure_pattern (반복 실패 → 새 스킬 필요).</div>
+      </div>
+      <div class="stomach s4">
+        <div class="num">04</div>
+        <div class="name">Abomasum (주름위)</div>
+        <div class="kr">Final Digestion → Action</div>
+        <div class="desc">인사이트를 행동으로: 링크 강화, XP 추가, 실패 패턴은 rumination note로 기록. 충분히 강한 링크는 compound skill 생성 트리거.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Gomguk Mode (곰국 모드)</h2>
+    <div class="quote">뼈까지 푸욱 고아서 영양분을 뽑아낸다</div>
+    <p style="margin-top: 12px; line-height: 1.8; color: #999;">
+      <code>deepRuminate()</code>: 30분마다 전체 Zettelkasten을 재분석.<br>
+      - 링크된 but 아직 compound 아닌 skill 쌍 → compound 후보 발견<br>
+      - 5번 이상 사용, 성공률 50% 미만, 소화 3회 미만 → 재소화<br>
+      - dormant skill에 rumination note 추가 ("다시 봐야 할 기술")
+    </p>
+  </div>
+</div>
+
+<!-- XP -->
+<div class="panel" id="panel-xp">
+  <div class="card">
+    <h2>RPG Progression System</h2>
+    <table class="tier-table">
+      <tr><th>Tier</th><th>Min XP</th><th>Description</th><th>Analogy</th></tr>
+      <tr><td>🌱 Novice</td><td>0</td><td>Just planted — needs watering</td><td>Wooden sword</td></tr>
+      <tr><td>🔨 Apprentice</td><td>10</td><td>Starting to take shape</td><td>Iron tools</td></tr>
+      <tr><td>⚒️ Journeyman</td><td>30</td><td>Reliable under pressure</td><td>Steel armor</td></tr>
+      <tr><td>⚔️ Expert</td><td>70</td><td>Battle-tested warrior</td><td>Enchanted weapons</td></tr>
+      <tr><td>👑 Master</td><td>150</td><td>True craftsman (장인)</td><td>Legendary gear</td></tr>
+      <tr><td>🏆 Grandmaster</td><td>300</td><td>Legend of the realm</td><td>Mythic artifacts</td></tr>
+    </table>
+
+    <h3>XP Rules</h3>
+    <ul class="hook-list">
+      <li>Success → <strong>+3 XP</strong> (effective combat)</li>
+      <li>Failure → <strong>+1 XP</strong> (even bones have value — 뼈도 곰국)</li>
+      <li>Compound inherit → <strong>50% parent XP</strong> (inherited knowledge)</li>
+      <li>Deprecation → XP freezes, moved to <code>deprecated/</code></li>
+    </ul>
+
+    <h3>Compound Skill Creation</h3>
+    <p style="line-height: 1.8; color: #999; margin-top: 8px;">
+      Two skills that co-occur <strong>5+ times</strong> with <strong>70%+ success</strong> automatically merge into a compound skill. Like forging two weapons into a legendary blade.
+    </p>
+  </div>
+</div>
+
+<!-- GOT -->
+<div class="panel" id="panel-got">
+  <div class="card">
+    <h2>Graph of Thought — 4 Reasoning Strategies</h2>
+    <div class="got-strategies">
+      <div class="strategy">
+        <div class="icon">🔍</div>
+        <h4>1. Synergy Discovery</h4>
+        <p>Find unlinked skills that SHOULD be combined. Scores based on: shared error types, shared tags, complementary tiers, both having high success rates.</p>
+      </div>
+      <div class="strategy">
+        <div class="icon">⚔️</div>
+        <h4>2. Optimal Builds</h4>
+        <p>RPG character build optimization. Start from high-XP skills, greedily expand through strongest links. Returns top 5 skill combos ranked by buildStrength.</p>
+      </div>
+      <div class="strategy">
+        <div class="icon">🕳️</div>
+        <h4>3. Gap Analysis</h4>
+        <p>Find error types with no skills or only Novice-level coverage. Critical gaps (zero skills) vs moderate gaps (weak skills). Triggers new skill creation.</p>
+      </div>
+      <div class="strategy">
+        <div class="icon">📈</div>
+        <h4>4. Evolution Paths</h4>
+        <p>For each skill, predict: uses needed to reach Master, estimated game sessions, compound potential with neighbors, current bottleneck (low success vs needs more usage).</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>GoT vs CoT vs ToT</h2>
+    <table class="tier-table">
+      <tr><th>Method</th><th>Structure</th><th>Limitation</th></tr>
+      <tr><td>Chain of Thought</td><td>A → B → C (linear)</td><td>Can't explore alternatives</td></tr>
+      <tr><td>Tree of Thought</td><td>A → {B1, B2} → {C1, C2, C3}</td><td>Grows exponentially</td></tr>
+      <tr><td><strong>Graph of Thought</strong></td><td>Any node ↔ any node</td><td>Our approach — matches Zettelkasten</td></tr>
+    </table>
+    <p style="margin-top: 12px; color: #999;">GoT naturally maps to the Zettelkasten graph structure. Skills ARE nodes. Links ARE edges. Reasoning IS graph traversal.</p>
+  </div>
+</div>
+
+<!-- HOOKS -->
+<div class="panel" id="panel-hooks">
+  <div class="card">
+    <h2>Auto-Memory Wiring</h2>
+    <p style="color: #999; margin-bottom: 16px;">zettelkasten-hooks.js intercepts existing agent methods — zero changes needed to builder/leader/pipeline code.</p>
+    <ul class="hook-list">
+      <li><code>builder._tryLearnedSkill()</code> <span class="arrow">→</span> records usage + co-occurrence in Zettelkasten, feeds Rumination</li>
+      <li><code>builder._selfImprove()</code> <span class="arrow">→</span> feeds failures as gomguk (1.5x nutrition)</li>
+      <li><code>leader.triggerGroupReflexion()</code> <span class="arrow">→</span> triggers full GoT reasoning cycle</li>
+      <li><code>pipeline.deploySkill()</code> <span class="arrow">→</span> creates atomic Zettelkasten note</li>
+      <li><code>pipeline.updateSuccessRate()</code> <span class="arrow">→</span> mirrors XP to Zettelkasten, auto-deprecate</li>
+    </ul>
+
+    <h3>Pub/Sub Events</h3>
+    <ul class="hook-list">
+      <li><code>zettelkasten:tier-up</code> <span class="arrow">→</span> celebration broadcast to all agents</li>
+      <li><code>zettelkasten:compound-created</code> <span class="arrow">→</span> logged + vault synced</li>
+      <li><code>rumination:digested</code> <span class="arrow">→</span> after 5 digestions, triggers GoT reasoning</li>
+      <li><code>got:reasoning-complete</code> <span class="arrow">→</span> summary stats published</li>
+    </ul>
+
+    <h3>Scheduling</h3>
+    <table class="tier-table">
+      <tr><th>Cycle</th><th>Interval</th><th>What</th></tr>
+      <tr><td>Digestion</td><td>5 min</td><td>Process raw experience buffer</td></tr>
+      <tr><td>Deep Rumination</td><td>30 min</td><td>Full Zettelkasten re-analysis (gomguk)</td></tr>
+      <tr><td>GoT Reasoning</td><td>After 5 digestions</td><td>Full 4-strategy analysis</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- VAULT -->
+<div class="panel" id="panel-vault">
+  <div class="card">
+    <h2>Obsidian Vault Structure</h2>
+    <div class="file-tree">
+      <span class="dir">vault/04-Skills/</span><br>
+      &nbsp;&nbsp;<span class="dir">atomic/</span> <span class="desc">— individual skill .md notes</span><br>
+      &nbsp;&nbsp;<span class="dir">compound/</span> <span class="desc">— merged compound skills</span><br>
+      &nbsp;&nbsp;<span class="dir">deprecated/</span> <span class="desc">— retired skills (gomguk archive)</span><br>
+      &nbsp;&nbsp;<span class="dir">reasoning/</span> <span class="desc">— GoT reasoning traces</span><br>
+      &nbsp;&nbsp;<span class="file">Skill-Dashboard.md</span> <span class="desc">— Dataview queries</span><br>
+      &nbsp;&nbsp;<span class="file">ARCHITECTURE.md</span> <span class="desc">— system design docs</span><br>
+      <br>
+      <span class="dir">vault/Templates/</span><br>
+      &nbsp;&nbsp;<span class="file">Skill-Atomic.md</span> <span class="desc">— Templater template</span><br>
+      &nbsp;&nbsp;<span class="file">Skill-Compound.md</span> <span class="desc">— compound template</span>
+    </div>
+
+    <h3>Dataview Dashboard</h3>
+    <p style="color: #999; line-height: 1.8;">
+      <code>Skill-Dashboard.md</code> provides 7 Dataview tables:<br>
+      Tier distribution, Top skills by XP, Compound skills, Novice training list,
+      Deprecated archive, Rumination stats, GoT reasoning history.
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>Redis Keys</h2>
+    <table class="redis-keys">
+      <tr><th>Key</th><th>Type</th><th>Purpose</th></tr>
+      <tr><td><code>octiv:zettelkasten:notes</code></td><td>Hash</td><td>All skill notes (JSON)</td></tr>
+      <tr><td><code>octiv:zettelkasten:links:*</code></td><td>String</td><td>Link strength between pairs</td></tr>
+      <tr><td><code>octiv:zettelkasten:tier-up</code></td><td>Pub/Sub</td><td>Tier-up events</td></tr>
+      <tr><td><code>octiv:zettelkasten:compound-created</code></td><td>Pub/Sub</td><td>New compound events</td></tr>
+      <tr><td><code>octiv:rumination:digested</code></td><td>Pub/Sub</td><td>Digestion completions</td></tr>
+      <tr><td><code>octiv:got:reasoning-complete</code></td><td>Pub/Sub</td><td>GoT cycle results</td></tr>
+    </table>
+  </div>
+</div>
+
+<script>
+function showTab(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>
