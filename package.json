@@ -4,9 +4,9 @@
   "description": "Octiv — AI Agent Sandbox powered by OpenClaw + PaperMC",
   "main": "index.js",
   "scripts": {
-    "test": "node --test test/*.test.js",
-    "test:bot": "node --test test/bot.test.js",
-    "test:blackboard": "node --test test/blackboard.test.js",
+    "test": "node --test --test-force-exit test/*.test.js",
+    "test:bot": "node --test --test-force-exit test/bot.test.js",
+    "test:blackboard": "node --test --test-force-exit test/blackboard.test.js",
     "server": "bash start-server.sh",
     "bot": "node agent/bot.js",
     "team": "node agent/team.js",

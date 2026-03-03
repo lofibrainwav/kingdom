@@ -38,6 +38,7 @@ function createMockBot(overrides = {}) {
         position: pos, name: 'dirt', boundingBox: 'block',
     }));
     bot.findBlock = mock.fn(() => null);
+    bot.recipesFor = mock.fn(() => []);
     bot.inventory = { items: mock.fn(() => []) };
     bot.version = '1.21.1';
     bot.registry = { itemsByName: {} };
@@ -308,7 +309,7 @@ describe('OctivBot — Blackboard Integration (Phase 1.3)', () => {
         await new Promise(r => setTimeout(r, 100));
 
         await bot.shutdown();
-        assert.ok(mockBot.end.mock.calls.length >= 1, 'bot.end() should be called');
+        assert.ok(mockBot.quit.mock.calls.length >= 1, 'bot.quit() should be called');
     });
 });
 
@@ -356,6 +357,7 @@ describe('BuilderAgent — Shelter Construction (AC-2)', () => {
         });
 
         builder.bot = mockBot;
+        builder.mcData = require('minecraft-data')(mockBot.version);
 
         // Stub pathfinder setup (Movements needs full bot registry)
         builder._setupPathfinder = () => {};

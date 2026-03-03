@@ -18,10 +18,15 @@ class OctivBot {
         };
 
         this.reconnectAttempts = 0;
-        this.redisClient = redis.createClient({ url: this.options.redisUrl });
-        this.redisClient.on('error', (err) => {
+        this.redisClient = redis.createClient({
+            url: this.options.redisUrl,
+            socket: {
+                connectTimeout: 5000,
+                reconnectStrategy: false,
+            },
+        });
+        this.redisClient.on('error', () => {
             // Prevent background Redis connection errors from crashing the process
-            // console.warn(`[Blackboard] Redis error: ${err.message}`);
         });
 
         this.bot = null;

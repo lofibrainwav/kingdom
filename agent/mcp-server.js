@@ -59,6 +59,7 @@ class MCPServer {
       await this.subscriber.disconnect();
     }
     if (this.server) {
+      this.server.closeAllConnections();
       await new Promise((resolve) => this.server.close(resolve));
     }
     await this.board.disconnect();
@@ -125,7 +126,7 @@ class MCPServer {
     if (!agentId || x == null || y == null || z == null) {
       throw new Error('Required: agentId, x, y, z');
     }
-    await this.board.publish(`command:${agentId}:moveTo`, { author: 'mcp-server', x, y, z });
+    await this.board.publish(`command:${agentId}:move-to`, { author: 'mcp-server', x, y, z });
     return { agentId, command: 'moveTo', target: { x, y, z }, status: 'dispatched' };
   }
 
@@ -133,7 +134,7 @@ class MCPServer {
   async _chopTree(params) {
     const { agentId } = params;
     if (!agentId) throw new Error('Required: agentId');
-    await this.board.publish(`command:${agentId}:chopTree`, { author: 'mcp-server', action: 'chopTree' });
+    await this.board.publish(`command:${agentId}:chop-tree`, { author: 'mcp-server', action: 'chopTree' });
     return { agentId, command: 'chopTree', status: 'dispatched' };
   }
 

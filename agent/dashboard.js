@@ -42,6 +42,7 @@ class DashboardServer {
       await this.subscriber.disconnect();
     }
     if (this.server) {
+      this.server.closeAllConnections();
       await new Promise((resolve) => this.server.close(resolve));
     }
     await this.board.disconnect();
