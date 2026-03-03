@@ -29,6 +29,7 @@ class BuilderAgent {
     };
     this.logger = null;
     this.skillPipeline = null;
+    this.spawnTimeoutMs = config.spawnTimeoutMs || 30000;
   }
 
   setLogger(logger) { this.logger = logger; }
@@ -37,8 +38,8 @@ class BuilderAgent {
   async init() {
     await this.board.connect();
     this.bot = mineflayer.createBot({
-      host: 'localhost',
-      port: 25565,
+      host: process.env.MC_HOST || 'localhost',
+      port: parseInt(process.env.MC_PORT) || 25565,
       username: `OctivBot_${this.id}`,
       version: '1.21.1',
       auth: 'offline',
@@ -47,13 +48,29 @@ class BuilderAgent {
     this.bot.loadPlugin(pathfinder);
     this.bot.loadPlugin(collectBlock.plugin);
 
-    this.bot.once('spawn', () => {
-      this.mcData = require('minecraft-data')(this.bot.version);
-      this._onSpawn();
+    // Wait for spawn with timeout
+    await new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error(`[${this.id}] spawn timeout (${this.spawnTimeoutMs}ms) — PaperMC unreachable?`));
+      }, this.spawnTimeoutMs);
+
+      this.bot.once('spawn', () => {
+        clearTimeout(timeout);
+        this.mcData = require('minecraft-data')(this.bot.version);
+        resolve();
+      });
+
+      this.bot.once('error', (err) => {
+        clearTimeout(timeout);
+        reject(new Error(`[${this.id}] connection error: ${err.message}`));
+      });
     });
+
     this.bot.on('chat', (user, msg) => this._onChat(user, msg));
     this.bot.on('health', () => this._onHealthChange());
     this.bot.on('error', (err) => console.error(`[${this.id}] error:`, err.message));
+
+    await this._onSpawn();
   }
 
   async _onSpawn() {
@@ -89,7 +106,7 @@ class BuilderAgent {
     }
 
     this.acProgress[1] = true;
-    if (this.logger) this.logger.logEvent(this.id, { type: 'ac_complete', ac: 1, collected });
+    if (this.logger) this.logger.logEvent(this.id, { type: 'ac_complete', ac: 1, collected }).catch(e => console.error('[Log]', e.message));
     console.log(`[${this.id}] ✅ AC-1 done: collected ${collected} wood`);
   }
 
@@ -99,7 +116,7 @@ class BuilderAgent {
     await this.bot.craft(this.bot.registry.itemsByName.wooden_pickaxe, 1, null);
     this.acProgress[3] = true;
     await this.board.updateAC(this.id, 3, 'done');
-    if (this.logger) this.logger.logEvent(this.id, { type: 'ac_complete', ac: 3 });
+    if (this.logger) this.logger.logEvent(this.id, { type: 'ac_complete', ac: 3 }).catch(e => console.error('[Log]', e.message));
     console.log(`[${this.id}] ✅ AC-3 done: basic tools crafted`);
   }
 
@@ -148,7 +165,7 @@ class BuilderAgent {
       position: { x: origin.x, y: origin.y, z: origin.z },
       size: { x: 3, y: 4, z: 3 },
     });
-    if (this.logger) this.logger.logEvent(this.id, { type: 'ac_complete', ac: 2, position: { x: origin.x, y: origin.y, z: origin.z } });
+    if (this.logger) this.logger.logEvent(this.id, { type: 'ac_complete', ac: 2, position: { x: origin.x, y: origin.y, z: origin.z } }).catch(e => console.error('[Log]', e.message));
     console.log(`[${this.id}] AC-2 done: shelter at ${origin}`);
   }
 
@@ -229,7 +246,7 @@ class BuilderAgent {
       agentId: this.id,
       position: { x, y, z },
     });
-    if (this.logger) this.logger.logEvent(this.id, { type: 'ac_complete', ac: 4, position: { x, y, z } });
+    if (this.logger) this.logger.logEvent(this.id, { type: 'ac_complete', ac: 4, position: { x, y, z } }).catch(e => console.error('[Log]', e.message));
     console.log(`[${this.id}] AC-4 done: arrived at shelter`);
   }
 
@@ -329,7 +346,7 @@ class BuilderAgent {
         improvement,
         iteration: this.reactIterations,
       });
-      if (this.logger) this.logger.logEvent(this.id, { type: 'self_improve', ...improvement });
+      if (this.logger) this.logger.logEvent(this.id, { type: 'self_improve', ...improvement }).catch(e => console.error('[Log]', e.message));
       console.log(`[${this.id}] AC-5 self-improve: ${improvement.type} → ${improvement.value}`);
 
       // Mark AC-5 done on first successful adaptation
@@ -368,17 +385,17 @@ class BuilderAgent {
       const valid = await this.skillPipeline.validateSkill(skill.code, 1);
       if (!valid) {
         await this.skillPipeline.updateSuccessRate(skillName, false);
-        if (this.logger) this.logger.logEvent(this.id, { type: 'skill_applied', skill: skillName, success: false, error: 'validation_failed' });
+        if (this.logger) this.logger.logEvent(this.id, { type: 'skill_applied', skill: skillName, success: false, error: 'validation_failed' }).catch(e => console.error('[Log]', e.message));
         console.log(`[${this.id}] learned skill validation failed: ${skillName}`);
         return false;
       }
       await this.skillPipeline.updateSuccessRate(skillName, true);
-      if (this.logger) this.logger.logEvent(this.id, { type: 'skill_applied', skill: skillName, success: true });
+      if (this.logger) this.logger.logEvent(this.id, { type: 'skill_applied', skill: skillName, success: true }).catch(e => console.error('[Log]', e.message));
       console.log(`[${this.id}] applied learned skill: ${skillName}`);
       return true;
     } catch (err) {
       await this.skillPipeline.updateSuccessRate(skillName, false);
-      if (this.logger) this.logger.logEvent(this.id, { type: 'skill_applied', skill: skillName, success: false, error: err.message });
+      if (this.logger) this.logger.logEvent(this.id, { type: 'skill_applied', skill: skillName, success: false, error: err.message }).catch(e => console.error('[Log]', e.message));
       console.log(`[${this.id}] learned skill failed: ${skillName} — ${err.message}`);
       return false;
     }
@@ -428,7 +445,7 @@ class BuilderAgent {
         }
       } catch (err) {
         console.error(`[${this.id}] ReAct error:`, err.message);
-        if (this.logger) this.logger.logEvent(this.id, { type: 'error', error: err.message, iteration: this.reactIterations });
+        if (this.logger) this.logger.logEvent(this.id, { type: 'error', error: err.message, iteration: this.reactIterations }).catch(e => console.error('[Log]', e.message));
 
         // Wrap recovery logic — Redis may be down, must not crash the loop
         let shouldRetry = true;
@@ -449,7 +466,11 @@ class BuilderAgent {
   }
 
   async shutdown() {
-    this.bot?.end();
+    try {
+      if (this.bot) this.bot.end();
+    } catch (err) {
+      console.error(`[${this.id}] shutdown bot error:`, err.message);
+    }
     await this.board.disconnect();
   }
 }

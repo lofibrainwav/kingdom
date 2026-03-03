@@ -11,6 +11,10 @@ const { SkillPipeline } = require('./skill-pipeline');
 const { ReflexionEngine } = require('./ReflexionEngine');
 const { ExplorerAgent } = require('./roles/ExplorerAgent');
 const { createApiClients } = require('./api-clients');
+const { SkillZettelkasten } = require('./skill-zettelkasten');
+const { RuminationEngine } = require('./rumination-engine');
+const { GoTReasoner } = require('./got-reasoner');
+const { ZettelkastenHooks } = require('./zettelkasten-hooks');
 
 const TEAM_SIZE = 3; // number of builder agents
 
@@ -51,7 +55,12 @@ async function main() {
   console.log('');
 
   const board = new Blackboard();
-  await board.connect();
+  try {
+    await board.connect();
+  } catch (err) {
+    console.error('FATAL: Redis unavailable:', err.message);
+    process.exit(1);
+  }
 
   // AC-7: Persistent disk logging — shared across all agents
   const logger = new MemoryLogger();
@@ -64,6 +73,19 @@ async function main() {
   await reflexion.init();
   const pipeline = new SkillPipeline(reflexion);
   await pipeline.init();
+
+  // Learning brain: Zettelkasten + Rumination + GoT
+  const zettelkasten = new SkillZettelkasten({ logger });
+  await zettelkasten.init();
+  const rumination = new RuminationEngine(zettelkasten, { logger });
+  await rumination.init();
+  const got = new GoTReasoner(zettelkasten, { logger });
+  await got.init();
+  const zkHooks = new ZettelkastenHooks(zettelkasten, rumination, got, { logger });
+  await zkHooks.init();
+
+  // Wire Zettelkasten hooks to skill pipeline
+  zkHooks.wireToSkillPipeline(pipeline);
 
   // Record Octiv team initialization state
   await board.publish('team:status', {
@@ -78,6 +100,7 @@ async function main() {
   leader.setLogger(logger);
   leader.setSkillPipeline(pipeline);
   await leader.init();
+  zkHooks.wireToLeader(leader);
 
   // 2. Start Safety (with logger)
   const safety = new SafetyAgent();
@@ -91,9 +114,19 @@ async function main() {
     const builder = new BuilderAgent({ id: `builder-0${i}` });
     builder.setLogger(logger);
     builder.setSkillPipeline(pipeline); // Task B: enable skill feedback loop
-    await builder.init();
-    builders.push(builder);
-    console.log(`✅ Builder-0${i} started`);
+    try {
+      await builder.init();
+      zkHooks.wireToBuilder(builder);
+      builders.push(builder);
+      console.log(`✅ Builder-0${i} started`);
+    } catch (err) {
+      console.error(`❌ Builder-0${i} failed to start: ${err.message}`);
+    }
+  }
+
+  if (builders.length === 0) {
+    console.error('FATAL: No builders started. Exiting.');
+    process.exit(1);
   }
 
   // 4. Start Explorer (world scout — uses Blackboard, not direct mineflayer)
@@ -106,7 +139,7 @@ async function main() {
   emergencySubscriber.subscribe('octiv:skills:emergency', async (message) => {
     try {
       const data = JSON.parse(message);
-      logger.logEvent('team', { type: 'emergency', ...data });
+      logger.logEvent('team', { type: 'emergency', ...data }).catch(e => console.error('[Log]', e.message));
       console.warn(`[Team] ⚠️  Emergency: ${data.failureType || data.newSkill || 'unknown'}`);
 
       // Task C: Increment leader failure counter on safety threats
@@ -124,7 +157,7 @@ async function main() {
         });
         if (result.success) {
           await leader.injectLearnedSkill(result.skill);
-          logger.logEvent('team', { type: 'skill_created', skill: result.skill });
+          logger.logEvent('team', { type: 'skill_created', skill: result.skill }).catch(e => console.error('[Log]', e.message));
         }
       }
     } catch (err) {
@@ -139,7 +172,7 @@ async function main() {
     startedAt: new Date().toISOString(),
   });
 
-  logger.logEvent('team', { type: 'started', members: TEAM_SIZE + 2 });
+  logger.logEvent('team', { type: 'started', members: TEAM_SIZE + 2 }).catch(e => console.error('[Log]', e.message));
 
   console.log('');
   console.log('✅ Full team running. Press Ctrl+C to stop.');
@@ -151,16 +184,31 @@ async function main() {
   // Graceful shutdown handler
   process.on('SIGINT', async () => {
     console.log('\n🛑 Team shutting down...');
-    logger.logEvent('team', { type: 'shutdown' });
-    await leader.shutdown();
-    await safety.shutdown();
-    await explorer.shutdown();
-    for (const b of builders) await b.shutdown();
-    await emergencySubscriber.unsubscribe();
-    await emergencySubscriber.disconnect();
-    await pipeline.shutdown();
-    await reflexion.shutdown();
-    await board.disconnect();
+    const forceExit = setTimeout(() => {
+      console.error('Shutdown timeout (10s), forcing exit');
+      process.exit(1);
+    }, 10000);
+
+    try {
+      logger.logEvent('team', { type: 'shutdown' }).catch(e => console.error('[Log]', e.message));
+      await leader.shutdown();
+      await safety.shutdown();
+      await explorer.shutdown();
+      for (const b of builders) await b.shutdown();
+      await emergencySubscriber.unsubscribe();
+      await emergencySubscriber.disconnect();
+      await zkHooks.shutdown();
+      await got.shutdown();
+      await rumination.shutdown();
+      await zettelkasten.shutdown();
+      await pipeline.shutdown();
+      await reflexion.shutdown();
+      await board.disconnect();
+    } catch (err) {
+      console.error('Shutdown error:', err.message);
+    }
+
+    clearTimeout(forceExit);
     process.exit(0);
   });
 

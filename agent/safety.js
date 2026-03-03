@@ -126,7 +126,7 @@ class SafetyAgent {
   async handleThreat(threat, agentId) {
     console.warn(`[Safety] ⚠️  threat detected: ${threat.type} — ${threat.reason}`);
     this.consecutiveFailures++;
-    if (this.logger) this.logger.logEvent(this.id, { type: 'threat', agentId, ...threat });
+    if (this.logger) this.logger.logEvent(this.id, { type: 'threat', agentId, ...threat }).catch(e => console.error('[Log]', e.message));
 
     await this.board.publish('safety:threat', {
       author: 'safety',

@@ -42,7 +42,7 @@ class LeaderAgent {
 
     await this.board.publish(`command:${agentId}:mission`, { author: 'leader', ...mission });
     if (this.logger) {
-      this.logger.logEvent(this.id, { type: 'mission_assigned', agentId, mission });
+      this.logger.logEvent(this.id, { type: 'mission_assigned', agentId, mission }).catch(e => console.error('[Log]', e.message));
     }
     return mission;
   }
@@ -128,7 +128,7 @@ class LeaderAgent {
     this.consecutiveTeamFailures = 0;
 
     if (this.logger) {
-      this.logger.logEvent(this.id, { type: 'group_reflexion', ...result });
+      this.logger.logEvent(this.id, { type: 'group_reflexion', ...result }).catch(e => console.error('[Log]', e.message));
     }
 
     // Trigger skill creation for the most common error via pipeline
@@ -188,7 +188,7 @@ class LeaderAgent {
       await this.board.publish(`command:builder-0${i}:prompt_update`, { author: 'leader', skills });
     }
     if (this.logger) {
-      this.logger.logEvent(this.id, { type: 'skill_injected', skill: skillName, version, totalSkills: skills.length });
+      this.logger.logEvent(this.id, { type: 'skill_injected', skill: skillName, version, totalSkills: skills.length }).catch(e => console.error('[Log]', e.message));
     }
     console.log(`[Leader] injected: ${tag}`);
     return { tag, totalSkills: skills.length };

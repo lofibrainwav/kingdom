@@ -462,3 +462,94 @@ describe('Sandbox Migration — node:vm (Task E)', () => {
     await pipeline.shutdown();
   });
 });
+
+// ── Part 1: Spawn-Await Tests ──────────────────────────────────
+describe('BuilderAgent — Spawn-Await (Part 1)', () => {
+  const { EventEmitter } = require('node:events');
+
+  it('Should have configurable spawnTimeoutMs', () => {
+    const BuilderAgent = require('../agent/builder').BuilderAgent;
+    const builder = new BuilderAgent({ id: 'test-timeout', spawnTimeoutMs: 500 });
+    assert.equal(builder.spawnTimeoutMs, 500);
+  });
+
+  it('Should default spawnTimeoutMs to 30000', () => {
+    const BuilderAgent = require('../agent/builder').BuilderAgent;
+    const builder = new BuilderAgent({ id: 'test-default' });
+    assert.equal(builder.spawnTimeoutMs, 30000);
+  });
+
+  it('Should reject on spawn timeout', async () => {
+    const BuilderAgent = require('../agent/builder').BuilderAgent;
+    const builder = new BuilderAgent({ id: 'test-spawn-timeout', spawnTimeoutMs: 100 });
+
+    // Mock board that connects instantly
+    builder.board = {
+      connect: async () => {},
+      disconnect: async () => {},
+      publish: async () => {},
+    };
+
+    // Mock bot that never emits 'spawn'
+    const fakeBotEmitter = new EventEmitter();
+    fakeBotEmitter.loadPlugin = () => {};
+
+    // Intercept mineflayer.createBot
+    const mineflayer = require('mineflayer');
+    const originalCreateBot = mineflayer.createBot;
+    mineflayer.createBot = () => fakeBotEmitter;
+
+    try {
+      await assert.rejects(
+        () => builder.init(),
+        (err) => {
+          assert.ok(err.message.includes('spawn timeout'), `Expected spawn timeout error, got: ${err.message}`);
+          return true;
+        }
+      );
+    } finally {
+      mineflayer.createBot = originalCreateBot;
+    }
+  });
+
+  it('Should reject on bot connection error', async () => {
+    const BuilderAgent = require('../agent/builder').BuilderAgent;
+    const builder = new BuilderAgent({ id: 'test-conn-error', spawnTimeoutMs: 5000 });
+
+    builder.board = {
+      connect: async () => {},
+      disconnect: async () => {},
+      publish: async () => {},
+    };
+
+    const fakeBotEmitter = new EventEmitter();
+    fakeBotEmitter.loadPlugin = () => {};
+
+    const mineflayer = require('mineflayer');
+    const originalCreateBot = mineflayer.createBot;
+    mineflayer.createBot = () => fakeBotEmitter;
+
+    try {
+      const initPromise = builder.init();
+      // Emit error after a tick
+      setImmediate(() => fakeBotEmitter.emit('error', new Error('ECONNREFUSED')));
+      await assert.rejects(
+        () => initPromise,
+        (err) => {
+          assert.ok(err.message.includes('connection error'), `Expected connection error, got: ${err.message}`);
+          return true;
+        }
+      );
+    } finally {
+      mineflayer.createBot = originalCreateBot;
+    }
+  });
+
+  it('shutdown should not throw when bot is null', async () => {
+    const BuilderAgent = require('../agent/builder').BuilderAgent;
+    const builder = new BuilderAgent({ id: 'test-shutdown-null' });
+    builder.board = { disconnect: async () => {} };
+    // bot is null by default — shutdown should not throw
+    await builder.shutdown();
+  });
+});
