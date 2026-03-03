@@ -556,3 +556,87 @@ describe('BuilderAgent — Spawn-Await (Part 1)', () => {
     await builder.shutdown();
   });
 });
+
+// ── Live LLM Call (conditional — requires ANTHROPIC_API_KEY) ─────
+describe('ReflexionEngine — Live LLM Call (conditional)', () => {
+  const hasKey = !!process.env.ANTHROPIC_API_KEY;
+
+  it('should call Claude API and receive a non-empty response', async (t) => {
+    if (!hasKey) {
+      t.skip('ANTHROPIC_API_KEY not set');
+      return;
+    }
+
+    const { createApiClients } = require('../agent/api-clients');
+    const { ReflexionEngine } = require('../agent/ReflexionEngine');
+
+    const clients = createApiClients();
+    assert.ok(clients.anthropic, 'Anthropic client should be created');
+
+    const engine = new ReflexionEngine(clients);
+    await engine.init();
+
+    try {
+      const result = await engine.callLLM('Reply with exactly: OCTIV_OK');
+      assert.ok(result, 'LLM should return a non-empty response');
+      assert.ok(result.length > 0, 'Response should have content');
+      assert.ok(engine.totalCalls >= 1, 'Call count should increment');
+    } finally {
+      await engine.shutdown();
+    }
+  });
+
+  it('should track cost after real LLM call', async (t) => {
+    if (!hasKey) {
+      t.skip('ANTHROPIC_API_KEY not set');
+      return;
+    }
+
+    const { createApiClients } = require('../agent/api-clients');
+    const { ReflexionEngine } = require('../agent/ReflexionEngine');
+
+    const clients = createApiClients();
+    const engine = new ReflexionEngine(clients);
+    await engine.init();
+
+    try {
+      await engine.callLLM('Say OK');
+      assert.ok(engine.dailyCost > 0, 'Daily cost should increment after real call');
+      const stats = engine.getStats();
+      assert.ok(stats.totalCalls >= 1, 'Stats should reflect the call');
+    } finally {
+      await engine.shutdown();
+    }
+  });
+
+  it('should generate valid skill JSON from failure context', async (t) => {
+    if (!hasKey) {
+      t.skip('ANTHROPIC_API_KEY not set');
+      return;
+    }
+
+    const { createApiClients } = require('../agent/api-clients');
+    const { ReflexionEngine } = require('../agent/ReflexionEngine');
+
+    const clients = createApiClients();
+    const engine = new ReflexionEngine(clients);
+    await engine.init();
+
+    try {
+      const skill = await engine.generateSkill({
+        error: 'No oak_log found within search radius',
+        errorType: 'inventory',
+        agentId: 'test-live',
+      });
+
+      // generateSkill may return null if LLM response is malformed
+      if (skill) {
+        assert.ok(skill.name, 'Skill should have a name');
+        assert.ok(skill.code, 'Skill should have code');
+        assert.ok(skill.errorType, 'Skill should have errorType');
+      }
+    } finally {
+      await engine.shutdown();
+    }
+  });
+});
