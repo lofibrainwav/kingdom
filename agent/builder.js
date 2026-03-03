@@ -364,8 +364,14 @@ class BuilderAgent {
     const [skillName, skill] = matching[0];
 
     try {
-      // Execute skill code in sandbox (uses same sandbox as SkillPipeline)
-      await this.skillPipeline.validateSkill(skill.code, 1);
+      // Execute skill code in sandbox — check return value (validateSkill returns false, doesn't throw)
+      const valid = await this.skillPipeline.validateSkill(skill.code, 1);
+      if (!valid) {
+        await this.skillPipeline.updateSuccessRate(skillName, false);
+        if (this.logger) this.logger.logEvent(this.id, { type: 'skill_applied', skill: skillName, success: false, error: 'validation_failed' });
+        console.log(`[${this.id}] learned skill validation failed: ${skillName}`);
+        return false;
+      }
       await this.skillPipeline.updateSuccessRate(skillName, true);
       if (this.logger) this.logger.logEvent(this.id, { type: 'skill_applied', skill: skillName, success: true });
       console.log(`[${this.id}] applied learned skill: ${skillName}`);
@@ -423,11 +429,16 @@ class BuilderAgent {
       } catch (err) {
         console.error(`[${this.id}] ReAct error:`, err.message);
         if (this.logger) this.logger.logEvent(this.id, { type: 'error', error: err.message, iteration: this.reactIterations });
-        await this.board.logReflexion(this.id, { error: err.message, iteration: this.reactIterations });
-        const shouldRetry = await this._selfImprove(err);
 
-        // Task B: Try learned skill from library for this error type
-        await this._tryLearnedSkill(err);
+        // Wrap recovery logic — Redis may be down, must not crash the loop
+        let shouldRetry = true;
+        try {
+          await this.board.logReflexion(this.id, { error: err.message, iteration: this.reactIterations });
+          shouldRetry = await this._selfImprove(err);
+          await this._tryLearnedSkill(err);
+        } catch (recoveryErr) {
+          console.error(`[${this.id}] recovery failed (Redis down?):`, recoveryErr.message);
+        }
 
         if (!shouldRetry) {
           console.warn(`[${this.id}] max retries reached, skipping action`);

@@ -37,12 +37,12 @@ class SkillPipeline {
       return { success: false, reason: 'daily_limit_reached' };
     }
 
-    // Generate skill via LLM
+    // Generate skill via LLM (fallback if LLM absent or returns null)
     let skillJson;
     if (this.llmClient) {
       skillJson = await this.llmClient.generateSkill(failureContext);
-    } else {
-      // Fallback: create a basic retry skill
+    }
+    if (!skillJson) {
       skillJson = this._fallbackSkill(failureContext);
     }
 

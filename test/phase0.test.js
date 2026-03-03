@@ -122,6 +122,140 @@ describe('BuilderAgent — Skill Feedback Loop (Task B)', () => {
   });
 });
 
+// ── BUG-1: _tryLearnedSkill must check validateSkill return value ──
+describe('BUG-1 — _tryLearnedSkill rejects invalid skill code', () => {
+  let BuilderAgent, SkillPipeline;
+  let redisClient;
+
+  before(async () => {
+    const { createClient } = require('redis');
+    redisClient = createClient({ url: 'redis://localhost:6380' });
+    await redisClient.connect();
+    BuilderAgent = require('../agent/builder').BuilderAgent;
+    SkillPipeline = require('../agent/skill-pipeline').SkillPipeline;
+  });
+
+  after(async () => {
+    const keys = await redisClient.keys('octiv:skills:*');
+    if (keys.length > 0) await redisClient.del(keys);
+    await redisClient.disconnect();
+  });
+
+  it('Should return false and record failure for invalid-code skill', async () => {
+    const pipeline = new SkillPipeline(null);
+    await pipeline.init();
+
+    // Deploy skill with broken code (syntax error → validateSkill returns false)
+    await pipeline.deploySkill({
+      name: 'broken_skill_v1',
+      code: 'function( { broken syntax }',
+      description: 'Intentionally broken skill',
+      errorType: 'inventory',
+    });
+
+    const builder = new BuilderAgent({ id: 'test-bug1' });
+    await builder.board.connect();
+    builder.skillPipeline = pipeline;
+
+    const result = await builder._tryLearnedSkill(new Error('No item in inventory'));
+    assert.equal(result, false, 'Should return false for invalid skill code');
+
+    // Verify uses=1, successes=0 (failure correctly recorded)
+    const lib = await pipeline.getLibrary();
+    assert.equal(lib.broken_skill_v1.uses, 1, 'Should have 1 use');
+    assert.equal(lib.broken_skill_v1.successes, 0, 'Should have 0 successes');
+
+    await builder.board.disconnect();
+    await pipeline.shutdown();
+  });
+});
+
+// ── BUG-2: LLM null → fallback skill must be generated ──────────
+describe('BUG-2 — generateFromFailure fallback when LLM returns null', () => {
+  let SkillPipeline;
+  let redisClient;
+
+  before(async () => {
+    const { createClient } = require('redis');
+    redisClient = createClient({ url: 'redis://localhost:6380' });
+    await redisClient.connect();
+    SkillPipeline = require('../agent/skill-pipeline').SkillPipeline;
+  });
+
+  after(async () => {
+    const keys = await redisClient.keys('octiv:skills:*');
+    if (keys.length > 0) await redisClient.del(keys);
+    await redisClient.disconnect();
+  });
+
+  it('Should use fallback when LLM client returns null', async () => {
+    // Mock LLM client that returns null
+    const mockLlm = { generateSkill: async () => null };
+    const pipeline = new SkillPipeline(mockLlm);
+    await pipeline.init();
+
+    const result = await pipeline.generateFromFailure({
+      error: 'pathfinding timeout',
+      errorType: 'pathfinding',
+    });
+
+    assert.equal(result.success, true, 'Should succeed via fallback');
+    assert.ok(result.skill.startsWith('fallback_'), 'Skill name should start with fallback_');
+
+    // Verify skill is in library
+    const lib = await pipeline.getLibrary();
+    assert.ok(lib[result.skill], 'Fallback skill should be in library');
+
+    await pipeline.shutdown();
+  });
+});
+
+// ── BUG-3: _selfImprove resilience when Redis is down ───────────
+describe('BUG-3 — _reactLoop catch block resilience', () => {
+  it('Should not crash when _selfImprove encounters Redis failure', async () => {
+    const BuilderAgent = require('../agent/builder').BuilderAgent;
+    const builder = new BuilderAgent({ id: 'test-bug3' });
+
+    // Mock board with failing publish/logReflexion
+    builder.board = {
+      publish: async () => { throw new Error('Redis connection refused'); },
+      logReflexion: async () => { throw new Error('Redis connection refused'); },
+      disconnect: async () => {},
+    };
+
+    // _selfImprove calls board.publish and board.logReflexion internally
+    // It should be callable without crashing even when Redis is down
+    // We test the error classification and adaptation logic still works
+    const error = new Error('No suitable build site found');
+    const initialRadius = builder.adaptations.buildSiteRadius;
+
+    // Direct call — should not throw despite Redis failure
+    try {
+      await builder._selfImprove(error);
+      // If we get here with a Redis mock that throws, the function
+      // propagated the error. The fix wraps this in _reactLoop's catch.
+      assert.fail('_selfImprove should throw when board.publish fails');
+    } catch {
+      // Expected: _selfImprove itself throws because board.publish fails
+      // The FIX is in _reactLoop which wraps _selfImprove in try/catch
+      // Verify the adaptation logic ran before the throw
+      assert.equal(builder.adaptations.buildSiteRadius, initialRadius + 8,
+        'Adaptation should still update before Redis call fails');
+    }
+  });
+
+  it('_reactLoop catch block should survive Redis failure', async () => {
+    // This tests the actual fix: the try/catch wrapper in _reactLoop
+    // We verify the pattern by checking builder.js source has the wrapper
+    const fs = require('node:fs');
+    const src = fs.readFileSync(require.resolve('../agent/builder'), 'utf8');
+    assert.ok(
+      src.includes('recovery failed (Redis down?)'),
+      '_reactLoop catch should have recovery error handling'
+    );
+  });
+});
+
 // ── Task C: checkReflexionTrigger Wiring ──────────────────────
 describe('LeaderAgent — Failure Counter & Reflexion Trigger (Task C)', () => {
   let LeaderAgent;

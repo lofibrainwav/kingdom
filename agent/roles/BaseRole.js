@@ -15,9 +15,9 @@ class BaseRole {
 
   async init() {
     await this.board.connect();
-    await this.board.client.hSet('octiv:agents:registry', this.id, JSON.stringify({
+    await this.board.setHashField('agents:registry', this.id, {
       role: this.role, status: 'active', registeredAt: Date.now(),
-    }));
+    });
     console.log(`[${this.role}:${this.id}] initialized`);
   }
 
@@ -31,7 +31,7 @@ class BaseRole {
   }
 
   async shutdown() {
-    await this.board.client.hDel('octiv:agents:registry', this.id);
+    await this.board.deleteHashField('agents:registry', this.id);
     await this.board.disconnect();
   }
 }
