@@ -2,105 +2,127 @@
 
 ## Language Rule
 - **Conversation with user**: Korean
-- **All code, comments, file content**: English
-
-## Session Workflow
-
-### Session Start (ALWAYS do this first)
-1. Use `/session-memory` skill to load full context
-2. Read ROADMAP.md to confirm active Phase
-3. Run `git log --oneline -5` to see recent work
-4. Report current state to user before proceeding
-
-### During Session
-- Update MEMORY.md whenever new patterns/decisions are discovered
-- Use skills explicitly: `/notebooklm`, `/tdd-workflow`, `/security-review`, etc.
-- Commit frequently with meaningful messages
-- Follow commit format: `emoji Phase-N: English description`
-
-### Session End (ALWAYS do this last)
-1. Use `/save-memory` skill to persist all learnings
-2. Update ROADMAP.md if phase status changed
-3. Push to GitHub: `git push origin main`
-4. Tell user: memory saved, context ready for next session
+- **All code, comments, file content, commits**: English
 
 ---
 
-## Project Overview
-- **Repo**: https://github.com/octivofficial/mvp
-- **Stack**: Node.js, mineflayer, Redis (port 6380), PaperMC 1.21.1 (port 25565)
-- **Goal**: AI agent team survives first night in Minecraft autonomously
-- **Current Phase**: See ROADMAP.md
+## Session Workflow
 
-## Key Paths
-| Item | Path |
-|------|------|
-| Memory | `/Users/octiv/.claude/projects/-Users-octiv-Octiv-MVP/memory/` |
-| Skills (global) | `~/.claude/skills/` |
-| Skills (project) | `./skills/` |
-| Agents | `./.claude/agents/` |
-| Docker stack | `docker-compose.yml` |
-| Redis port | 6380 (mapped from container 6379) |
+### START (ALWAYS — before anything else)
+1. `/session-memory` — loads MEMORY.md + debugging.md + patterns.md + session-log + git log
+2. Report state to user: current Phase, last commit, next task, any blockers
+3. Ask: "What are we working on today?"
 
-## Available Skills (Global)
-| Skill | Use Case |
-|-------|----------|
-| `/session-memory` | Load context at session start |
-| `/save-memory` | Save context at session end |
-| `/notebooklm` | Query Google NotebookLM notebooks |
-| `/tdd-workflow` | Test-driven development workflow |
-| `/security-review` | Security audit before commit |
-| `/coding-standards` | Code quality enforcement |
-| `/backend-patterns` | API and data layer patterns |
+### DURING SESSION
+- `/remember` — anytime you discover something worth keeping (bug fix, decision, pattern)
+- `/tdd-workflow` — before implementing any new feature
+- `/security-review` — before committing agent code with external inputs
+- Always `npm test` before committing (enforced by PreToolUse hook)
+- Commit often: small, focused commits with `emoji Phase-N: description`
 
-## Available Agents
-| Agent | When to Use |
-|-------|-------------|
-| `architect` | Architecture decisions |
-| `planner` | Phase/task planning |
-| `code-reviewer` | Pre-commit code review |
-| `security-reviewer` | Security audit |
-| `tdd-guide` | TDD implementation guidance |
+### END (ALWAYS — before closing)
+1. `/save-memory` — updates MEMORY.md + debugging.md + patterns.md + session-log
+2. `git push origin main`
+3. Tell user: "Memory saved ✅ Next session picks up from [X]"
+
+---
+
+## Available Skills
+
+### Memory Management
+| Skill | When |
+|-------|------|
+| `/session-memory` | **Session start** — load all context |
+| `/save-memory` | **Session end** — persist all learnings |
+| `/remember` | **Mid-session** — quick save of one insight |
+
+### Development
+| Skill | When |
+|-------|------|
+| `/tdd-workflow` | Before implementing any new feature |
+| `/security-review` | Before committing security-sensitive code |
+| `/coding-standards` | When code quality is unclear |
+| `/backend-patterns` | API, Redis, caching design questions |
+| `/notebooklm` | Query project knowledge base (Phase 5+) |
+
+### Project-Specific
+| Skill | When |
+|-------|------|
+| `/health-monitor` | Diagnose Redis/PaperMC/agent issues |
+| `/mcporter` | Minecraft bot control reference |
+| `/automated-debugging` | Agent crash investigation |
+| `/strategy-engine` | AC priority and mode decisions |
+| `/dev-tool-belt` | Tests, Docker, git quick reference |
+| `/github` | PR, issues, CI status |
+
+---
+
+## Available Agents (Subagents)
+| Agent | Trigger |
+|-------|---------|
+| `planner` | Before starting any new Phase or complex feature |
+| `architect` | Major structural decisions (new modules, system design) |
+| `code-reviewer` | After writing significant new code |
+| `security-reviewer` | Code that handles external input, vm2, RCON |
+| `tdd-guide` | Implementing AC tasks with test coverage |
+
+---
 
 ## Git & Commit Rules
-- Language: English only in commits
-- Format: `emoji Phase-N: short description`
-- Examples:
+- **Format**: `emoji Phase-N: short English description`
+- **Examples**:
   - `🎮 P2: add shelter construction (AC-2)`
-  - `✅ P1: fix Redis reconnection logic`
+  - `✅ P1: fix Redis ECONNREFUSED on wrong port`
   - `🔧 P3: integrate Leader-Builder vote system`
-- Never commit: `.env`, `vault/`, `TXT/`, `.obsidian/`, `node_modules/`
-- Always run tests before committing: `npm test`
+  - `🐛 fix: pathfinder stuck on unreachable block`
+  - `📋 docs: update ROADMAP.md phase 2 status`
+- **Never commit**: `.env`, `vault/`, `TXT/`, `.obsidian/`, `node_modules/`, `dump.rdb`
+- **Tests**: `npm test` runs automatically via PreToolUse hook on `git commit`
+
+---
 
 ## Architecture Quick Reference
-- `agent/OctivBot.js` — base bot class
-- `agent/blackboard.js` — Redis pub/sub (`octiv:` prefix, port 6380)
-- `agent/team.js` — 5-agent orchestrator
-- `agent/leader.js` — strategy + voting
-- `agent/builder.js` — wood/shelter/tools (AC-1,2,3)
-- `agent/safety.js` — threat detection AC-8, vm2 sandbox
-- `test/` — Node.js native test runner (`npm test`)
+| File | Role |
+|------|------|
+| `agent/OctivBot.js` | Base bot (spawn, health, heartbeat, exponential backoff) |
+| `agent/blackboard.js` | Redis pub/sub (`octiv:` prefix, port **6380**) |
+| `agent/team.js` | Orchestrator: Leader + 3×Builder + Safety |
+| `agent/leader.js` | Strategy, Training/Creative mode, 2/3 majority voting |
+| `agent/builder.js` | AC-1 wood, AC-3 tools, main ReAct loop |
+| `agent/safety.js` | AC-8: lava/fall/loop detection, vm2 sandbox |
+| `test/` | Node.js native test runner — requires Redis on 6380 |
 
-## AC Progress Tracking
+---
+
+## AC Status
 | AC | Description | Status |
 |----|-------------|--------|
-| AC-1 | Collect 16 wood logs | builder.js ✅ |
-| AC-2 | Build 3×3×3 shelter | ❌ not implemented |
-| AC-3 | Craft basic tools | builder.js ✅ |
-| AC-4 | All agents gather in shelter | ❌ not implemented |
-| AC-5 | Self-improvement on failure | ❌ stub only |
-| AC-6 | Group Reflexion → system prompt | ❌ not connected |
-| AC-7 | Memory logging to disk | ❌ not implemented |
-| AC-8 | Threat detection (lava/fall/loop) | safety.js ✅ |
+| AC-1 | Collect 16 wood logs | ✅ `collectWood()` |
+| AC-2 | Build 3×3×3 shelter | ❌ TODO |
+| AC-3 | Craft basic tools | ✅ `craftBasicTools()` |
+| AC-4 | All agents gather in shelter | ❌ TODO |
+| AC-5 | Self-improvement on failure | ❌ stub |
+| AC-6 | Group Reflexion → prompt inject | ❌ TODO |
+| AC-7 | Memory logging to disk | ❌ TODO |
+| AC-8 | Threat detection | ✅ `detectThreat()` |
 
-## NotebookLM MCP
-- MCP server configured in `~/.claude/settings.json`
-- Use `/notebooklm` skill or ask "Log me in to NotebookLM"
-- Supports: source-grounded answers, zero hallucinations
-- Phase 5 integration: connect Octiv strategy docs to NotebookLM
+**Next priority**: AC-2 (shelter construction in `builder.js`)
 
-## Memory System
-- `MEMORY.md` — auto-loaded each session (max 200 lines)
-- `session-log.md` — chronological session history
-- `debugging.md` — recurring issues and solutions
-- Always update at session end using `/save-memory`
+---
+
+## Memory Files
+| File | Purpose | Location |
+|------|---------|---------|
+| `MEMORY.md` | Main context (auto-loaded, max 200 lines) | `memory/` |
+| `session-log.md` | Per-session history (last 10) | `memory/` |
+| `debugging.md` | Known bugs and fixes | `memory/` |
+| `patterns.md` | Code patterns and conventions | `memory/` |
+
+---
+
+## Key Infrastructure
+- **Redis**: `localhost:6380` (Docker: container 6379 → host 6380)
+- **PaperMC**: `localhost:25565` (offline-mode, no auth)
+- **RCON**: `localhost:25575` / pw: `octiv_rcon_2026`
+- **MCP**: `notebooklm` via `npx notebooklm-mcp@latest`
+- **Repo**: https://github.com/octivofficial/mvp (branch: `main`)

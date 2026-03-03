@@ -6,17 +6,29 @@
         "hooks": [
           {
             "type": "command",
-            "command": "MEMORY=/Users/octiv/.claude/projects/-Users-octiv-Octiv-MVP/memory/MEMORY.md; CLAUDE=/Users/octiv/Octiv_MVP/CLAUDE.md; echo '--- Octiv Session Context ---'; if [ -f \"$MEMORY\" ]; then echo \"Memory: $(wc -l < $MEMORY) lines, last updated $(stat -f '%Sm' $MEMORY 2>/dev/null)\"; fi; git -C /Users/octiv/Octiv_MVP log --oneline -3 2>/dev/null; echo '---'"
+            "command": "MEM=/Users/octiv/.claude/projects/-Users-octiv-Octiv-MVP/memory/MEMORY.md; echo \"[Octiv] $(git -C /Users/octiv/Octiv_MVP log --oneline -1 2>/dev/null) | mem:$([ -f $MEM ] && wc -l < $MEM || echo '?')L\""
           }
         ]
       }
     ],
-    "Stop": [
+    "PreToolUse": [
       {
+        "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
-            "command": "LOG=/Users/octiv/.claude/projects/-Users-octiv-Octiv-MVP/memory/session-log.md; mkdir -p \"$(dirname $LOG)\"; echo \"[$(date '+%Y-%m-%d %H:%M')] turn-end\" >> \"$LOG\" 2>/dev/null; true"
+            "command": "INPUT=$(cat); echo \"$INPUT\" | grep -q 'git commit' && { cd /Users/octiv/Octiv_MVP && echo '[PreCommit] Running tests...' && npm test 2>&1 | tail -5; } || true"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "true"
           }
         ]
       }
