@@ -1,10 +1,10 @@
 # Dependencies
 node_modules/
 
-# Environment — secrets 포함, 절대 커밋 금지
+# Environment — contains secrets, never commit
 .env
 
-# PaperMC 서버 런타임 파일 (jar만 버전관리)
+# PaperMC server runtime files (only jar is version-controlled)
 server/octiv-world/
 server/cache/
 server/libraries/
@@ -17,7 +17,7 @@ server/bundler/
 server/*.log
 server/session.lock
 
-# OpenClaw 런타임 상태
+# OpenClaw runtime state
 agent/.openclaw/
 agent/sessions/
 
@@ -27,7 +27,7 @@ agent/sessions/
 # Redis persistence
 dump.rdb
 
-# Obsidian (전체 디렉토리 무시)
+# Obsidian (ignore entire directory)
 .obsidian/
 vault/
 
@@ -36,6 +36,9 @@ TXT/
 
 # IDE settings
 .vscode/
+.smart-env/
+.smtcmp_json_db/
+.smtcmp_vector_db.tar.gz
 
 # Session notes
 2026-03-02.md

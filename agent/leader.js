@@ -1,6 +1,6 @@
 /**
- * Octiv Leader Agent — strategy-engine 역할
- * 목표 분해, Training/Creative 모드 결정, 투표 집계
+ * Octiv Leader Agent — strategy-engine role
+ * Goal decomposition, Training/Creative mode decision, vote aggregation
  */
 const { Blackboard } = require('./blackboard');
 
@@ -15,10 +15,10 @@ class LeaderAgent {
 
   async init() {
     await this.board.connect();
-    console.log('[Leader] 초기화 완료, 팀 크기:', this.teamSize);
+    console.log('[Leader] initialized, team size:', this.teamSize);
   }
 
-  // AC 진행도 집계 후 모드 결정
+  // Decide mode based on AC progress
   async decideMode(agentId) {
     const acData = await this.board.getACProgress(agentId);
     const total = Object.keys(acData).length;
@@ -30,20 +30,20 @@ class LeaderAgent {
       : 'training';
 
     await this.board.publish('leader:mode', { mode: this.mode, progress });
-    console.log(`[Leader] 모드: ${this.mode} (진행도: ${Math.floor(progress * 100)}%)`);
+    console.log(`[Leader] mode: ${this.mode} (progress: ${Math.floor(progress * 100)}%)`);
     return this.mode;
   }
 
-  // 팀 투표 집계
+  // Aggregate team votes
   async collectVote(agentId, vote) {
     this.votes.push({ agentId, vote, ts: Date.now() });
     await this.board.publish('leader:votes', { votes: this.votes });
-    console.log(`[Leader] 투표 수신: ${agentId} → ${vote}`);
+    console.log(`[Leader] vote received: ${agentId} → ${vote}`);
   }
 
-  // Group Reflexion 강제 실행 (3회 연속 실패 시)
+  // Force Group Reflexion (on 3 consecutive failures)
   async forceGroupReflexion(failureLog) {
-    console.warn('[Leader] ⚠️  Group Reflexion 강제 실행!');
+    console.warn('[Leader] ⚠️  forcing Group Reflexion!');
     await this.board.publish('leader:reflexion', {
       type: 'group',
       trigger: 'consecutive_failures',

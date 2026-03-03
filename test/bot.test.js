@@ -32,10 +32,10 @@ function createMockBot(overrides = {}) {
     return bot;
 }
 
-// mineflayer 모듈 mock
+// mineflayer module mock
 let mockBotInstance;
 
-// ── 테스트 시작 ──────────────────────────────────────────────────
+// ── Test Suite ───────────────────────────────────────────────────
 
 describe('OctivBot — Single Bot Stability (Phase 1.2)', () => {
     let OctivBot;

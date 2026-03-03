@@ -13,7 +13,7 @@ services:
     container_name: octiv-redis
     restart: unless-stopped
     ports:
-      - "6380:6379"   # 6380 → 로컬 6379와 충돌 방지
+      - "6380:6379"   # 6380 → avoids conflict with local Redis on 6379
     volumes:
       - redis-data:/data
     command: redis-server --appendonly yes
@@ -31,7 +31,7 @@ services:
       EULA: "TRUE"
       TYPE: PAPER
       VERSION: "1.21.1"
-      ONLINE_MODE: "FALSE"        # AI 봇 무인증 접속
+      ONLINE_MODE: "FALSE"        # allows unauthenticated bot access
       DIFFICULTY: normal
       GAMEMODE: survival
       MAX_PLAYERS: "20"
@@ -55,7 +55,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 120s    # PaperMC 첫 실행 다운로드 여유
+      start_period: 120s    # extra time for PaperMC first-run download
 
 volumes:
   redis-data:

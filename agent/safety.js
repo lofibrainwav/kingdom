@@ -1,6 +1,6 @@
 /**
- * Octiv Safety Agent — health-monitor + automated-debugging 역할
- * AC-8 위험 감지 (용암/추락/무한루프), vm2 코드 검증
+ * Octiv Safety Agent — health-monitor + automated-debugging role
+ * AC-8 threat detection (lava/fall/infinite-loop), vm2 code validation
  */
 const { Blackboard } = require('./blackboard');
 const { VM } = require('vm2');
@@ -11,7 +11,7 @@ const AC8_THRESHOLDS = {
     lavaBlockRadius: 3,
   },
   fall: {
-    damageThreshold: 10,   // 하트
+    damageThreshold: 10,   // hearts
     velocityThreshold: -20, // velocity.y
   },
   loop: {
@@ -31,46 +31,46 @@ class SafetyAgent {
 
   async init() {
     await this.board.connect();
-    console.log('[Safety] 초기화 완료, AC-8 감시 시작');
+    console.log('[Safety] initialized, AC-8 monitoring started');
   }
 
-  // AC-8.1: 위험 감지
+  // AC-8.1: Threat detection
   detectThreat(bot) {
     const pos = bot.entity.position;
     const vel = bot.entity.velocity;
 
-    // 용암 감지
+    // Lava detection
     if (pos.y < AC8_THRESHOLDS.lava.minY) {
       return { type: 'lava', reason: `Y=${Math.floor(pos.y)} < 10` };
     }
     const lavaBlock = bot.findBlock({ matching: bot.registry.blocksByName.lava?.id, maxDistance: 3 });
     if (lavaBlock) {
-      return { type: 'lava', reason: '3블록 내 용암 감지' };
+      return { type: 'lava', reason: 'lava detected within 3 blocks' };
     }
 
-    // 추락 감지
+    // Fall detection
     if (vel.y < AC8_THRESHOLDS.fall.velocityThreshold) {
       return { type: 'fall', reason: `velocity.y=${vel.y.toFixed(2)}` };
     }
     if (bot.health <= (20 - AC8_THRESHOLDS.fall.damageThreshold)) {
-      return { type: 'fall', reason: `체력 ${bot.health}/20` };
+      return { type: 'fall', reason: `health ${bot.health}/20` };
     }
 
-    // 무한루프 감지
+    // Infinite loop detection
     if (this.reactIterations >= AC8_THRESHOLDS.loop.maxIterations) {
-      return { type: 'loop', reason: `ReAct ${this.reactIterations}회 반복` };
+      return { type: 'loop', reason: `ReAct iterations: ${this.reactIterations}` };
     }
     if (this.actionHistory.length >= 8) {
       const last8 = this.actionHistory.slice(-8);
       if (new Set(last8).size === 1) {
-        return { type: 'loop', reason: `동일 액션 8회 반복: ${last8[0]}` };
+        return { type: 'loop', reason: `same action repeated 8 times: ${last8[0]}` };
       }
     }
 
     return null;
   }
 
-  // AC-8.3: vm2 샌드박스 코드 검증 (3회 dry-run)
+  // AC-8.3: vm2 sandbox code validation (3x dry-run)
   async verifySkillCode(code, maxAttempts = 3) {
     let attempts = 0;
     while (attempts < maxAttempts) {
@@ -78,18 +78,18 @@ class SafetyAgent {
         const vm = new VM({ timeout: 3000, sandbox: {} });
         vm.run(`(async function() { ${code} })`);
         attempts++;
-        console.log(`[Safety] vm2 검증 통과 (${attempts}/${maxAttempts})`);
+        console.log(`[Safety] vm2 validation passed (${attempts}/${maxAttempts})`);
       } catch (err) {
-        console.error(`[Safety] vm2 검증 실패 (${attempts + 1}/${maxAttempts}):`, err.message);
+        console.error(`[Safety] vm2 validation failed (${attempts + 1}/${maxAttempts}):`, err.message);
         return false;
       }
     }
     return true;
   }
 
-  // AC-8: 위협 감지 → 스킬 생성 트리거
+  // AC-8: Threat detected → trigger skill creation
   async handleThreat(threat, agentId) {
-    console.warn(`[Safety] ⚠️  위협 감지: ${threat.type} — ${threat.reason}`);
+    console.warn(`[Safety] ⚠️  threat detected: ${threat.type} — ${threat.reason}`);
     this.consecutiveFailures++;
 
     await this.board.publish('safety:threat', {
@@ -98,14 +98,14 @@ class SafetyAgent {
       consecutiveFailures: this.consecutiveFailures,
     });
 
-    // AC-8 Emergency 채널에 브로드캐스트
+    // Broadcast to AC-8 emergency channel
     await this.board.publish('skills:emergency', {
       failureType: threat.type,
       agentId,
       triggerSkillCreation: true,
     });
 
-    // 3회 연속 실패 → Group Reflexion 강제 실행
+    // 3 consecutive failures → force Group Reflexion
     if (this.consecutiveFailures >= 3) {
       await this.board.publish('leader:reflexion', {
         type: 'group',

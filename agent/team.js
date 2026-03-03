@@ -1,5 +1,5 @@
 /**
- * Octiv Team Orchestrator — 전체 에이전트 팀 시작/관리
+ * Octiv Team Orchestrator — start and manage the full agent team
  * Usage: node agent/team.js
  */
 const { LeaderAgent } = require('./leader');
@@ -7,44 +7,44 @@ const { BuilderAgent } = require('./builder');
 const { SafetyAgent } = require('./safety');
 const { Blackboard } = require('./blackboard');
 
-const TEAM_SIZE = 3; // builder 수
+const TEAM_SIZE = 3; // number of builder agents
 
 async function main() {
   console.log('');
-  console.log('🎮 Octiv Agent Team 시작');
+  console.log('🎮 Octiv Agent Team starting');
   console.log('═══════════════════════════════════════');
   console.log('  PaperMC: localhost:25565 (offline)');
   console.log('  Redis:   localhost:6379');
-  console.log('  팀 구성: Leader + Builder x3 + Safety');
+  console.log('  Team:    Leader + Builder x3 + Safety');
   console.log('═══════════════════════════════════════');
   console.log('');
 
   const board = new Blackboard();
   await board.connect();
 
-  // Octiv 팀 초기화 상태 기록
+  // Record Octiv team initialization state
   await board.publish('team:status', {
     status: 'initializing',
     members: ['leader', 'builder-01', 'builder-02', 'builder-03', 'safety'],
     mission: 'first-day-survival v1.3.1',
   });
 
-  // 1. Leader 시작
+  // 1. Start Leader
   const leader = new LeaderAgent(TEAM_SIZE);
   await leader.init();
 
-  // 2. Safety 시작
+  // 2. Start Safety
   const safety = new SafetyAgent();
   await safety.init();
 
-  // 3. Builder 팀 시작 (순차적으로, 서버 과부하 방지)
+  // 3. Start Builder team (sequentially to prevent server overload)
   const builders = [];
   for (let i = 1; i <= TEAM_SIZE; i++) {
-    await new Promise(r => setTimeout(r, 2000)); // 2초 간격
+    await new Promise(r => setTimeout(r, 2000)); // 2s interval
     const builder = new BuilderAgent({ id: `builder-0${i}` });
     await builder.init();
     builders.push(builder);
-    console.log(`✅ Builder-0${i} 시작됨`);
+    console.log(`✅ Builder-0${i} started`);
   }
 
   await board.publish('team:status', {
@@ -54,12 +54,12 @@ async function main() {
   });
 
   console.log('');
-  console.log('✅ 전체 팀 실행 중. Ctrl+C로 종료.');
+  console.log('✅ Full team running. Press Ctrl+C to stop.');
   console.log('');
 
-  // 종료 처리
+  // Graceful shutdown handler
   process.on('SIGINT', async () => {
-    console.log('\n🛑 팀 종료 중...');
+    console.log('\n🛑 Team shutting down...');
     await leader.shutdown();
     await safety.shutdown();
     for (const b of builders) await b.shutdown();
@@ -67,11 +67,11 @@ async function main() {
     process.exit(0);
   });
 
-  // 팀 상태 주기적 출력 (30초마다)
+  // Log team status periodically (every 30s)
   setInterval(async () => {
     const status = await board.get('team:status');
     if (status) {
-      console.log(`[Team] 상태: ${status.status} | 미션: ${status.mission}`);
+      console.log(`[Team] status: ${status.status} | mission: ${status.mission}`);
     }
   }, 30000);
 }

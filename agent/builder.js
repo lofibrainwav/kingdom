@@ -1,6 +1,6 @@
 /**
- * Octiv Builder Agent — coding-agent + mineflayer 역할
- * 봇 제어: 나무 수집, 대피소 건설, 도구 제작
+ * Octiv Builder Agent — coding-agent + mineflayer role
+ * Bot control: wood collection, shelter construction, tool crafting
  */
 const mineflayer = require('mineflayer');
 const { pathfinder, Movements, goals } = require('mineflayer-pathfinder');
@@ -33,22 +33,22 @@ class BuilderAgent {
     this.bot.once('spawn', () => this._onSpawn());
     this.bot.on('chat', (user, msg) => this._onChat(user, msg));
     this.bot.on('health', () => this._onHealthChange());
-    this.bot.on('error', (err) => console.error(`[${this.id}] 에러:`, err.message));
+    this.bot.on('error', (err) => console.error(`[${this.id}] error:`, err.message));
   }
 
   async _onSpawn() {
-    console.log(`[${this.id}] 스폰 완료`);
+    console.log(`[${this.id}] spawned`);
     await this.board.publish(`agent:${this.id}:status`, {
       status: 'spawned',
       position: this.bot.entity.position,
     });
-    // ReAct 루프 시작
+    // Start ReAct loop
     this._reactLoop();
   }
 
-  // AC-1: 나무 16개 수집
+  // AC-1: Collect 16 wood logs
   async collectWood(count = 16) {
-    console.log(`[${this.id}] 나무 수집 시작 (목표: ${count}개)`);
+    console.log(`[${this.id}] starting wood collection (target: ${count})`);
     const mcData = require('minecraft-data')(this.bot.version);
     const logIds = ['oak_log', 'spruce_log', 'birch_log'].map(n => mcData.blocksByName[n]?.id).filter(Boolean);
 
@@ -68,19 +68,19 @@ class BuilderAgent {
     }
 
     this.acProgress[1] = true;
-    console.log(`[${this.id}] ✅ AC-1 완료: 나무 ${collected}개 수집`);
+    console.log(`[${this.id}] ✅ AC-1 done: collected ${collected} wood`);
   }
 
-  // AC-3: 도구 제작
+  // AC-3: Craft basic tools
   async craftBasicTools() {
     await this.bot.craft(this.bot.registry.itemsByName.crafting_table, 1, null);
     await this.bot.craft(this.bot.registry.itemsByName.wooden_pickaxe, 1, null);
     this.acProgress[3] = true;
     await this.board.updateAC(this.id, 3, 'done');
-    console.log(`[${this.id}] ✅ AC-3 완료: 기본 도구 제작`);
+    console.log(`[${this.id}] ✅ AC-3 done: basic tools crafted`);
   }
 
-  // Health 변화 모니터링
+  // Monitor health changes
   async _onHealthChange() {
     await this.board.publish(`agent:${this.id}:health`, {
       health: this.bot.health,
@@ -90,10 +90,10 @@ class BuilderAgent {
 
   _onChat(username, message) {
     if (username === this.bot.username) return;
-    console.log(`[${this.id}] 채팅 [${username}]: ${message}`);
+    console.log(`[${this.id}] chat [${username}]: ${message}`);
   }
 
-  // 메인 ReAct 루프
+  // Main ReAct loop
   async _reactLoop() {
     while (true) {
       this.reactIterations++;
@@ -105,11 +105,11 @@ class BuilderAgent {
         } else if (!this.acProgress[3]) {
           await this.craftBasicTools();
         } else {
-          // 모든 AC 완료 — 대기
+          // All ACs done — idle
           await this.bot.waitForTicks(40);
         }
       } catch (err) {
-        console.error(`[${this.id}] ReAct 오류:`, err.message);
+        console.error(`[${this.id}] ReAct error:`, err.message);
         await this.board.logReflexion(this.id, { error: err.message, iteration: this.reactIterations });
         await this.bot.waitForTicks(20);
       }
