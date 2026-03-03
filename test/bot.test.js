@@ -10,6 +10,8 @@ const { describe, it, before, after, beforeEach, afterEach, mock } = require('no
 const assert = require('node:assert/strict');
 const EventEmitter = require('node:events');
 
+const { Vec3 } = require('vec3');
+
 // ── mineflayer mock ──────────────────────────────────────────────
 function createMockBot(overrides = {}) {
     const bot = new EventEmitter();
@@ -29,6 +31,20 @@ function createMockBot(overrides = {}) {
     });
     bot.loadPlugin = mock.fn();
     bot.waitForTicks = mock.fn(async () => { });
+    bot.placeBlock = mock.fn(async () => {});
+    bot.equip = mock.fn(async () => {});
+    bot.craft = mock.fn(async () => {});
+    bot.blockAt = mock.fn((pos) => ({
+        position: pos, name: 'dirt', boundingBox: 'block',
+    }));
+    bot.findBlock = mock.fn(() => null);
+    bot.inventory = { items: mock.fn(() => []) };
+    bot.version = '1.21.1';
+    bot.registry = { itemsByName: {} };
+    bot.pathfinder = {
+        setMovements: mock.fn(),
+        goto: mock.fn(async () => {}),
+    };
     return bot;
 }
 
@@ -293,5 +309,140 @@ describe('OctivBot — Blackboard Integration (Phase 1.3)', () => {
 
         await bot.shutdown();
         assert.ok(mockBot.end.mock.calls.length >= 1, 'bot.end() should be called');
+    });
+});
+
+// ── AC-2 Shelter Construction Tests ─────────────────────────────
+describe('BuilderAgent — Shelter Construction (AC-2)', () => {
+    let BuilderAgent;
+    let redisClient;
+
+    before(async () => {
+        const { createClient } = require('redis');
+        redisClient = createClient({ url: 'redis://localhost:6380' });
+        await redisClient.connect();
+        BuilderAgent = require('../agent/builder').BuilderAgent;
+    });
+
+    after(async () => {
+        const keys = await redisClient.keys('octiv:*builder*');
+        if (keys.length > 0) await redisClient.del(keys);
+        const acKeys = await redisClient.keys('octiv:agent:builder*');
+        if (acKeys.length > 0) await redisClient.del(acKeys);
+        await redisClient.disconnect();
+    });
+
+    async function createBuilderWithMocks() {
+        const builder = new BuilderAgent({ id: 'builder-test' });
+        await builder.board.connect();
+        const mockBot = createMockBot({
+            position: new Vec3(100, 64, -200),
+        });
+
+        // Entity position must be Vec3 for .floored()
+        mockBot.entity.position = new Vec3(100, 64, -200);
+
+        // Inventory: return oak_planks item for equip
+        const plankItem = { name: 'oak_planks', count: 64 };
+        const logItem = { name: 'oak_log', count: 16 };
+        mockBot.inventory.items = mock.fn(() => [plankItem, logItem]);
+
+        // blockAt: ground = solid, above = air
+        mockBot.blockAt = mock.fn((pos) => {
+            if (pos.y <= 63) {
+                return { position: pos, name: 'dirt', boundingBox: 'block' };
+            }
+            return { position: pos, name: 'air', boundingBox: 'empty' };
+        });
+
+        builder.bot = mockBot;
+
+        // Stub pathfinder setup (Movements needs full bot registry)
+        builder._setupPathfinder = () => {};
+
+        return { builder, mockBot };
+    }
+
+    it('Should call placeBlock 32 times (9 floor + 14 walls + 9 roof)', async () => {
+        const { builder, mockBot } = await createBuilderWithMocks();
+
+        await builder.buildShelter();
+
+        assert.equal(
+            mockBot.placeBlock.mock.calls.length,
+            32,
+            `Expected 32 placeBlock calls, got ${mockBot.placeBlock.mock.calls.length}`
+        );
+
+        await builder.board.disconnect();
+    });
+
+    it('Should publish shelter coordinates to Blackboard', async () => {
+        const { builder } = await createBuilderWithMocks();
+
+        await builder.buildShelter();
+
+        const raw = await redisClient.get('octiv:builder:shelter:latest');
+        assert.ok(raw, 'Shelter position should be published to Redis');
+        const data = JSON.parse(raw);
+        assert.ok(data.position, 'Should have position field');
+        assert.equal(typeof data.position.x, 'number');
+        assert.equal(typeof data.position.y, 'number');
+        assert.equal(typeof data.position.z, 'number');
+        assert.deepEqual(data.size, { x: 3, y: 4, z: 3 });
+
+        await builder.board.disconnect();
+    });
+
+    it('Should mark AC-2 as done in Redis', async () => {
+        const { builder } = await createBuilderWithMocks();
+
+        await builder.buildShelter();
+
+        const acRaw = await redisClient.hGet('octiv:agent:builder-test:ac', 'AC-2');
+        assert.ok(acRaw, 'AC-2 should be stored in Redis');
+        const ac = JSON.parse(acRaw);
+        assert.equal(ac.status, 'done');
+
+        await builder.board.disconnect();
+    });
+
+    it('Should leave door gap at (dx=1, dz=0, dy=1) and (dx=1, dz=0, dy=2)', async () => {
+        const { builder, mockBot } = await createBuilderWithMocks();
+
+        const placedPositions = [];
+        const origPlaceBlock = mockBot.placeBlock;
+        mockBot.placeBlock = mock.fn(async (refBlock, faceVec) => {
+            // The placed block position = refBlock.position + faceVec
+            const placed = new Vec3(
+                refBlock.position.x + faceVec.x,
+                refBlock.position.y + faceVec.y,
+                refBlock.position.z + faceVec.z
+            );
+            placedPositions.push(placed);
+        });
+
+        await builder.buildShelter();
+
+        // Find origin from shelter publish
+        const raw = await redisClient.get('octiv:builder:shelter:latest');
+        const data = JSON.parse(raw);
+        const origin = new Vec3(data.position.x, data.position.y, data.position.z);
+
+        // Door positions: origin + (1, 1, 0) and origin + (1, 2, 0)
+        const door1 = origin.offset(1, 1, 0);
+        const door2 = origin.offset(1, 2, 0);
+
+        const hasDoor1 = placedPositions.some(p =>
+            p.x === door1.x && p.y === door1.y && p.z === door1.z
+        );
+        const hasDoor2 = placedPositions.some(p =>
+            p.x === door2.x && p.y === door2.y && p.z === door2.z
+        );
+
+        assert.equal(hasDoor1, false, 'No block should be placed at door position (dy=1)');
+        assert.equal(hasDoor2, false, 'No block should be placed at door position (dy=2)');
+
+        await builder.board.disconnect();
     });
 });
