@@ -55,6 +55,9 @@ describe('BuilderAgent — Skill Feedback Loop (Task B)', () => {
     const { createClient } = require('redis');
     redisClient = createClient({ url: 'redis://localhost:6380' });
     await redisClient.connect();
+    // Clean stale skills from prior test files (e.g. integration.test.js)
+    const staleKeys = await redisClient.keys('octiv:skills:*');
+    if (staleKeys.length > 0) await redisClient.del(staleKeys);
     BuilderAgent = require('../agent/builder').BuilderAgent;
     SkillPipeline = require('../agent/skill-pipeline').SkillPipeline;
   });
