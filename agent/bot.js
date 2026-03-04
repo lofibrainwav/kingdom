@@ -5,16 +5,16 @@ const { OctivBot } = require('./OctivBot');
  */
 
 const BOT_CONFIG = {
-  host: 'localhost',
-  port: 25565,
+  host: process.env.MC_HOST || 'localhost',
+  port: parseInt(process.env.MC_PORT) || 25565,
   username: 'Octiv',
-  version: '1.21.1',
+  version: process.env.MC_VERSION || '1.21.1',
   checkTimeoutInterval: 30000,
   auth: 'offline'
 };
 
 const BOT_OPTIONS = {
-  redisUrl: 'redis://localhost:6380',
+  redisUrl: process.env.BLACKBOARD_REDIS_URL || 'redis://localhost:6380',
   heartbeatIntervalMs: 10000
 };
 

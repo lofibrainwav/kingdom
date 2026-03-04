@@ -6,7 +6,7 @@
  * Sandbox: node:vm with isolated context (replaces vm2 CVE-2023-37466).
  */
 const { Blackboard } = require('./blackboard');
-const vm = require('node:vm');
+const { validateCode } = require('./vm-sandbox');
 
 const DAILY_LIMIT = 5;
 const MIN_SUCCESS_RATE = 0.7;
@@ -74,20 +74,11 @@ class SkillPipeline {
 
   // 4.1: Sandbox validation via node:vm (3x dry-run)
   async validateSkill(code, attempts = 3) {
-    for (let i = 0; i < attempts; i++) {
-      try {
-        const context = vm.createContext(Object.create(null));
-        const script = new vm.Script(`(function() { ${code} })()`, {
-          filename: 'skill-validation.js',
-          timeout: 3000,
-        });
-        script.runInContext(context, { timeout: 3000 });
-      } catch (err) {
-        console.error(`[SkillPipeline] validation failed (${i + 1}/${attempts}): ${err.message}`);
-        return false;
-      }
+    const result = await validateCode(code, attempts);
+    if (!result.valid) {
+      console.error(`[SkillPipeline] validation failed (${result.attempt}/${attempts}): ${result.error}`);
     }
-    return true;
+    return result.valid;
   }
 
   // 4.2: Deploy skill to Redis library

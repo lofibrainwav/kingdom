@@ -5,7 +5,7 @@
  * Sandbox: node:vm with isolated context (replaces vm2 CVE-2023-37466).
  */
 const { Blackboard } = require('./blackboard');
-const vm = require('node:vm');
+const { validateCode } = require('./vm-sandbox');
 
 const AC8_THRESHOLDS = {
   lava: {
@@ -56,7 +56,9 @@ class SafetyAgent {
         if (threat) {
           await this.handleThreat(threat, data.agentId || 'unknown');
         }
-      } catch {}
+      } catch (err) {
+        console.error('[Safety] health monitor error:', err.message);
+      }
     });
 
     this.subscriber.pSubscribe('octiv:agent:builder-*:react', async (message) => {
@@ -105,20 +107,12 @@ class SafetyAgent {
 
   // AC-8.3: Sandbox code validation via node:vm (3x dry-run)
   async verifySkillCode(code, maxAttempts = 3) {
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      try {
-        const context = vm.createContext(Object.create(null));
-        const script = new vm.Script(`(function() { ${code} })()`, {
-          filename: 'safety-validation.js',
-          timeout: 3000,
-        });
-        script.runInContext(context, { timeout: 3000 });
-        console.log(`[Safety] sandbox validation passed (${attempt}/${maxAttempts})`);
-      } catch (err) {
-        console.error(`[Safety] sandbox validation failed (${attempt}/${maxAttempts}):`, err.message);
-        return false;
-      }
+    const result = await validateCode(code, maxAttempts);
+    if (!result.valid) {
+      console.error(`[Safety] sandbox validation failed (${result.attempt}/${maxAttempts}):`, result.error);
+      return false;
     }
+    console.log(`[Safety] sandbox validation passed (${maxAttempts}/${maxAttempts})`);
     return true;
   }
 

@@ -49,8 +49,9 @@ async function main() {
   console.log('');
   console.log('🎮 Octiv Agent Team starting');
   console.log('═══════════════════════════════════════');
-  console.log('  PaperMC: localhost:25565 (offline)');
-  console.log('  Redis:   localhost:6380');
+  console.log(`  PaperMC: ${process.env.MC_HOST || 'localhost'}:${process.env.MC_PORT || 25565} (offline)`);
+  const redisDisplay = (process.env.BLACKBOARD_REDIS_URL || 'redis://localhost:6380').replace(/:\/\/[^@]*@/, '://***@');
+  console.log(`  Redis:   ${redisDisplay}`);
   console.log('  Team:    Leader + Builder x3 + Safety + Explorer');
   console.log('═══════════════════════════════════════');
   console.log('');

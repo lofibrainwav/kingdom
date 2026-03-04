@@ -55,7 +55,9 @@ class LeaderAgent {
           await this.distributeMission(`builder-0${i}`);
         }
         await this.decideMode('builder-01');
-      } catch {}
+      } catch (err) {
+        console.error('[Leader] mission loop error:', err.message);
+      }
     }, 10000);
   }
 
