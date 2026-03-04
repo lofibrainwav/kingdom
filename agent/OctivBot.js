@@ -10,7 +10,7 @@ class OctivBot {
         this.config = config;
         this.options = {
             redisUrl: options.redisUrl || 'redis://localhost:6380',
-            heartbeatIntervalMs: options.heartbeatIntervalMs || 10000,
+            heartbeatIntervalMs: options.heartbeatIntervalMs || parseInt(process.env.HEARTBEAT_INTERVAL_MS) || 10000,
             maxReconnectAttempts: options.maxReconnectAttempts || 5,
             baseReconnectDelayMs: options.baseReconnectDelayMs || 1000,
             createBotFn: options.createBotFn || null,

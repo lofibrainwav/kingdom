@@ -21,7 +21,7 @@ function setupPathfinder(bot, cachedMovements) {
  * @param {number} timeoutMs - max navigation time (default 30s)
  * @returns {Promise<void>}
  */
-function goto(bot, goal, timeoutMs = 30000) {
+function goto(bot, goal, timeoutMs = parseInt(process.env.PATHFINDER_TIMEOUT_MS) || 30000) {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
       bot.pathfinder.stop();

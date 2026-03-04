@@ -4,7 +4,7 @@
  */
 const vm = require('node:vm');
 
-const VM_TIMEOUT_MS = 3000;
+const VM_TIMEOUT_MS = parseInt(process.env.VM_TIMEOUT_MS) || 3000;
 const VM_VALIDATION_ATTEMPTS = 3;
 
 async function validateCode(code, attempts = VM_VALIDATION_ATTEMPTS, timeoutMs = VM_TIMEOUT_MS) {

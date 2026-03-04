@@ -8,8 +8,8 @@
 const { Blackboard } = require('./blackboard');
 const { validateCode } = require('./vm-sandbox');
 
-const DAILY_LIMIT = 5;
-const MIN_SUCCESS_RATE = 0.7;
+const DAILY_LIMIT = parseInt(process.env.SKILL_DAILY_LIMIT) || 5;
+const MIN_SUCCESS_RATE = parseFloat(process.env.SKILL_MIN_SUCCESS_RATE) || 0.7;
 
 class SkillPipeline {
   constructor(llmClient = null) {

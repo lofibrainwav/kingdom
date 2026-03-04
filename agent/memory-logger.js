@@ -19,7 +19,11 @@ class MemoryLogger {
   async logEvent(agentId, event) {
     const entry = JSON.stringify({ ts: Date.now(), agentId, ...event }) + '\n';
     const filePath = path.join(this.logDir, `${agentId}.jsonl`);
-    await fsp.appendFile(filePath, entry);
+    try {
+      await fsp.appendFile(filePath, entry);
+    } catch (err) {
+      console.error(`[MemoryLogger] write failed for ${agentId}: ${err.message}`);
+    }
   }
 
   async getHistory(agentId) {
