@@ -15,8 +15,6 @@ const { describe, it, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('path');
 const os = require('os');
-const net = require('net');
-
 const { Blackboard } = require('../agent/blackboard');
 const { LeaderAgent } = require('../agent/leader');
 const { SafetyAgent } = require('../agent/safety');
@@ -31,16 +29,6 @@ const { ZettelkastenHooks } = require('../agent/zettelkasten-hooks');
 const { ExplorerAgent } = require('../agent/roles/ExplorerAgent');
 
 const TEMP_VAULT = path.join(os.tmpdir(), `octiv-int-test-${Date.now()}`);
-
-// Check if PaperMC server is reachable
-async function isPaperMCOnline(host = 'localhost', port = 25565, timeoutMs = 2000) {
-  return new Promise((resolve) => {
-    const socket = new net.Socket();
-    const timer = setTimeout(() => { socket.destroy(); resolve(false); }, timeoutMs);
-    socket.connect(port, host, () => { clearTimeout(timer); socket.destroy(); resolve(true); });
-    socket.on('error', () => { clearTimeout(timer); resolve(false); });
-  });
-}
 
 // ── 1. Learning Pipeline Assembly ──────────────────────────────────
 
@@ -102,40 +90,8 @@ describe('Integration — Learning Pipeline Assembly', () => {
   });
 });
 
-// ── 2. Builder Spawn-Await (PaperMC required) ──────────────────────
-
-describe('Integration — Builder Spawn-Await (live PaperMC)', () => {
-  let paperMCOnline;
-
-  before(async () => {
-    paperMCOnline = await isPaperMCOnline();
-    if (!paperMCOnline) {
-      console.log('[Integration] PaperMC offline — skipping live spawn tests');
-    }
-  });
-
-  it('should connect builder to PaperMC and receive spawn event', { skip: !undefined }, async (t) => {
-    // This test is always skipped at definition time; we conditionally skip below
-    if (!paperMCOnline) {
-      t.skip('PaperMC server not available');
-      return;
-    }
-
-    const { BuilderAgent } = require('../agent/builder');
-    const builder = new BuilderAgent({
-      id: 'int-test-01',
-      spawnTimeoutMs: 10000,
-    });
-
-    try {
-      await builder.init();
-      assert.ok(builder.bot, 'Bot should be created');
-      assert.ok(builder.bot.entity, 'Bot should have spawned with entity');
-    } finally {
-      await builder.shutdown();
-    }
-  });
-});
+// ── 2. Builder Spawn-Await → moved to test/papermc-live.test.js
+// (Isolated to avoid Redis connection interference with mineflayer TCP)
 
 // ── 3. Emergency Handler Chain ──────────────────────────────────────
 

@@ -43,6 +43,9 @@ services:
       ALLOW_FLIGHT: "true"
       SPAWN_PROTECTION: "0"
       ENABLE_COMMAND_BLOCK: "true"
+      # NOTE: After first run, set connection-throttle: 0 in bukkit.yml
+      # (Docker bridge = same IP for all bots, default 4000ms throttle blocks reconnects)
+      # docker exec octiv-mc sed -i 's/connection-throttle: .*/connection-throttle: 0/' /data/bukkit.yml
       MEMORY: "3G"
       JVM_OPTS: "-XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200"
     ports:
