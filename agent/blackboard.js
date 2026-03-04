@@ -20,7 +20,9 @@ class Blackboard {
   }
 
   async disconnect() {
-    await this.client.disconnect();
+    if (this.client.isOpen) {
+      await this.client.quit();
+    }
   }
 
   /**

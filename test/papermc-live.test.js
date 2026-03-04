@@ -46,6 +46,8 @@ it('PaperMC Live — should connect builder and receive spawn event', async (t) 
     }
     throw err;
   } finally {
-    if (builder.bot) await builder.shutdown();
+    await builder.shutdown();
+    // Allow async cleanup (mineflayer socket drain) to complete
+    await new Promise((r) => setTimeout(r, 200));
   }
 });

@@ -33,6 +33,7 @@ class BuilderAgent {
     this.logger = null;
     this.skillPipeline = null;
     this.spawnTimeoutMs = config.spawnTimeoutMs || 30000;
+    this._running = true;
   }
 
   setLogger(logger) { this.logger = logger; }
@@ -220,9 +221,15 @@ class BuilderAgent {
 
   // ── ReAct loop ─────────────────────────────────────────────────
   async _reactLoop() {
-    while (true) {
+    while (this._running) {
       this.reactIterations++;
-      await this.board.publish(`agent:${this.id}:react`, { author: this.id, iteration: this.reactIterations });
+      try {
+        await this.board.publish(`agent:${this.id}:react`, { author: this.id, iteration: this.reactIterations });
+      } catch (err) {
+        if (!this._running) return; // shutdown in progress
+        console.error(`[${this.id}] react publish error:`, err.message);
+      }
+      if (!this._running) return;
 
       try {
         if (!this.acProgress[1]) {
@@ -258,6 +265,7 @@ class BuilderAgent {
   }
 
   async shutdown() {
+    this._running = false;
     try {
       if (this.bot) this.bot.end();
     } catch (err) {
