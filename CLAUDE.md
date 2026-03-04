@@ -157,26 +157,29 @@ See `~/.claude/skills/{skill-name}/SKILL.md` for details.
 
 ### MCP Servers — Scope Strategy
 
-**Global** (`~/.claude/settings.json`) — available in ALL projects:
+**Global** (`~/.claude/settings.json` + `~/.claude.json` user scope) — available in ALL projects:
 | MCP | Purpose | Access | Status |
 |-----|---------|--------|--------|
 | `context7` | Library docs (mineflayer, Redis, discord.js) | read-only | ✅ Active |
-| `sequentialthinking` | Extended multi-step reasoning | read-only | ⚠️ Not in global config (available via other path) |
-| `playwright` | Browser testing, E2E automation | read-only | 🔧 Setup Needed |
+| `notebooklm` | Knowledge base queries | read-only | ✅ Active |
+| `github` | PR, CI, code search, issues | fine-grained PAT | ✅ Active |
+| `filesystem` | Local file operations | project root only | ✅ Active |
+| `memory` | Persistent knowledge graph | local | ✅ Active |
+| `sequentialthinking` | Extended multi-step reasoning | read-only | ✅ Active |
+| `playwright` | Browser testing, E2E automation | read-only | ✅ Active |
+| `redis` | Redis data access | local | ⚠️ Requires Docker |
+| `docker` | Container management | local | ⚠️ Requires Docker |
 
 **Project** (`.mcp.json`) — Octiv-specific:
 | MCP | Purpose | Access | Status |
 |-----|---------|--------|--------|
-| `github` | PR, CI, code search, issues | fine-grained PAT | ✅ Active |
-| `serena` | LSP semantic code analysis | local workspace | ✅ Active |
-| `filesystem` | Local file operations | project root only | ✅ Active |
-| `memory` | Persistent knowledge graph | local | ✅ Active |
-| `figma` | Design specs, component extraction | read-only token | ⚠️ Token Required |
+| `serena` | LSP semantic code analysis | local workspace | ⚠️ Connection issues |
 | `supabase` | Database queries, schema management | `--read-only` flag | ⚠️ Token Required |
-| `vercel` | Deploy, preview, environment vars | team-scoped token | ⚠️ Token Required |
 | `sentry` | Error tracking, performance monitoring | read scopes only | ⚠️ Token Required |
+| `vercel` | Deploy, preview, environment vars | team-scoped token | ⚠️ Token Required |
+| `figma` | Design specs, component extraction | read-only token | ⚠️ Token Required |
 
-**Summary**: 4 global active + 1 setup needed + 1 inconsistent, 4 project active, 4 project pending token setup
+**Summary**: 7 global active + 2 Docker-dependent, 5 project (1 connection issue + 4 token required)
 
 ### MCP Security Policy
 
