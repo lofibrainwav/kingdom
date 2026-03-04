@@ -76,7 +76,6 @@ describe('GoTReasoner — buildGraph', () => {
     const got = new GoTReasoner(zk);
     got.board = createMockBoard({
       'zettelkasten:links:dig::place': { strength: 0.7, coOccurrences: 5 },
-      'zettelkasten:links:dig::place': { strength: 0.7, coOccurrences: 5 },
     });
 
     const graph = await got.buildGraph();

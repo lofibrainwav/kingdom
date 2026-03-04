@@ -67,7 +67,7 @@ Choose the right pattern for the task at hand:
 
 ### When unsure → `octiv-orchestrator`
 
-### Agents (13 total)
+### Agents (13 logical modules, 24 source files)
 | Agent | One-liner |
 |-------|-----------|
 | `octiv-orchestrator` | **START HERE** for complex tasks |
@@ -101,7 +101,7 @@ Choose the right pattern for the task at hand:
 | `/rc` | Remote control status / Discord bridge (not yet implemented) |
 | `/auto-memory status` | Show all memory layer stats |
 
-### Skills (16 total)
+### Skills (19 total)
 | Skill | When |
 |-------|------|
 | `/tool-index` | Find any tool |
@@ -111,6 +111,9 @@ Choose the right pattern for the task at hand:
 | `/verify-implementation` | Before PR — full audit |
 | `/verify-redis` | After Blackboard changes |
 | `/verify-agents` | After agent/*.js changes |
+| `/verify-tests` | Test count & coverage audit |
+| `/verify-dependencies` | Dependency health check |
+| `/verify-mcp` | MCP server status audit |
 | `/manage-skills` | After new patterns |
 | `/tdd-workflow` | Before new feature (or use `/loop tdd`) |
 | `/security-review` | After auth, input handling, API changes |

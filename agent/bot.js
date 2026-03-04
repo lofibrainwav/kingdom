@@ -1,4 +1,5 @@
 const { OctivBot } = require('./OctivBot');
+const T = require('../config/timeouts');
 
 /**
  * Octiv Bot Entry Point
@@ -9,13 +10,13 @@ const BOT_CONFIG = {
   port: parseInt(process.env.MC_PORT) || 25565,
   username: 'Octiv',
   version: process.env.MC_VERSION || '1.21.1',
-  checkTimeoutInterval: 30000,
+  checkTimeoutInterval: T.SPAWN_TIMEOUT_MS,
   auth: 'offline'
 };
 
 const BOT_OPTIONS = {
   redisUrl: process.env.BLACKBOARD_REDIS_URL || 'redis://localhost:6380',
-  heartbeatIntervalMs: 10000
+  heartbeatIntervalMs: T.HEARTBEAT_INTERVAL_MS
 };
 
 async function main() {

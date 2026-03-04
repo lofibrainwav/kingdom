@@ -22,6 +22,9 @@ export default [
         clearInterval: 'readonly',
         setImmediate: 'readonly',
         URL: 'readonly',
+        fetch: 'readonly',
+        TextDecoder: 'readonly',
+        TextEncoder: 'readonly',
         // Test globals (node:test)
         describe: 'readonly',
         it: 'readonly',
