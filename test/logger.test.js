@@ -50,7 +50,7 @@ describe('Logger', () => {
         console: false,
       });
       // Monkey-patch to capture calls
-      logger._log = function(level, agentId, msg, data) {
+      logger._log = function(level, agentId, msg, _data) {
         const levelDef = { debug: { rank: 0 }, info: { rank: 1 }, warn: { rank: 2 }, error: { rank: 3 } };
         if (levelDef[level].rank >= this.minRank) {
           logs.push({ level, agentId, msg });
@@ -69,7 +69,7 @@ describe('Logger', () => {
         persist: false,
         console: false,
       });
-      logger._log = function(level, agentId, msg) {
+      logger._log = function(level, _agentId, _msg) {
         const levelDef = { debug: { rank: 0 }, info: { rank: 1 }, warn: { rank: 2 }, error: { rank: 3 } };
         if (levelDef[level].rank >= this.minRank) {
           logs.push({ level });
@@ -89,7 +89,7 @@ describe('Logger', () => {
         persist: false,
         console: false,
       });
-      logger._log = function(level, agentId, msg) {
+      logger._log = function(level, _agentId, _msg) {
         const levelDef = { debug: { rank: 0 }, info: { rank: 1 }, warn: { rank: 2 }, error: { rank: 3 } };
         if (levelDef[level].rank >= this.minRank) {
           logs.push({ level });

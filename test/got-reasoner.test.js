@@ -3,7 +3,7 @@
  * Tests graph construction, synergy discovery, optimal builds,
  * gap analysis, and evolution path prediction.
  */
-const { describe, it, beforeEach } = require('node:test');
+const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 const { GoTReasoner } = require('../agent/got-reasoner');
 

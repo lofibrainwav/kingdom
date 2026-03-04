@@ -23,24 +23,6 @@ function createMockZettelkasten(notes = {}) {
   };
 }
 
-function makeNote(id, overrides = {}) {
-  return {
-    id,
-    name: id,
-    tier: 'Novice',
-    xp: 5,
-    uses: 10,
-    successRate: 0.6,
-    errorType: null,
-    tags: [],
-    links: [],
-    status: 'active',
-    digestCount: 0,
-    lastDigestedAt: 0,
-    ruminationNotes: [],
-    ...overrides,
-  };
-}
 
 // ── Tests ───────────────────────────────────────────────────
 

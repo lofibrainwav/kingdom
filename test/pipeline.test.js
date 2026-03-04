@@ -2,19 +2,19 @@
  * Phase 4 Tests — SkillPipeline, ReflexionEngine, Leader Skill Injection
  * Usage: node --test test/pipeline.test.js
  */
-const { describe, it, before, after, mock } = require('node:test');
+const { describe, it, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 
 // ── 4.1 + 4.2: Skill Pipeline ──────────────────────────────────
 describe('SkillPipeline — Generation & Deployment (Phase 4.1/4.2)', () => {
-    let SkillPipeline, DAILY_LIMIT, MIN_SUCCESS_RATE;
+    let SkillPipeline, DAILY_LIMIT;
     let redisClient;
 
     before(async () => {
         const { createClient } = require('redis');
         redisClient = createClient({ url: 'redis://localhost:6380' });
         await redisClient.connect();
-        ({ SkillPipeline, DAILY_LIMIT, MIN_SUCCESS_RATE } = require('../agent/skill-pipeline'));
+        ({ SkillPipeline, DAILY_LIMIT } = require('../agent/skill-pipeline'));
     });
 
     after(async () => {
@@ -151,8 +151,7 @@ describe('SkillPipeline — Generation & Deployment (Phase 4.1/4.2)', () => {
         const subscriber = redisClient.duplicate();
         await subscriber.connect();
 
-        let received = null;
-        await subscriber.subscribe('octiv:skills:emergency:latest', (message) => {
+        await subscriber.subscribe('octiv:skills:emergency:latest', (_message) => {
             // Blackboard publishes to key:latest
         });
 
@@ -219,7 +218,7 @@ describe('ReflexionEngine — LLM Router & Config (Phase 4.3/4.5/4.6)', () => {
     it('Should route critical severity to escalation model', async () => {
         let calledModel = null;
         const mockAnthropic = {
-            call: async (model, prompt) => {
+            call: async (model, _prompt) => {
                 calledModel = model;
                 return '{"name":"test","code":"x=1","description":"test","errorType":"test"}';
             },
@@ -240,7 +239,7 @@ describe('ReflexionEngine — LLM Router & Config (Phase 4.3/4.5/4.6)', () => {
             call: async () => { throw new Error('rate limited'); },
         };
         const mockGroq = {
-            call: async (model, prompt) => {
+            call: async (model, _prompt) => {
                 usedModel = model;
                 return 'groq response';
             },

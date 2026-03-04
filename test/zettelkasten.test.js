@@ -12,7 +12,7 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 
-const { SkillZettelkasten, TIERS } = require('../agent/skill-zettelkasten');
+const { SkillZettelkasten } = require('../agent/skill-zettelkasten');
 const { RuminationEngine } = require('../agent/rumination-engine');
 const { GoTReasoner } = require('../agent/got-reasoner');
 const { ZettelkastenHooks } = require('../agent/zettelkasten-hooks');

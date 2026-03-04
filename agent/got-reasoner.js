@@ -273,7 +273,7 @@ class GoTReasoner {
       }
     }
 
-    gaps.sort((a, b) => (a.severity === 'critical' ? -1 : 1));
+    gaps.sort((a, _b) => (a.severity === 'critical' ? -1 : 1));
 
     await this._saveReasoningTrace('gap-analysis', {
       errorTypesAnalyzed: Object.keys(errorCoverage).length,

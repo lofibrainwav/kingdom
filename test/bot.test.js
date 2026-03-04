@@ -414,7 +414,6 @@ describe('BuilderAgent — Shelter Construction (AC-2)', () => {
         const { builder, mockBot } = await createBuilderWithMocks();
 
         const placedPositions = [];
-        const origPlaceBlock = mockBot.placeBlock;
         mockBot.placeBlock = mock.fn(async (refBlock, faceVec) => {
             // The placed block position = refBlock.position + faceVec
             const placed = new Vec3(

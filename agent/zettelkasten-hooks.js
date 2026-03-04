@@ -251,7 +251,7 @@ class ZettelkastenHooks {
     }
   }
 
-  async _onDigestionComplete(data) {
+  async _onDigestionComplete(_data) {
     this.ruminationsSinceReasoning++;
 
     // After enough digestions, trigger GoT reasoning

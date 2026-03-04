@@ -108,7 +108,7 @@ describe('Discord Bot — Embed Formatting', () => {
 
   it('should create red embed for low health', () => {
     const embed = new MockEmbedBuilder()
-      .setColor(5 > 10 ? 0x00ff00 : 0xff0000);
+      .setColor(0xff0000);
 
     assert.equal(embed.data.color, 0xff0000);
   });

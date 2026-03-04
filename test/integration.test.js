@@ -83,7 +83,7 @@ describe('Integration — Learning Pipeline Assembly', () => {
     for (let i = 0; i < 3; i++) {
       leader.consecutiveTeamFailures++;
     }
-    const result = await leader.checkReflexionTrigger();
+    await leader.checkReflexionTrigger();
 
     // After threshold, reflexion should trigger and reset counter
     assert.equal(leader.consecutiveTeamFailures, 0, 'Counter should reset after reflexion');
@@ -126,7 +126,6 @@ describe('Integration — Emergency Handler (Redis pub/sub)', () => {
     leader.consecutiveTeamFailures = 0;
 
     // Simulate the emergency handler logic from team.js
-    const data = { failureType: 'lava', agentId: 'builder-01' };
     leader.consecutiveTeamFailures++;
 
     assert.equal(leader.consecutiveTeamFailures, 1);

@@ -3,7 +3,7 @@
  *                  Quality Filter, node:vm Sandbox Migration
  * Usage: node --test --test-force-exit test/phase0.test.js
  */
-const { describe, it, before, after, mock } = require('node:test');
+const { describe, it, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 
 // ── Task A: API Client Factory ────────────────────────────────

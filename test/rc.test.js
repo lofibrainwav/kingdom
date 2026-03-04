@@ -2,7 +2,7 @@
  * Remote Control (/rc) tests
  * Tests RC command handling in discord-bot.js and RC listener in team.js
  */
-const { describe, it, beforeEach } = require('node:test');
+const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 
 // Mock Blackboard
@@ -51,28 +51,7 @@ function createMockBoard() {
   };
 }
 
-// Mock Discord message
-function createMockMsg(content, isBot = false) {
-  const replies = [];
-  return {
-    content,
-    author: { bot: isBot, tag: 'testuser#1234' },
-    reply: (data) => { replies.push(data); return Promise.resolve(); },
-    replies,
-  };
-}
-
 describe('Remote Control — Discord Bot (_cmdRc)', () => {
-  let bot;
-
-  beforeEach(() => {
-    // Simulate OctivDiscordBot with mock board
-    const board = createMockBoard();
-    bot = {
-      board,
-      _cmdRc: null, // Will be tested via _handleCommand
-    };
-  });
 
   it('should parse !rc command with subcmd', () => {
     const content = '!rc status';
