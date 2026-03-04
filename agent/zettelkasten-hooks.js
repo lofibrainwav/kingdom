@@ -239,6 +239,7 @@ class ZettelkastenHooks {
   // ── Event Handlers ────────────────────────────────────────
 
   async _onSkillDeployed(data) {
+    if (!data.newSkill) return; // safety alerts don't have newSkill
     console.log(`[ZK-Hooks] new skill deployed: ${data.newSkill}`);
     // Note already created by pipeline wire, just log
     if (this.logger) {

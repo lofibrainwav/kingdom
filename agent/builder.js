@@ -78,12 +78,22 @@ class BuilderAgent {
 
   async _onSpawn() {
     console.log(`[${this.id}] spawned`);
+    await this._waitForGround();
     await this.board.publish(`agent:${this.id}:status`, {
       author: this.id,
       status: 'spawned',
       position: this.bot.entity.position,
     });
     this._reactLoop();
+  }
+
+  async _waitForGround() {
+    const maxWait = parseInt(process.env.SPAWN_GROUND_WAIT_MS) || 2000;
+    const start = Date.now();
+    while (Date.now() - start < maxWait) {
+      if (this.bot.entity.velocity.y >= 0) return;
+      await this.bot.waitForTicks(1);
+    }
   }
 
   // ── AC-1: Collect wood ──────────────────────────────────────────

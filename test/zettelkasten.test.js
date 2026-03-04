@@ -319,6 +319,40 @@ describe('ZettelkastenHooks — Wiring', () => {
   });
 });
 
+// ── ZettelkastenHooks — newSkill Guard ────────────────────────────
+
+describe('ZettelkastenHooks — newSkill Guard', () => {
+  let hooks;
+
+  before(async () => {
+    // Minimal hooks with stubs (no Redis needed for _onSkillDeployed)
+    const stubZk = { getStats: async () => ({}) };
+    const stubRum = { getStats: () => ({}), init: async () => {} };
+    const stubGot = { init: async () => {} };
+    hooks = new ZettelkastenHooks(stubZk, stubRum, stubGot);
+    // Don't call init() — avoid Redis subscription for this unit test
+  });
+
+  it('should ignore events without newSkill field', async () => {
+    let logged = false;
+    hooks.logger = { logEvent: async () => { logged = true; } };
+
+    // Safety alert: has failureType but no newSkill
+    await hooks._onSkillDeployed({ failureType: 'fall', triggerSkillCreation: true });
+
+    assert.equal(logged, false, 'Should not log when newSkill is missing');
+  });
+
+  it('should process events with valid newSkill', async () => {
+    let logged = false;
+    hooks.logger = { logEvent: async () => { logged = true; } };
+
+    await hooks._onSkillDeployed({ newSkill: 'avoid_lava_v1' });
+
+    assert.equal(logged, true, 'Should log when newSkill is present');
+  });
+});
+
 // ── Compound Skill Creation ─────────────────────────────────────
 
 describe('SkillZettelkasten — Compound Creation', () => {

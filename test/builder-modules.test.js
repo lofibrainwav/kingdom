@@ -269,6 +269,56 @@ describe('builder-shelter — placeBlockAt', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════
+// builder.js — _waitForGround
+// ═══════════════════════════════════════════════════════════════
+
+describe('builder — _waitForGround', () => {
+  // Import BuilderAgent but we won't call init() — just test _waitForGround directly
+  const { BuilderAgent } = require('../agent/builder');
+
+  it('should wait for ground before starting ReAct loop', async () => {
+    const builder = new BuilderAgent({ id: 'test-ground' });
+    let ticksWaited = 0;
+    builder.bot = {
+      entity: { velocity: { y: -5 } },
+      waitForTicks: async () => {
+        ticksWaited++;
+        // After 2 ticks, simulate landing
+        if (ticksWaited >= 2) builder.bot.entity.velocity.y = 0;
+      },
+    };
+
+    await builder._waitForGround();
+    assert.ok(ticksWaited >= 2, `Should have waited ticks, got ${ticksWaited}`);
+    assert.equal(builder.bot.entity.velocity.y, 0, 'Should be on ground');
+  });
+
+  it('should timeout and proceed if ground not reached', async () => {
+    const builder = new BuilderAgent({ id: 'test-timeout' });
+    let ticksWaited = 0;
+    builder.bot = {
+      entity: { velocity: { y: -10 } }, // always falling
+      waitForTicks: async () => { ticksWaited++; },
+    };
+
+    // Set very short timeout via env
+    const origEnv = process.env.SPAWN_GROUND_WAIT_MS;
+    process.env.SPAWN_GROUND_WAIT_MS = '50';
+
+    const start = Date.now();
+    await builder._waitForGround();
+    const elapsed = Date.now() - start;
+
+    // Restore env
+    if (origEnv === undefined) delete process.env.SPAWN_GROUND_WAIT_MS;
+    else process.env.SPAWN_GROUND_WAIT_MS = origEnv;
+
+    assert.ok(elapsed >= 40, `Should have waited ~50ms, got ${elapsed}ms`);
+    assert.ok(ticksWaited > 0, 'Should have waited at least some ticks');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
 // 3. builder-adaptation.js
 // ═══════════════════════════════════════════════════════════════
 

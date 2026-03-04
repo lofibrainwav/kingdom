@@ -200,13 +200,13 @@ describe('SafetyAgent — Threat Handling (AC-8)', () => {
         await safety.shutdown();
     });
 
-    it('Should trigger Group Reflexion after 3 consecutive failures', async () => {
+    it('Should trigger Group Reflexion after 3 consecutive failures (different types)', async () => {
         const safety = new SafetyAgent();
         await safety.init();
 
         await safety.handleThreat({ type: 'fall', reason: 'test1' }, 'builder-01');
-        await safety.handleThreat({ type: 'fall', reason: 'test2' }, 'builder-01');
-        await safety.handleThreat({ type: 'fall', reason: 'test3' }, 'builder-01');
+        await safety.handleThreat({ type: 'lava', reason: 'test2' }, 'builder-01');
+        await safety.handleThreat({ type: 'loop', reason: 'test3' }, 'builder-01');
 
         const raw = await redisClient.get('octiv:leader:reflexion:latest');
         assert.ok(raw, 'Group Reflexion should be triggered');
@@ -214,5 +214,85 @@ describe('SafetyAgent — Threat Handling (AC-8)', () => {
         assert.equal(data.type, 'group');
 
         await safety.shutdown();
+    });
+});
+
+describe('SafetyAgent — Threat Debounce', () => {
+    let SafetyAgent;
+
+    before(() => {
+        SafetyAgent = require('../agent/safety').SafetyAgent;
+    });
+
+    it('should debounce same threat type within cooldown window', async () => {
+        const safety = new SafetyAgent();
+        // Stub board to avoid Redis
+        const published = [];
+        safety.board = {
+            connect: async () => {},
+            publish: async (ch, data) => { published.push({ ch, data }); },
+            disconnect: async () => {},
+        };
+
+        await safety.handleThreat({ type: 'fall', reason: 'v1' }, 'b-01');
+        await safety.handleThreat({ type: 'fall', reason: 'v2' }, 'b-01');
+
+        // Only first call should go through
+        assert.equal(safety.consecutiveFailures, 1);
+        const threatPubs = published.filter(p => p.ch === 'safety:threat');
+        assert.equal(threatPubs.length, 1);
+    });
+
+    it('should allow different threat types through debounce', async () => {
+        const safety = new SafetyAgent();
+        safety.board = {
+            connect: async () => {},
+            publish: async () => {},
+            disconnect: async () => {},
+        };
+
+        await safety.handleThreat({ type: 'fall', reason: 'v1' }, 'b-01');
+        await safety.handleThreat({ type: 'lava', reason: 'v2' }, 'b-01');
+        await safety.handleThreat({ type: 'loop', reason: 'v3' }, 'b-01');
+
+        assert.equal(safety.consecutiveFailures, 3);
+    });
+
+    it('should reset consecutiveFailures when no threat detected', () => {
+        const safety = new SafetyAgent();
+        safety.consecutiveFailures = 5;
+
+        // Simulate health handler: no threat detected → reset
+        const bot = {
+            entity: { position: { x: 0, y: 64, z: 0 }, velocity: { x: 0, y: 0, z: 0 } },
+            health: 20,
+            findBlock: () => null,
+            registry: { blocksByName: {} },
+        };
+        const threat = safety.detectThreat(bot);
+        assert.equal(threat, null);
+        // Simulate what _startMonitoring does
+        if (!threat && safety.consecutiveFailures > 0) {
+            safety.consecutiveFailures = 0;
+        }
+        assert.equal(safety.consecutiveFailures, 0);
+    });
+
+    it('should not spam emergencies from rapid fall events', async () => {
+        const safety = new SafetyAgent();
+        let emergencyCount = 0;
+        safety.board = {
+            connect: async () => {},
+            publish: async (ch) => { if (ch === 'skills:emergency') emergencyCount++; },
+            disconnect: async () => {},
+        };
+
+        // 10 rapid fall threats — should only register 1
+        for (let i = 0; i < 10; i++) {
+            await safety.handleThreat({ type: 'fall', reason: `rapid-${i}` }, 'b-01');
+        }
+
+        assert.equal(emergencyCount, 1, 'Only 1 emergency should pass through debounce');
+        assert.equal(safety.consecutiveFailures, 1);
     });
 });

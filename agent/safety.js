@@ -29,6 +29,7 @@ class SafetyAgent {
     this.actionHistory = [];
     this.reactIterations = 0;
     this.consecutiveFailures = 0;
+    this.lastThreatTime = {};
     this.logger = null;
   }
 
@@ -58,6 +59,8 @@ class SafetyAgent {
         const threat = this.detectThreat(mockBot);
         if (threat) {
           await this.handleThreat(threat, data.agentId || 'unknown');
+        } else if (this.consecutiveFailures > 0) {
+          this.consecutiveFailures = 0;
         }
       } catch (err) {
         console.error('[Safety] health monitor error:', err.message);
@@ -119,8 +122,13 @@ class SafetyAgent {
     return true;
   }
 
-  // AC-8: Threat detected → trigger skill creation
+  // AC-8: Threat detected → trigger skill creation (debounced per type)
   async handleThreat(threat, agentId) {
+    const THREAT_COOLDOWN_MS = parseInt(process.env.SAFETY_THREAT_COOLDOWN_MS) || 2000;
+    const now = Date.now();
+    if (now - (this.lastThreatTime[threat.type] || 0) < THREAT_COOLDOWN_MS) return;
+    this.lastThreatTime[threat.type] = now;
+
     console.warn(`[Safety] ⚠️  threat detected: ${threat.type} — ${threat.reason}`);
     this.consecutiveFailures++;
     if (this.logger) this.logger.logEvent(this.id, { type: 'threat', agentId, ...threat }).catch(e => console.error('[Log]', e.message));

@@ -17,6 +17,15 @@ const { GoTReasoner } = require('./got-reasoner');
 const { ZettelkastenHooks } = require('./zettelkasten-hooks');
 
 const TEAM_SIZE = 3; // number of builder agents
+const EMERGENCY_DEDUP_MS = parseInt(process.env.EMERGENCY_DEDUP_MS) || 3000;
+
+function shouldProcessEmergency(state, failureType, dedupMs = EMERGENCY_DEDUP_MS) {
+  const now = Date.now();
+  if (failureType === state.type && now - state.time < dedupMs) return false;
+  state.type = failureType;
+  state.time = now;
+  return true;
+}
 
 function monitorGathering(board, teamSize, intervalMs = 5000) {
   const checkInterval = setInterval(async () => {
@@ -151,16 +160,19 @@ async function main() {
 
   // Subscribe to skills:emergency — handle safety alerts and skill pipeline events
   const emergencySubscriber = await board.createSubscriber();
+  let lastEmergency = { type: null, time: 0 };
   emergencySubscriber.subscribe('octiv:skills:emergency', async (message) => {
     try {
       const data = JSON.parse(message);
       logger.logEvent('team', { type: 'emergency', ...data }).catch(e => console.error('[Log]', e.message));
       console.warn(`[Team] ⚠️  Emergency: ${data.failureType || data.newSkill || 'unknown'}`);
 
-      // Task C: Increment leader failure counter on safety threats
+      // Task C: Increment leader failure counter on safety threats (deduped)
       if (data.failureType) {
-        leader.consecutiveTeamFailures++;
-        await leader.checkReflexionTrigger();
+        if (shouldProcessEmergency(lastEmergency, data.failureType)) {
+          leader.consecutiveTeamFailures++;
+          await leader.checkReflexionTrigger();
+        }
       }
 
       // If safety triggered skill creation, attempt to generate a skill
@@ -241,4 +253,4 @@ if (require.main === module) {
   main().catch(console.error);
 }
 
-module.exports = { monitorGathering, main };
+module.exports = { monitorGathering, main, shouldProcessEmergency };

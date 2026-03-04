@@ -8,7 +8,7 @@
 const { describe, it, after, mock } = require('node:test');
 const assert = require('node:assert/strict');
 
-const { monitorGathering } = require('../agent/team');
+const { monitorGathering, shouldProcessEmergency } = require('../agent/team');
 
 describe('team — monitorGathering', () => {
   const intervals = [];
@@ -144,5 +144,29 @@ describe('team — monitorGathering', () => {
     const id = monitorGathering(board, 3, 50000);
     assert.ok(id, 'Should return interval ID');
     clearInterval(id);
+  });
+});
+
+describe('team — shouldProcessEmergency', () => {
+  it('should process first emergency of any type', () => {
+    const state = { type: null, time: 0 };
+    assert.equal(shouldProcessEmergency(state, 'fall', 3000), true);
+    assert.equal(state.type, 'fall');
+  });
+
+  it('should reject duplicate emergency within dedup window', () => {
+    const state = { type: 'fall', time: Date.now() };
+    assert.equal(shouldProcessEmergency(state, 'fall', 3000), false);
+  });
+
+  it('should allow same type after dedup window expires', () => {
+    const state = { type: 'fall', time: Date.now() - 5000 };
+    assert.equal(shouldProcessEmergency(state, 'fall', 3000), true);
+  });
+
+  it('should allow different type within dedup window', () => {
+    const state = { type: 'fall', time: Date.now() };
+    assert.equal(shouldProcessEmergency(state, 'lava', 3000), true);
+    assert.equal(state.type, 'lava');
   });
 });
