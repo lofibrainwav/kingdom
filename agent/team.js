@@ -136,6 +136,19 @@ async function main() {
   await explorer.init();
   console.log('✅ Explorer-01 started');
 
+  // Explorer execution loop — piggyback on builder-01's position via Blackboard
+  const explorerInterval = setInterval(async () => {
+    try {
+      const status = await board.get('agent:builder-01:status');
+      if (status?.position) {
+        const mockBot = { entity: { position: status.position }, blockAt: () => null };
+        await explorer.execute(mockBot);
+      }
+    } catch (err) {
+      console.error('[Explorer] loop error:', err.message);
+    }
+  }, 15000);
+
   // Subscribe to skills:emergency — handle safety alerts and skill pipeline events
   const emergencySubscriber = await board.createSubscriber();
   emergencySubscriber.subscribe('octiv:skills:emergency', async (message) => {
@@ -192,6 +205,7 @@ async function main() {
     }, 10000);
 
     try {
+      clearInterval(explorerInterval);
       logger.logEvent('team', { type: 'shutdown' }).catch(e => console.error('[Log]', e.message));
       await leader.shutdown();
       await safety.shutdown();

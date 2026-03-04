@@ -47,7 +47,10 @@ class SafetyAgent {
       try {
         const data = JSON.parse(message);
         const mockBot = {
-          entity: { position: { x: 0, y: 64, z: 0 }, velocity: { x: 0, y: 0, z: 0 } },
+          entity: {
+            position: data.position || { x: 0, y: 64, z: 0 },
+            velocity: data.velocity || { x: 0, y: 0, z: 0 },
+          },
           health: data.health || 20,
           findBlock: () => null,
           registry: { blocksByName: {} },

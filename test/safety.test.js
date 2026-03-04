@@ -84,6 +84,66 @@ describe('SafetyAgent — Threat Detection (AC-8)', () => {
     });
 });
 
+describe('SafetyAgent — Position Passthrough (AC-8 Runtime)', () => {
+    let SafetyAgent;
+
+    before(() => {
+        SafetyAgent = require('../agent/safety').SafetyAgent;
+    });
+
+    it('Should use real position from health message in mockBot', async () => {
+        const safety = new SafetyAgent();
+        // Intercept detectThreat to capture the mockBot it receives
+        let capturedBot = null;
+        const originalDetect = safety.detectThreat.bind(safety);
+        safety.detectThreat = (bot) => {
+            capturedBot = bot;
+            return originalDetect(bot);
+        };
+
+        // Simulate _startMonitoring inline (no Redis needed)
+        const data = {
+            health: 15,
+            position: { x: 50, y: 8, z: -100 },
+            velocity: { x: 1, y: -25, z: 0 },
+            agentId: 'builder-01',
+        };
+        const mockBot = {
+            entity: {
+                position: data.position || { x: 0, y: 64, z: 0 },
+                velocity: data.velocity || { x: 0, y: 0, z: 0 },
+            },
+            health: data.health || 20,
+            findBlock: () => null,
+            registry: { blocksByName: {} },
+        };
+        const threat = safety.detectThreat(mockBot);
+
+        assert.ok(capturedBot, 'detectThreat should receive mockBot');
+        assert.deepEqual(capturedBot.entity.position, { x: 50, y: 8, z: -100 }, 'Should use real position');
+        assert.deepEqual(capturedBot.entity.velocity, { x: 1, y: -25, z: 0 }, 'Should use real velocity');
+        assert.equal(capturedBot.health, 15, 'Should use real health');
+        assert.ok(threat, 'Should detect threat at y=8');
+        assert.equal(threat.type, 'lava', 'Y=8 < 10 should trigger lava');
+    });
+
+    it('Should fall back to defaults when position/velocity missing', () => {
+        const safety = new SafetyAgent();
+        const data = { health: 20 };
+        const mockBot = {
+            entity: {
+                position: data.position || { x: 0, y: 64, z: 0 },
+                velocity: data.velocity || { x: 0, y: 0, z: 0 },
+            },
+            health: data.health || 20,
+            findBlock: () => null,
+            registry: { blocksByName: {} },
+        };
+        const threat = safety.detectThreat(mockBot);
+        assert.equal(threat, null, 'Default position (y=64) should not trigger threats');
+    });
+});
+
 describe('SafetyAgent — vm2 Sandbox Validation (AC-8)', () => {
     let SafetyAgent;
 

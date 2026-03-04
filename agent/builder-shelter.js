@@ -102,9 +102,7 @@ async function buildShelter(ctx) {
         const isDoor = (dx === 1 && dz === 0 && (dy === 1 || dy === 2));
 
         if (isDoor) continue;
-        if (isFloor || isRoof) { /* place block */ }
-        else if (isWall && isEdge) { /* place block */ }
-        else continue;
+        if (!isFloor && !isRoof && !(isWall && isEdge)) continue;
 
         const pos = origin.offset(dx, dy, dz);
         await placeBlockAt(bot, pos, plankName, gotoFn);

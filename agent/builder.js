@@ -211,6 +211,8 @@ class BuilderAgent {
       author: this.id,
       health: this.bot.health,
       food: this.bot.food,
+      position: this.bot.entity?.position,
+      velocity: this.bot.entity?.velocity,
     });
   }
 
