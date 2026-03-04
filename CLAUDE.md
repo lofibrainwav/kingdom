@@ -106,9 +106,9 @@ Choose the right pattern for the task at hand:
 | `/learn [topic]` | Extract patterns from session → instincts |
 | `/checkpoint [name]` | Save session state snapshot for recovery |
 
-### Skills (10 Octiv + 3 utility — with SKILL.md)
+### Skills (19 Octiv + 5 global + 3 utility — with SKILL.md)
 
-**Octiv project skills (5 — `.claude/skills/`):**
+**Octiv project skills (19 — `.claude/skills/`):**
 | Skill | When |
 |-------|------|
 | `cost-aware-llm-pipeline` | LLM model routing, cost optimization |
@@ -116,6 +116,20 @@ Choose the right pattern for the task at hand:
 | `search-first` | Search codebase before writing new code |
 | `docker-patterns` | Docker/PaperMC/Redis container best practices |
 | `autonomous-loops` | Loop pattern theory for `/loop` commands |
+| `tool-index` | Full tool/agent/skill reference |
+| `verify-implementation` | Verify feature implementation completeness |
+| `verify-redis` | Redis connection and data verification |
+| `verify-agents` | Agent config and syntax verification |
+| `verify-tests` | Test suite health check |
+| `verify-dependencies` | Dependency audit and security check |
+| `verify-mcp` | MCP server status verification |
+| `manage-skills` | Skill lifecycle management |
+| `health-monitor` | System health monitoring |
+| `dev-tool-belt` | Developer utility collection |
+| `mcporter` | MCP server porting utilities |
+| `weather` | Minecraft weather control |
+| `first-day-survival` | Minecraft first-day survival guide |
+| `automated-debugging` | Automated debug workflows |
 
 **Octiv global skills (5 — `~/.claude/skills/`):**
 | Skill | When |
@@ -132,9 +146,6 @@ Choose the right pattern for the task at hand:
 | `backend-patterns` | Backend architecture, API design, DB optimization |
 | `coding-standards` | TypeScript/JS/React/Node.js best practices |
 | `notebooklm` | NotebookLM knowledge base queries |
-
-**Planned skills (14 — no SKILL.md yet):**
-tool-index, verify-implementation, verify-redis, verify-agents, verify-tests, verify-dependencies, verify-mcp, manage-skills, health-monitor, dev-tool-belt, mcporter, weather, first-day-survival, automated-debugging
 
 ### Superpowers (14 global methodology skills)
 Installed from [obra/superpowers](https://github.com/obra/superpowers).
