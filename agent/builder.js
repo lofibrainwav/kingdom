@@ -44,7 +44,7 @@ class BuilderAgent {
     this.bot = mineflayer.createBot({
       host: process.env.MC_HOST || 'localhost',
       port: parseInt(process.env.MC_PORT) || 25565,
-      username: `OctivBot_${this.id}`,
+      username: `Octiv_${this.id}`,
       version: process.env.MC_VERSION || '1.21.1',
       auth: 'offline',
     });
