@@ -3,6 +3,10 @@
  * Goal decomposition, Training/Creative mode decision, vote aggregation
  */
 const { Blackboard } = require('./blackboard');
+const { getLogger } = require('./logger');
+const T = require('../config/timeouts');
+
+const log = getLogger();
 
 class LeaderAgent {
   constructor(teamSize = 3) {
@@ -22,7 +26,7 @@ class LeaderAgent {
   async init() {
     await this.board.connect();
     this._startMissionLoop();
-    console.log('[Leader] initialized, team size:', this.teamSize);
+    log.info(this.id, `initialized, team size: ${this.teamSize}`);
   }
 
   // 3.1: Distribute missions to builders based on AC progress
@@ -56,9 +60,9 @@ class LeaderAgent {
         }
         await this.decideMode('builder-01');
       } catch (err) {
-        console.error('[Leader] mission loop error:', err.message);
+        log.error(this.id, 'mission loop error', { error: err.message });
       }
-    }, 10000);
+    }, T.MISSION_LOOP_INTERVAL_MS);
   }
 
   // Decide mode based on AC progress
@@ -75,7 +79,7 @@ class LeaderAgent {
       : 'training';
 
     await this.board.publish('leader:mode', { author: 'leader', mode: this.mode, progress });
-    console.log(`[Leader] mode: ${this.mode} (progress: ${Math.floor(progress * 100)}%)`);
+    log.info(this.id, `mode: ${this.mode} (progress: ${Math.floor(progress * 100)}%)`);
     return this.mode;
   }
 
@@ -83,12 +87,12 @@ class LeaderAgent {
   async collectVote(agentId, vote) {
     this.votes.push({ agentId, vote, ts: Date.now() });
     await this.board.publish('leader:votes', { author: 'leader', votes: this.votes });
-    console.log(`[Leader] vote received: ${agentId} → ${vote}`);
+    log.info(this.id, `vote received: ${agentId} → ${vote}`);
   }
 
   // Force Group Reflexion (on 3 consecutive failures)
   async forceGroupReflexion(failureLog) {
-    console.warn('[Leader] ⚠️  forcing Group Reflexion!');
+    log.warn(this.id, 'forcing Group Reflexion!');
     await this.board.publish('leader:reflexion', {
       author: 'leader',
       type: 'group',
@@ -99,7 +103,7 @@ class LeaderAgent {
 
   // AC-6: Collect reflexion logs from all builders, synthesize improvements
   async triggerGroupReflexion() {
-    console.log('[Leader] triggering Group Reflexion');
+    log.info(this.id, 'triggering Group Reflexion');
     const allErrors = [];
     for (let i = 1; i <= this.teamSize; i++) {
       const entries = await this.board.getListRange(`agent:builder-0${i}:reflexion`);
@@ -146,7 +150,7 @@ class LeaderAgent {
       }
     }
 
-    console.log(`[Leader] Group Reflexion complete: ${allErrors.length} entries from ${this.teamSize} agents`);
+    log.info(this.id, `Group Reflexion complete: ${allErrors.length} entries from ${this.teamSize} agents`);
     return result;
   }
 
@@ -159,7 +163,7 @@ class LeaderAgent {
         const library = await this.skillPipeline.getLibrary();
         const skill = library[skillName];
         if (skill && skill.uses >= 3 && skill.successRate < 0.5) {
-          console.log(`[Leader] skipped low-quality skill: ${skillName} (rate: ${skill.successRate.toFixed(2)})`);
+          log.info(this.id, `skipped low-quality skill: ${skillName} (rate: ${skill.successRate.toFixed(2)})`);
           return { tag: null, totalSkills: 0, rejected: 'low_success_rate' };
         }
       } catch {
@@ -178,7 +182,7 @@ class LeaderAgent {
 
     // Max skill count limit (10 skills max to avoid prompt bloat)
     if (skills.length >= 10) {
-      console.log(`[Leader] skill limit reached (${skills.length}/10), skipping: ${skillName}`);
+      log.info(this.id, `skill limit reached (${skills.length}/10), skipping: ${skillName}`);
       return { tag: null, totalSkills: skills.length, rejected: 'max_skills_reached' };
     }
 
@@ -192,7 +196,7 @@ class LeaderAgent {
     if (this.logger) {
       this.logger.logEvent(this.id, { type: 'skill_injected', skill: skillName, version, totalSkills: skills.length }).catch(e => console.error('[Log]', e.message));
     }
-    console.log(`[Leader] injected: ${tag}`);
+    log.info(this.id, `injected: ${tag}`);
     return { tag, totalSkills: skills.length };
   }
 

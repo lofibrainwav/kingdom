@@ -191,6 +191,8 @@ class OctivDiscordBot {
         return this._cmdReflexion(msg);
       case 'team':
         return this._cmdTeam(msg);
+      case 'rc':
+        return this._cmdRc(msg, args);
       default:
         return; // ignore unknown commands
     }
@@ -305,6 +307,74 @@ class OctivDiscordBot {
     } catch (err) {
       msg.reply(`Error fetching team: ${err.message}`);
     }
+  }
+
+  // --- Remote Control ---
+
+  async _cmdRc(msg, args) {
+    const subcmd = (args[0] || 'status').toLowerCase();
+    const supported = ['status', 'test', 'ac', 'log', 'agents'];
+
+    if (!supported.includes(subcmd)) {
+      return msg.reply(`Unknown RC subcommand: \`${subcmd}\`. Available: ${supported.join(', ')}`);
+    }
+
+    try {
+      const requestId = `rc:response:${Date.now()}`;
+
+      // Publish RC command to Blackboard
+      await this.board.publish(`rc:cmd:${subcmd}`, {
+        author: 'discord-bot',
+        requestId,
+        subcmd,
+        requestedBy: msg.author?.tag || 'unknown',
+      });
+
+      // Wait for response with timeout
+      const response = await this._waitForRcResponse(requestId, 30000);
+
+      if (!response) {
+        return msg.reply(`RC \`${subcmd}\`: no response (timeout 30s). Is the team running?`);
+      }
+
+      const embed = new EmbedBuilder()
+        .setTitle(`RC: ${subcmd}`)
+        .setColor(0x2ecc71)
+        .setDescription(typeof response.data === 'string'
+          ? response.data
+          : '```json\n' + JSON.stringify(response.data, null, 2).slice(0, 1900) + '\n```')
+        .setTimestamp();
+
+      msg.reply({ embeds: [embed] });
+    } catch (err) {
+      msg.reply(`RC error: ${err.message}`);
+    }
+  }
+
+  async _waitForRcResponse(requestId, timeoutMs) {
+    return new Promise(async (resolve) => {
+      const timeout = setTimeout(() => {
+        if (sub) sub.disconnect().catch(() => {});
+        resolve(null);
+      }, timeoutMs);
+
+      let sub;
+      try {
+        sub = await this.board.createSubscriber();
+        await sub.subscribe(PREFIX + requestId, (message) => {
+          clearTimeout(timeout);
+          sub.disconnect().catch(() => {});
+          try {
+            resolve(JSON.parse(message));
+          } catch {
+            resolve({ data: message });
+          }
+        });
+      } catch {
+        clearTimeout(timeout);
+        resolve(null);
+      }
+    });
   }
 }
 

@@ -15,11 +15,13 @@ const { SkillZettelkasten } = require('./skill-zettelkasten');
 const { RuminationEngine } = require('./rumination-engine');
 const { GoTReasoner } = require('./got-reasoner');
 const { ZettelkastenHooks } = require('./zettelkasten-hooks');
+const { getLogger } = require('./logger');
+const T = require('../config/timeouts');
 
+const log = getLogger();
 const TEAM_SIZE = 3; // number of builder agents
-const EMERGENCY_DEDUP_MS = parseInt(process.env.EMERGENCY_DEDUP_MS) || 3000;
 
-function shouldProcessEmergency(state, failureType, dedupMs = EMERGENCY_DEDUP_MS) {
+function shouldProcessEmergency(state, failureType, dedupMs = T.EMERGENCY_DEDUP_MS) {
   const now = Date.now();
   if (failureType === state.type && now - state.time < dedupMs) return false;
   state.type = failureType;
@@ -27,7 +29,7 @@ function shouldProcessEmergency(state, failureType, dedupMs = EMERGENCY_DEDUP_MS
   return true;
 }
 
-function monitorGathering(board, teamSize, intervalMs = 5000) {
+function monitorGathering(board, teamSize, intervalMs = T.GATHERING_POLL_INTERVAL_MS) {
   const checkInterval = setInterval(async () => {
     try {
       let arrivedCount = 0;
@@ -45,7 +47,7 @@ function monitorGathering(board, teamSize, intervalMs = 5000) {
           status: 'done',
           message: `All ${teamSize} builders gathered at shelter`,
         });
-        console.log(`🏠 AC-4 complete: all ${teamSize} builders at shelter`);
+        log.info('team', `AC-4 complete: all ${teamSize} builders at shelter`);
       }
     } catch (err) {
       // Ignore polling errors
@@ -54,22 +56,99 @@ function monitorGathering(board, teamSize, intervalMs = 5000) {
   return checkInterval;
 }
 
+/**
+ * Remote Control listener — responds to RC commands published by discord-bot
+ * Supports: status, agents, ac, log, test
+ */
+async function setupRemoteControl(board, agents) {
+  const rcSubscriber = await board.createSubscriber();
+  const rcCommands = ['status', 'agents', 'ac', 'log', 'test'];
+
+  for (const subcmd of rcCommands) {
+    await rcSubscriber.subscribe(`octiv:rc:cmd:${subcmd}`, async (message) => {
+      try {
+        const request = JSON.parse(message);
+        const requestId = request.requestId;
+        if (!requestId) return;
+
+        let data;
+        switch (subcmd) {
+          case 'status': {
+            const teamStatus = await board.get('team:status');
+            data = {
+              status: teamStatus?.status || 'unknown',
+              mission: teamStatus?.mission || 'unknown',
+              uptime: teamStatus?.startedAt
+                ? `${Math.round((Date.now() - new Date(teamStatus.startedAt).getTime()) / 1000)}s`
+                : 'unknown',
+              builders: agents.builders.length,
+            };
+            break;
+          }
+          case 'agents': {
+            const agentList = [
+              { id: agents.leader.id, role: 'leader', mode: agents.leader.mode },
+              ...agents.builders.map((b, i) => ({ id: `builder-0${i + 1}`, role: 'builder' })),
+              { id: 'safety-01', role: 'safety' },
+              { id: 'explorer-01', role: 'explorer' },
+            ];
+            data = agentList;
+            break;
+          }
+          case 'ac': {
+            const matrix = {};
+            for (let i = 1; i <= agents.builders.length; i++) {
+              const progress = await board.getACProgress(`builder-0${i}`);
+              const parsed = {};
+              for (const [k, v] of Object.entries(progress)) {
+                try { parsed[k] = JSON.parse(v).status; } catch { parsed[k] = v; }
+              }
+              matrix[`builder-0${i}`] = parsed;
+            }
+            data = matrix;
+            break;
+          }
+          case 'log': {
+            const recent = await board.get('team:status');
+            data = `Team: ${recent?.status || 'unknown'} | Mission: ${recent?.mission || 'unknown'}`;
+            break;
+          }
+          case 'test': {
+            data = 'RC connection OK. Team is responsive.';
+            break;
+          }
+        }
+
+        // Publish response back via main board client
+        const responsePayload = JSON.stringify({
+          ts: Date.now(),
+          requestId,
+          data,
+        });
+        await board.client.publish(`octiv:${requestId}`, responsePayload);
+      } catch (err) {
+        log.error('team', `RC handler error for ${subcmd}`, { error: err.message });
+      }
+    });
+  }
+
+  log.info('team', 'Remote Control listener active', { commands: rcCommands });
+  return rcSubscriber;
+}
+
 async function main() {
-  console.log('');
-  console.log('🎮 Octiv Agent Team starting');
-  console.log('═══════════════════════════════════════');
-  console.log(`  PaperMC: ${process.env.MC_HOST || 'localhost'}:${process.env.MC_PORT || 25565} (offline)`);
   const redisDisplay = (process.env.BLACKBOARD_REDIS_URL || 'redis://localhost:6380').replace(/:\/\/[^@]*@/, '://***@');
-  console.log(`  Redis:   ${redisDisplay}`);
-  console.log('  Team:    Leader + Builder x3 + Safety + Explorer');
-  console.log('═══════════════════════════════════════');
-  console.log('');
+  log.info('team', 'Octiv Agent Team starting', {
+    papermc: `${process.env.MC_HOST || 'localhost'}:${process.env.MC_PORT || 25565}`,
+    redis: redisDisplay,
+    composition: 'Leader + Builder x3 + Safety + Explorer',
+  });
 
   const board = new Blackboard();
   try {
     await board.connect();
   } catch (err) {
-    console.error('FATAL: Redis unavailable:', err.message);
+    log.error('team', 'FATAL: Redis unavailable', { error: err.message });
     process.exit(1);
   }
 
@@ -121,7 +200,7 @@ async function main() {
   // 3. Start Builder team (sequentially to prevent server overload)
   const builders = [];
   for (let i = 1; i <= TEAM_SIZE; i++) {
-    await new Promise(r => setTimeout(r, 2000)); // 2s interval
+    await new Promise(r => setTimeout(r, T.BUILDER_SPAWN_INTERVAL_MS));
     const builder = new BuilderAgent({ id: `builder-0${i}` });
     builder.setLogger(logger);
     builder.setSkillPipeline(pipeline); // Task B: enable skill feedback loop
@@ -129,21 +208,21 @@ async function main() {
       await builder.init();
       zkHooks.wireToBuilder(builder);
       builders.push(builder);
-      console.log(`✅ Builder-0${i} started`);
+      log.info('team', `Builder-0${i} started`);
     } catch (err) {
-      console.error(`❌ Builder-0${i} failed to start: ${err.message}`);
+      log.error('team', `Builder-0${i} failed to start`, { error: err.message });
     }
   }
 
   if (builders.length === 0) {
-    console.error('FATAL: No builders started. Exiting.');
+    log.error('team', 'FATAL: No builders started. Exiting.');
     process.exit(1);
   }
 
   // 4. Start Explorer (world scout — uses Blackboard, not direct mineflayer)
   const explorer = new ExplorerAgent({ id: 'explorer-01', maxRadius: 200 });
   await explorer.init();
-  console.log('✅ Explorer-01 started');
+  log.info('team', 'Explorer-01 started');
 
   // Explorer execution loop — piggyback on builder-01's position via Blackboard
   const explorerInterval = setInterval(async () => {
@@ -154,9 +233,9 @@ async function main() {
         await explorer.execute(mockBot);
       }
     } catch (err) {
-      console.error('[Explorer] loop error:', err.message);
+      log.error('explorer', 'loop error', { error: err.message });
     }
-  }, 15000);
+  }, T.EXPLORER_LOOP_INTERVAL_MS);
 
   // Subscribe to skills:emergency — handle safety alerts and skill pipeline events
   const emergencySubscriber = await board.createSubscriber();
@@ -165,7 +244,7 @@ async function main() {
     try {
       const data = JSON.parse(message);
       logger.logEvent('team', { type: 'emergency', ...data }).catch(e => console.error('[Log]', e.message));
-      console.warn(`[Team] ⚠️  Emergency: ${data.failureType || data.newSkill || 'unknown'}`);
+      log.warn('team', `Emergency: ${data.failureType || data.newSkill || 'unknown'}`);
 
       // Task C: Increment leader failure counter on safety threats (deduped)
       if (data.failureType) {
@@ -188,7 +267,7 @@ async function main() {
         }
       }
     } catch (err) {
-      console.error('[Team] emergency handler error:', err.message);
+      log.error('team', 'emergency handler error', { error: err.message });
     }
   });
 
@@ -201,20 +280,18 @@ async function main() {
 
   logger.logEvent('team', { type: 'started', members: TEAM_SIZE + 2 }).catch(e => console.error('[Log]', e.message));
 
-  console.log('');
-  console.log('✅ Full team running. Press Ctrl+C to stop.');
-  console.log('');
+  log.info('team', 'Full team running. Press Ctrl+C to stop.');
 
   // Monitor AC-4: all builders gathered at shelter
   monitorGathering(board, TEAM_SIZE);
 
   // Graceful shutdown handler
   process.on('SIGINT', async () => {
-    console.log('\n🛑 Team shutting down...');
+    log.info('team', 'Team shutting down...');
     const forceExit = setTimeout(() => {
-      console.error('Shutdown timeout (10s), forcing exit');
+      log.error('team', 'Shutdown timeout (10s), forcing exit');
       process.exit(1);
-    }, 10000);
+    }, T.SHUTDOWN_TIMEOUT_MS);
 
     try {
       clearInterval(explorerInterval);
@@ -233,24 +310,27 @@ async function main() {
       await reflexion.shutdown();
       await board.disconnect();
     } catch (err) {
-      console.error('Shutdown error:', err.message);
+      log.error('team', 'Shutdown error', { error: err.message });
     }
 
     clearTimeout(forceExit);
     process.exit(0);
   });
 
+  // Remote Control: listen for RC commands from Discord bot
+  await setupRemoteControl(board, { leader, safety, builders, explorer });
+
   // Log team status periodically (every 30s)
   setInterval(async () => {
     const status = await board.get('team:status');
     if (status) {
-      console.log(`[Team] status: ${status.status} | mission: ${status.mission}`);
+      log.info('team', `status: ${status.status} | mission: ${status.mission}`);
     }
-  }, 30000);
+  }, T.STATUS_LOG_INTERVAL_MS);
 }
 
 if (require.main === module) {
   main().catch(console.error);
 }
 
-module.exports = { monitorGathering, main, shouldProcessEmergency };
+module.exports = { monitorGathering, main, shouldProcessEmergency, setupRemoteControl };

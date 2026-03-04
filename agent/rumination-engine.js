@@ -18,8 +18,9 @@
  *   - Manual: leader requests deep rumination
  */
 const { Blackboard } = require('./blackboard');
+const T = require('../config/timeouts');
 
-const RUMINATION_INTERVAL = 5 * 60 * 1000; // 5 minutes
+const RUMINATION_INTERVAL = T.RUMINATION_INTERVAL_MS;
 const MIN_EXPERIENCES_TO_DIGEST = 3;
 
 class RuminationEngine {

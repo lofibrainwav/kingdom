@@ -6,6 +6,7 @@
  */
 const { Blackboard } = require('./blackboard');
 const { validateCode } = require('./vm-sandbox');
+const T = require('../config/timeouts');
 
 const AC8_THRESHOLDS = {
   lava: {
@@ -124,9 +125,8 @@ class SafetyAgent {
 
   // AC-8: Threat detected → trigger skill creation (debounced per type)
   async handleThreat(threat, agentId) {
-    const THREAT_COOLDOWN_MS = parseInt(process.env.SAFETY_THREAT_COOLDOWN_MS) || 2000;
     const now = Date.now();
-    if (now - (this.lastThreatTime[threat.type] || 0) < THREAT_COOLDOWN_MS) return;
+    if (now - (this.lastThreatTime[threat.type] || 0) < T.THREAT_COOLDOWN_MS) return;
     this.lastThreatTime[threat.type] = now;
 
     console.warn(`[Safety] ⚠️  threat detected: ${threat.type} — ${threat.reason}`);

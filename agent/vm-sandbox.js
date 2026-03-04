@@ -3,11 +3,9 @@
  * Used by both SkillPipeline and SafetyAgent.
  */
 const vm = require('node:vm');
+const T = require('../config/timeouts');
 
-const VM_TIMEOUT_MS = parseInt(process.env.VM_TIMEOUT_MS) || 3000;
-const VM_VALIDATION_ATTEMPTS = 3;
-
-async function validateCode(code, attempts = VM_VALIDATION_ATTEMPTS, timeoutMs = VM_TIMEOUT_MS) {
+async function validateCode(code, attempts = 3, timeoutMs = T.VM_TIMEOUT_MS) {
   for (let i = 1; i <= attempts; i++) {
     try {
       const context = vm.createContext(Object.create(null));
@@ -23,4 +21,4 @@ async function validateCode(code, attempts = VM_VALIDATION_ATTEMPTS, timeoutMs =
   return { valid: true };
 }
 
-module.exports = { validateCode, VM_TIMEOUT_MS, VM_VALIDATION_ATTEMPTS };
+module.exports = { validateCode, VM_TIMEOUT_MS: T.VM_TIMEOUT_MS, VM_VALIDATION_ATTEMPTS: 3 };

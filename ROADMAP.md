@@ -18,7 +18,7 @@
 
 ---
 
-## Current Status (Phase 1-7 Complete)
+## Current Status (Phase 1-6 Complete, Phase 7 In Progress)
 
 ### Phase 1 Deliverables
 - [x] Project structure (agent/, skills/, config/, logs/)
@@ -314,23 +314,23 @@ Explorer maps 200-block radius without dying
 
 ---
 
-## Phase 7 — Scale & Extend
+## Phase 7 — Scale & Extend (7.4 Complete, others In Progress)
 > Goal: Build a long-term operations framework beyond first-night survival
 
 ### 7.1 Mission Expansion
-- Week 2: Ore mining + stone tool upgrade
-- Week 3: Farm automation + food self-sufficiency
-- Week 4: Ender Dragon strategy planning
+- [ ] Week 2: Ore mining + stone tool upgrade
+- [ ] Week 3: Farm automation + food self-sufficiency
+- [ ] Week 4: Ender Dragon strategy planning
 
 ### 7.2 Agent Enhancement
-- Expand agent count (Builder 3→5+)
-- Role specialization (farmer, miner, explorer, architect)
-- Natural language negotiation between agents (LLM-based)
+- [ ] Expand agent count (Builder 3→5+)
+- [ ] Role specialization (farmer, miner, explorer, architect)
+- [ ] Natural language negotiation between agents (LLM-based)
 
 ### 7.3 Infrastructure Expansion
-- LM Studio local model integration (cost reduction)
-- Multi-server support
-- Plugin system (KubeJS integration)
+- [ ] LM Studio local model integration (cost reduction)
+- [ ] Multi-server support
+- [ ] Plugin system (KubeJS integration)
 
 ### 7.4 Redis Pipeline Optimization (NEW — from TXT 4.md)
 - `redis.multi().exec()` batch processing (77% latency reduction)

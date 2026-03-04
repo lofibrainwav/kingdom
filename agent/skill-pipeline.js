@@ -7,6 +7,7 @@
  */
 const { Blackboard } = require('./blackboard');
 const { validateCode } = require('./vm-sandbox');
+const T = require('../config/timeouts');
 
 const DAILY_LIMIT = parseInt(process.env.SKILL_DAILY_LIMIT) || 5;
 const MIN_SUCCESS_RATE = parseFloat(process.env.SKILL_MIN_SUCCESS_RATE) || 0.7;
@@ -16,7 +17,7 @@ class SkillPipeline {
     this.board = new Blackboard();
     this.llmClient = llmClient; // injected LLM client (ReflexionEngine)
     this.dailyCount = 0;
-    this.dailyResetAt = Date.now() + 86400000;
+    this.dailyResetAt = Date.now() + T.SKILL_DAILY_RESET_MS;
   }
 
   async init() {
@@ -137,7 +138,7 @@ class SkillPipeline {
   _checkDailyReset() {
     if (Date.now() >= this.dailyResetAt) {
       this.dailyCount = 0;
-      this.dailyResetAt = Date.now() + 86400000;
+      this.dailyResetAt = Date.now() + T.SKILL_DAILY_RESET_MS;
     }
   }
 

@@ -3,6 +3,7 @@
  * All agents share state through this module.
  */
 const { createClient } = require('redis');
+const T = require('../config/timeouts');
 
 const REDIS_URL = process.env.BLACKBOARD_REDIS_URL || 'redis://localhost:6380';
 const PREFIX = 'octiv:';
@@ -14,8 +15,8 @@ class Blackboard {
       url,
       socket: {
         reconnectStrategy: (retries) => {
-          if (retries > 10) return false; // Stop after 10 retries
-          return Math.min(retries * 100, 3000);
+          if (retries > T.MAX_RECONNECT_ATTEMPTS) return false;
+          return Math.min(retries * 100, T.REDIS_RECONNECT_MAX_MS);
         },
         ...options.socket,
       },
@@ -51,7 +52,7 @@ class Blackboard {
     this._validate(channel, data);
     const payload = JSON.stringify({ ts: Date.now(), ...data });
     await this.client.publish(PREFIX + channel, payload);
-    await this.client.set(PREFIX + channel + ':latest', payload, { EX: 300 });
+    await this.client.set(PREFIX + channel + ':latest', payload, { EX: T.REDIS_KEY_EXPIRY_SECONDS });
   }
 
   /**
@@ -124,7 +125,7 @@ class Blackboard {
     for (const { channel, data } of entries) {
       const payload = JSON.stringify({ ts: now, ...data });
       multi.publish(PREFIX + channel, payload);
-      multi.set(PREFIX + channel + ':latest', payload, { EX: 300 });
+      multi.set(PREFIX + channel + ':latest', payload, { EX: T.REDIS_KEY_EXPIRY_SECONDS });
     }
     const results = await multi.exec();
     return { count: entries.length, results: results.length };

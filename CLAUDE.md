@@ -124,23 +124,25 @@ Choose the right pattern for the task at hand:
 ### MCP Servers — Scope Strategy
 
 **Global** (`~/.claude/settings.json`) — available in ALL projects:
-| MCP | Purpose | Access | When |
-|-----|---------|--------|------|
-| `context7` | Library docs (mineflayer, Redis, discord.js) | read-only | Any code referencing external libraries |
-| `playwright` | Browser testing, E2E automation | read-only | Dashboard testing, web scraping |
-| `sequentialthinking` | Extended multi-step reasoning | read-only | Architecture decisions, complex debugging |
+| MCP | Purpose | Access | Status |
+|-----|---------|--------|--------|
+| `context7` | Library docs (mineflayer, Redis, discord.js) | read-only | ✅ Active |
+| `sequentialthinking` | Extended multi-step reasoning | read-only | ✅ Active |
+| `playwright` | Browser testing, E2E automation | read-only | 🔧 Setup Needed |
 
 **Project** (`.mcp.json`) — Octiv-specific:
-| MCP | Purpose | Access | When |
-|-----|---------|--------|------|
-| `github` | PR, CI, code search, issues | fine-grained PAT | Commits, reviews, CI monitoring |
-| `figma` | Design specs, component extraction | read-only token | UI/dashboard implementation |
-| `supabase` | Database queries, schema management | `--read-only` flag | Data layer, auth, storage |
-| `vercel` | Deploy, preview, environment vars | team-scoped token | Frontend deployment |
-| `sentry` | Error tracking, performance monitoring | read scopes only | Production debugging |
-| `serena` | LSP semantic code analysis | local workspace | Refactoring, symbol navigation, code planning |
-| `filesystem` | Local file operations | project root only | File management |
-| `memory` | Persistent knowledge graph | local | Cross-session context |
+| MCP | Purpose | Access | Status |
+|-----|---------|--------|--------|
+| `github` | PR, CI, code search, issues | fine-grained PAT | ✅ Active |
+| `serena` | LSP semantic code analysis | local workspace | ✅ Active |
+| `filesystem` | Local file operations | project root only | ✅ Active |
+| `memory` | Persistent knowledge graph | local | ✅ Active |
+| `figma` | Design specs, component extraction | read-only token | ⚠️ Token Required |
+| `supabase` | Database queries, schema management | `--read-only` flag | ⚠️ Token Required |
+| `vercel` | Deploy, preview, environment vars | team-scoped token | ⚠️ Token Required |
+| `sentry` | Error tracking, performance monitoring | read scopes only | ⚠️ Token Required |
+
+**Summary**: 5 global + 4 project active, 4 project pending token setup
 
 ### MCP Security Policy
 

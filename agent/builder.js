@@ -9,6 +9,7 @@ const { Blackboard } = require('./blackboard');
 const { setupPathfinder, goto } = require('./builder-navigation');
 const { buildShelter: buildShelterImpl } = require('./builder-shelter');
 const { classifyError, selfImprove, tryLearnedSkill } = require('./builder-adaptation');
+const T = require('../config/timeouts');
 
 const { GoalNear, GoalBlock } = goals;
 const collectBlock = require('mineflayer-collectblock');
@@ -32,7 +33,7 @@ class BuilderAgent {
     };
     this.logger = null;
     this.skillPipeline = null;
-    this.spawnTimeoutMs = config.spawnTimeoutMs || 30000;
+    this.spawnTimeoutMs = config.spawnTimeoutMs || T.SPAWN_TIMEOUT_MS;
     this._running = true;
   }
 
@@ -88,7 +89,7 @@ class BuilderAgent {
   }
 
   async _waitForGround() {
-    const maxWait = parseInt(process.env.SPAWN_GROUND_WAIT_MS) || 2000;
+    const maxWait = T.SPAWN_GROUND_WAIT_MS;
     const start = Date.now();
     while (Date.now() - start < maxWait) {
       if (this.bot.entity.velocity.y >= 0) return;
@@ -206,7 +207,7 @@ class BuilderAgent {
     this.movements = setupPathfinder(this.bot, this.movements);
   }
 
-  _goto(goal, timeoutMs = 30000) {
+  _goto(goal, timeoutMs = T.PATHFINDER_TIMEOUT_MS) {
     return goto(this.bot, goal, timeoutMs);
   }
 

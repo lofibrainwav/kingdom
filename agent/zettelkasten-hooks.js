@@ -18,6 +18,7 @@
  *   hooks.wireToSkillPipeline(pipeline);
  */
 const { Blackboard } = require('./blackboard');
+const T = require('../config/timeouts');
 
 class ZettelkastenHooks {
   constructor(zettelkasten, rumination, gotReasoner, options = {}) {
@@ -32,7 +33,7 @@ class ZettelkastenHooks {
     this.reasoningThreshold = options.reasoningThreshold || 5;
 
     // Deep rumination schedule (every 30 minutes)
-    this.deepRuminationInterval = options.deepRuminationIntervalMs || 30 * 60 * 1000;
+    this.deepRuminationInterval = options.deepRuminationIntervalMs || T.DEEP_RUMINATION_INTERVAL_MS;
     this.deepTimer = null;
   }
 

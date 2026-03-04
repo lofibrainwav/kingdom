@@ -3,6 +3,7 @@
  * Pathfinder setup and goal-based navigation with timeout.
  */
 const { Movements } = require('mineflayer-pathfinder');
+const T = require('../config/timeouts');
 
 /**
  * Initialize and cache pathfinder Movements for a bot.
@@ -21,7 +22,7 @@ function setupPathfinder(bot, cachedMovements) {
  * @param {number} timeoutMs - max navigation time (default 30s)
  * @returns {Promise<void>}
  */
-function goto(bot, goal, timeoutMs = parseInt(process.env.PATHFINDER_TIMEOUT_MS) || 30000) {
+function goto(bot, goal, timeoutMs = T.PATHFINDER_TIMEOUT_MS) {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
       bot.pathfinder.stop();

@@ -12,6 +12,7 @@
     "team": "node agent/team.js",
     "start": "node start.js",
     "redis:check": "redis-cli -p 6380 ping",
+    "lint": "eslint agent/ test/",
     "status": "redis-cli hgetall octiv:team:status:latest 2>/dev/null || echo \"Redis key not set yet\""
   },
   "keywords": [],
@@ -33,5 +34,9 @@
   "optionalDependencies": {
     "discord.js": "^14.16.0",
     "groq-sdk": "^0.37.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.0.2"
   }
 }

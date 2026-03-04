@@ -1,6 +1,10 @@
 const mineflayer = require('mineflayer');
 const { pathfinder } = require('mineflayer-pathfinder');
 const { Blackboard } = require('./blackboard');
+const { getLogger } = require('./logger');
+const T = require('../config/timeouts');
+
+const log = getLogger();
 
 /**
  * OctivBot Class — Core bot logic for Phase 1.2-1.3
@@ -10,9 +14,9 @@ class OctivBot {
         this.config = config;
         this.options = {
             redisUrl: options.redisUrl || 'redis://localhost:6380',
-            heartbeatIntervalMs: options.heartbeatIntervalMs || parseInt(process.env.HEARTBEAT_INTERVAL_MS) || 10000,
+            heartbeatIntervalMs: options.heartbeatIntervalMs || T.HEARTBEAT_INTERVAL_MS,
             maxReconnectAttempts: options.maxReconnectAttempts || 5,
-            baseReconnectDelayMs: options.baseReconnectDelayMs || 1000,
+            baseReconnectDelayMs: options.baseReconnectDelayMs || T.BASE_RECONNECT_DELAY_MS,
             createBotFn: options.createBotFn || null,
             ...options
         };
@@ -31,13 +35,13 @@ class OctivBot {
         try {
             await this.board.connect();
         } catch (err) {
-            console.error(`[Blackboard] Connection failed: ${err.message}`);
+            log.error(this.config.username, `Blackboard connection failed: ${err.message}`);
         }
         await this._createBot();
     }
 
     async _createBot() {
-        console.log(`Spawning bot... (username: ${this.config.username})`);
+        log.info(this.config.username, 'Spawning bot...');
 
         if (this.options.createBotFn) {
             this.bot = this.options.createBotFn(this.config);
@@ -76,10 +80,9 @@ class OctivBot {
         }
 
         const pos = this.bot.entity?.position;
-        console.log('Bot spawned successfully!');
-        if (pos) {
-            console.log(`   Position: X=${Math.floor(pos.x)}, Y=${Math.floor(pos.y)}, Z=${Math.floor(pos.z)}`);
-        }
+        log.info(this.config.username, 'Bot spawned successfully!', pos ? {
+            x: Math.floor(pos.x), y: Math.floor(pos.y), z: Math.floor(pos.z)
+        } : undefined);
 
         await this._publishStatus('spawned');
         this._startHeartbeat();
@@ -96,10 +99,10 @@ class OctivBot {
 
     _startSpawnTimeout() {
         if (this.spawnTimeoutTimer) clearTimeout(this.spawnTimeoutTimer);
-        const timeout = this.options.spawnTimeoutMs || 30000;
+        const timeout = this.options.spawnTimeoutMs || T.SPAWN_TIMEOUT_MS;
         this.spawnTimeoutTimer = setTimeout(() => {
             if (!this.spawned && !this.shuttingDown) {
-                console.warn(`Spawn timeout (${timeout}ms). Retrying...`);
+                log.warn(this.config.username, `Spawn timeout (${timeout}ms). Retrying...`);
                 this._reconnect(new Error('Spawn timeout'));
             }
         }, timeout);
@@ -107,7 +110,7 @@ class OctivBot {
 
     async _onHealthChange() {
         if (this.bot.health <= 10) {
-            console.warn(`Low health warning: ${this.bot.health}/20`);
+            log.warn(this.config.username, `Low health: ${this.bot.health}/20`);
         }
 
         const data = {
@@ -137,7 +140,7 @@ class OctivBot {
         try {
             await this.board.publish('bot:status', data);
         } catch (err) {
-            console.error(`[Blackboard] Publish error: ${err.message}`);
+            log.error(this.config.username, `Blackboard publish error: ${err.message}`);
         }
     }
 
@@ -145,7 +148,7 @@ class OctivBot {
         if (this.shuttingDown) return;
 
         if (this.spawned) {
-            console.log(`Bot disconnected: ${err.message}`);
+            log.info(this.config.username, `Bot disconnected: ${err.message}`);
             this.spawned = false;
         }
 
@@ -160,12 +163,12 @@ class OctivBot {
         }
 
         if (this.reconnectAttempts >= this.options.maxReconnectAttempts) {
-            console.error(`Max reconnect attempts reached (${this.options.maxReconnectAttempts}).`);
+            log.error(this.config.username, `Max reconnect attempts reached (${this.options.maxReconnectAttempts})`);
             return;
         }
 
         const delay = Math.pow(2, this.reconnectAttempts) * this.options.baseReconnectDelayMs;
-        console.log(`Reconnect attempt ${this.reconnectAttempts + 1}/${this.options.maxReconnectAttempts} (in ${delay}ms)...`);
+        log.info(this.config.username, `Reconnect attempt ${this.reconnectAttempts + 1}/${this.options.maxReconnectAttempts} (in ${delay}ms)`);
 
         await new Promise(r => setTimeout(r, delay));
         if (this.shuttingDown) return;
@@ -175,7 +178,7 @@ class OctivBot {
     }
 
     async shutdown() {
-        console.log('Shutting down OctivBot...');
+        log.info(this.config.username, 'Shutting down OctivBot...');
         this.shuttingDown = true;
         this.spawned = false;
         if (this.heartbeatTimer) clearInterval(this.heartbeatTimer);
@@ -189,7 +192,7 @@ class OctivBot {
             await this.board.disconnect();
         } catch (e) { }
 
-        console.log('OctivBot shutdown complete');
+        log.info(this.config.username, 'OctivBot shutdown complete');
     }
 }
 
