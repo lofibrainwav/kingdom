@@ -106,33 +106,35 @@ Choose the right pattern for the task at hand:
 | `/learn [topic]` | Extract patterns from session → instincts |
 | `/checkpoint [name]` | Save session state snapshot for recovery |
 
-### Skills (24 Octiv project skills)
+### Skills (10 Octiv + 3 utility — with SKILL.md)
+
+**Octiv project skills (5 — `.claude/skills/`):**
 | Skill | When |
 |-------|------|
-| `/tool-index` | Find any tool |
-| `/session-memory` | **Session start** (or use `/simplify start`) |
-| `/save-memory` | **Session end** (or use `/simplify end`) |
-| `/remember` | Mid-session insight |
-| `/verify-implementation` | Before PR — full audit |
-| `/verify-redis` | After Blackboard changes |
-| `/verify-agents` | After agent/*.js changes |
-| `/verify-tests` | Test count & coverage audit |
-| `/verify-dependencies` | Dependency health check |
-| `/verify-mcp` | MCP server status audit |
-| `/manage-skills` | After new patterns |
-| `/tdd-workflow` | Before new feature (or use `/loop tdd`) |
-| `/security-review` | After auth, input handling, API changes |
-| `/health-monitor` | Infrastructure issues (or use `/batch health`) |
-| `/dev-tool-belt` | Tests/Docker/git/GitHub CLI |
-| `/mcporter` | MCP server management |
-| `/weather` | Minecraft weather/time queries |
-| `/first-day-survival` | First night survival strategy |
-| `/automated-debugging` | Systematic bug investigation |
 | `cost-aware-llm-pipeline` | LLM model routing, cost optimization |
 | `verification-loop` | 6-phase verification before PR |
 | `search-first` | Search codebase before writing new code |
 | `docker-patterns` | Docker/PaperMC/Redis container best practices |
 | `autonomous-loops` | Loop pattern theory for `/loop` commands |
+
+**Octiv global skills (5 — `~/.claude/skills/`):**
+| Skill | When |
+|-------|------|
+| `/session-memory` | **Session start** (or use `/simplify start`) |
+| `/save-memory` | **Session end** (or use `/simplify end`) |
+| `/remember` | Mid-session insight |
+| `/tdd-workflow` | Before new feature (or use `/loop tdd`) |
+| `/security-review` | After auth, input handling, API changes |
+
+**Utility global skills (3 — `~/.claude/skills/`):**
+| Skill | When |
+|-------|------|
+| `backend-patterns` | Backend architecture, API design, DB optimization |
+| `coding-standards` | TypeScript/JS/React/Node.js best practices |
+| `notebooklm` | NotebookLM knowledge base queries |
+
+**Planned skills (14 — no SKILL.md yet):**
+tool-index, verify-implementation, verify-redis, verify-agents, verify-tests, verify-dependencies, verify-mcp, manage-skills, health-monitor, dev-tool-belt, mcporter, weather, first-day-survival, automated-debugging
 
 ### Superpowers (14 global methodology skills)
 Installed from [obra/superpowers](https://github.com/obra/superpowers).
