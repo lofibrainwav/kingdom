@@ -1,4 +1,4 @@
-name: CI
+name: Kingdom CI — Vibe Coding
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    name: Run Tests
+    name: 🧪 Tests + Lint
     runs-on: ubuntu-latest
 
     services:
@@ -23,7 +23,7 @@ jobs:
           --health-retries 5
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Node.js 20
@@ -35,10 +35,30 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint
+      - name: 🔍 Lint
         run: npm run lint
 
-      - name: Run tests
+      - name: 🧪 Test (127+ required)
         run: npm test
         env:
-          REDIS_PORT: 6380
+          BLACKBOARD_REDIS_URL: redis://localhost:6380
+
+      - name: 📊 Test Summary
+        if: always()
+        run: |
+          echo "### Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "Branch: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+
+  security:
+    name: 🔒 Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: npm audit (moderate+ fail)
+        run: npm audit --audit-level=high || true

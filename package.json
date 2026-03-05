@@ -7,6 +7,8 @@
     "test": "node --test --test-force-exit --test-concurrency=1 test/*.test.js",
     "test:blackboard": "node --test --test-force-exit test/blackboard.test.js",
     "start": "node --env-file=.env agent/interface/dashboard.js",
+    "start:pipeline": "node --env-file=.env agent/team/pm-agent.js",
+    "seed:skills": "node --env-file=.env scripts/seed-skills.js",
     "redis:check": "redis-cli -p 6380 ping",
     "lint": "eslint agent/ test/",
     "status": "redis-cli hgetall octiv:team:status:latest 2>/dev/null || echo \"Redis key not set yet\""
