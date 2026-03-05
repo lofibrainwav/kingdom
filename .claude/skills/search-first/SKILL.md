@@ -1,3 +1,8 @@
+---
+name: search-first
+description: Before writing new code, systematically search the codebase, dependencies, and docs for existing solutions. Prevents duplication and enforces reuse discipline.
+---
+
 # Search First
 
 ## Purpose

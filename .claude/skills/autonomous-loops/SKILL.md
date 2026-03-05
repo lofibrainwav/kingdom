@@ -1,3 +1,8 @@
+---
+name: autonomous-loops
+description: Theoretical foundation and patterns for automated feedback loops. Powers the /loop command family with Red-Green-Refactor, Fix Loop, De-Sloppify, and DAG strategies.
+---
+
 # Autonomous Loops
 
 ## Purpose

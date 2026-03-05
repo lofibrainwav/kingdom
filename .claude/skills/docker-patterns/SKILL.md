@@ -1,3 +1,8 @@
+---
+name: docker-patterns
+description: Docker/PaperMC/Redis container best practices for Octiv. Covers health checks, volumes, security hardening, multi-stage builds, and dev/prod environment separation.
+---
+
 # Docker Patterns
 
 ## Purpose

@@ -48,7 +48,7 @@ You are the Octiv planning agent. You create detailed implementation plans for A
 - Team = Leader + 3 Builders + Safety (5 agents)
 - ReAct loop is the core execution pattern
 - Tests use Node.js native test runner (`node --test`)
-- Check `skills/first-day-survival/SKILL.md` for AC acceptance criteria
+- Check `.claude/skills/first-day-survival/SKILL.md` for AC acceptance criteria
 
 ## Example: AC-2 Shelter Construction
 ```markdown

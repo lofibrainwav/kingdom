@@ -1,3 +1,8 @@
+---
+name: verification-loop
+description: Systematic 6-phase verification (build, type, lint, test, security, diff) before any PR or claiming work complete. Produces a definitive READY / NOT READY verdict.
+---
+
 # Verification Loop
 
 ## Purpose

@@ -27,6 +27,10 @@ Analyze changes made in the current session to detect and fix verification skill
 |-------|-------------|----------------------|
 | `verify-redis` | Redis connection, port, and channel naming | `agent/blackboard.js`, `agent/*.js` |
 | `verify-agents` | OctivBot patterns, heartbeat, reconnect logic | `agent/OctivBot.js`, `agent/*.js` |
+| `verify-tests` | Test suite health, count thresholds, agent coverage map | `test/*.test.js`, `agent/*.js` |
+| `verify-dependencies` | npm audit vulnerabilities, outdated packages | `package.json`, `package-lock.json` |
+| `verify-mcp` | MCP server config vs token availability | `~/.claude/settings.json`, `.mcp.json` |
+| `verify-implementation` | Orchestrates all verify-* skills sequentially | all of the above |
 
 ## Workflow
 

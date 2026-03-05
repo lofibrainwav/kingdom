@@ -1,3 +1,8 @@
+---
+name: verify-mcp
+description: Verify MCP server configurations and token availability across global (~/.claude/settings.json) and project (.mcp.json) scopes. Checks expected servers and env var presence.
+---
+
 # verify-mcp
 
 Verify MCP server configurations and token availability.

@@ -1,3 +1,8 @@
+---
+name: verify-tests
+description: Verifies the Octiv test suite is healthy — checks pass/fail counts, threshold minimums, and agent-to-test coverage mapping. Run after modifying any agent or test file.
+---
+
 # verify-tests
 
 Verify that the Octiv test suite is healthy and all agent files have coverage.
@@ -21,8 +26,8 @@ Verify that the Octiv test suite is healthy and all agent files have coverage.
 | agent/OctivBot.js | test/bot.test.js |
 | agent/blackboard.js | test/blackboard.test.js |
 | agent/team.js | test/team.test.js |
-| agent/leader.js | test/leader.test.js |
-| agent/builder.js | test/builder.test.js |
+| agent/leader.js | test/orchestrator.test.js |
+| agent/builder.js | test/builder-modules.test.js |
 | agent/builder-navigation.js | test/builder-modules.test.js |
 | agent/builder-shelter.js | test/builder-modules.test.js |
 | agent/builder-adaptation.js | test/builder-modules.test.js |

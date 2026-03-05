@@ -1,3 +1,8 @@
+---
+name: cost-aware-llm-pipeline
+description: Optimize LLM API costs through intelligent model routing (haiku/sonnet/opus), prompt caching, and retry strategies. Reference when making API calls or debugging credit issues.
+---
+
 # Cost-Aware LLM Pipeline
 
 ## Purpose

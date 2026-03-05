@@ -1,3 +1,8 @@
+---
+name: verify-dependencies
+description: Audit npm dependencies for security vulnerabilities and outdated packages. Checks package.json integrity, known upstream vulns (axios/undici), and major version drift.
+---
+
 # verify-dependencies
 
 Audit npm dependencies for vulnerabilities and outdated packages.

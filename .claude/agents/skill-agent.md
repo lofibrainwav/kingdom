@@ -10,7 +10,7 @@ You are the Octiv skill management agent. Your job is to maintain, optimize, and
 ## Skill System Overview
 
 ### Skill Locations
-- **Project skills**: `skills/<name>/SKILL.md` (committed, project-specific)
+- **Project skills**: `.claude/skills/<name>/SKILL.md` (committed, project-specific)
 - **Global skills**: `~/.claude/skills/<name>/SKILL.md` (user-level, cross-project)
 - **Agents**: `.claude/agents/<name>.md` (specialized Claude subagents)
 
@@ -27,13 +27,13 @@ You are the Octiv skill management agent. Your job is to maintain, optimize, and
 ### 1. Audit All Skills
 ```bash
 # List all project skills
-ls skills/
+ls .claude/skills/
 
 # List all global skills
 ls ~/.claude/skills/
 
 # Check for broken references
-for f in skills/*/SKILL.md; do
+for f in .claude/skills/*/SKILL.md; do
   echo "=== $f ==="; head -5 "$f"
 done
 ```
@@ -51,13 +51,13 @@ Report: total checks, pass/fail count, issues found.
 When new patterns emerge in the codebase:
 1. Identify the pattern (new module, new convention, new integration)
 2. Name the skill: `verify-<domain>` (kebab-case)
-3. Create `skills/verify-<name>/SKILL.md` with:
+3. Create `.claude/skills/verify-<name>/SKILL.md` with:
    - Real file paths (verified with `ls`)
    - Working Grep/Glob/Bash detection commands
    - Clear PASS/FAIL criteria
    - Exception cases
-4. Register in `skills/manage-skills/SKILL.md` → **Registered Verify Skills** table
-5. Register in `skills/verify-implementation/SKILL.md` → **Target Skills** table
+4. Register in `.claude/skills/manage-skills/SKILL.md` → **Registered Verify Skills** table
+5. Register in `.claude/skills/verify-implementation/SKILL.md` → **Target Skills** table
 6. Add to `CLAUDE.md` → Skills table
 
 ### 4. Update Stale Skills
