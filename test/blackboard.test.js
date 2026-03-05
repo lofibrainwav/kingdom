@@ -151,3 +151,122 @@ describe('Blackboard — Redis Integration', () => {
     );
   });
 });
+
+describe('Blackboard — Supplemental methods', () => {
+  let board;
+
+  before(async () => {
+    board = new Blackboard();
+    await board.connect();
+    const keys = await board.client.keys('octiv:sup:*');
+    if (keys.length > 0) await board.client.del(keys);
+  });
+
+  after(async () => {
+    const keys = await board.client.keys('octiv:sup:*');
+    if (keys.length > 0) await board.client.del(keys);
+    await board.disconnect();
+  });
+
+  it('saveSkill and getSkill should work', async () => {
+    await board.saveSkill('sup:jump', { cost: 5 });
+    const skill = await board.getSkill('sup:jump');
+    assert.equal(skill.cost, 5);
+  });
+
+  it('batchPublish and batchGet should work', async () => {
+    const res = await board.batchPublish([
+      { channel: 'sup:b1', data: { author: 't', val: 1 } },
+      { channel: 'sup:b2', data: { author: 't', val: 2 } }
+    ]);
+    assert.equal(res.count, 2);
+    
+    const results = await board.batchGet(['sup:b1', 'sup:b2', 'sup:missing']);
+    assert.equal(results.length, 3);
+    assert.equal(results[0].val, 1);
+    assert.equal(results[1].val, 2);
+    assert.equal(results[2], null);
+  });
+
+  it('batchUpdateAC should update multiple ACs', async () => {
+    await board.batchUpdateAC([
+      { agentId: 'sup-agent', acNum: 1, status: 'done' },
+      { agentId: 'sup-agent', acNum: 2, status: 'todo' }
+    ]);
+    const progress = await board.getACProgress('sup-agent');
+    assert.equal(JSON.parse(progress['AC-1']).status, 'done');
+    assert.equal(JSON.parse(progress['AC-2']).status, 'todo');
+  });
+
+  it('atomicUpdateSkill should safely read-modify-write', async () => {
+    await board.saveSkill('sup:dig', { uses: 0 });
+    
+    // update success
+    const updated = await board.atomicUpdateSkill('sup:dig', (s) => ({ uses: s.uses + 1 }));
+    assert.equal(updated.uses, 1);
+    
+    // get verify
+    const chk = await board.getSkill('sup:dig');
+    assert.equal(chk.uses, 1);
+
+    // returning null in updater drops the update
+    const drop = await board.atomicUpdateSkill('sup:dig', () => null);
+    assert.equal(drop, null);
+    
+    // missing skill returns null
+    const miss = await board.atomicUpdateSkill('sup:missing', (s) => s);
+    assert.equal(miss, null);
+  });
+
+  it('getConfig and setConfig should work', async () => {
+    await board.setConfig('sup:config:test', { a: 1 });
+    const cfg = await board.getConfig('sup:config:test');
+    assert.equal(cfg.a, 1);
+    
+    const miss = await board.getConfig('sup:config:missing');
+    assert.equal(miss, null);
+  });
+
+  it('Hash fields: setHashField, getHashField, getHash, deleteHashField', async () => {
+    await board.setHashField('sup:hash1', 'fieldA', { x: 10 });
+    await board.setHashField('sup:hash1', 'fieldB', { x: 20 });
+    
+    const a = await board.getHashField('sup:hash1', 'fieldA');
+    assert.equal(a.x, 10);
+    
+    const miss = await board.getHashField('sup:hash1', 'fieldC');
+    assert.equal(miss, null);
+
+    const full = await board.getHash('sup:hash1');
+    assert.ok(full['fieldA']);
+    assert.ok(full['fieldB']);
+
+    await board.deleteHashField('sup:hash1', 'fieldA');
+    const bAfter = await board.getHashField('sup:hash1', 'fieldA');
+    assert.equal(bAfter, null);
+  });
+
+  it('getListRange should retrieve list elements', async () => {
+    // isolated agent ID
+    const aid = 'sup-logs-' + Date.now();
+    await board.logReflexion(aid, { text: 'a' });
+    await board.logReflexion(aid, { text: 'b' });
+
+    const list = await board.getListRange(`agent:${aid}:reflexion`, 0, -1);
+    assert.equal(list.length, 2); // 'b' is pushed to left, then 'a'
+  });
+
+  it('createSubscriber should return an open duplicate client', async () => {
+    const sub = await board.createSubscriber();
+    assert.ok(sub.isReady);
+    await sub.quit();
+  });
+  
+  it('disconnect force cleanup block handles error', async () => {
+    const fresh = new Blackboard();
+    fresh.client.quit = async () => { throw new Error('mock quit throw'); };
+    // Should suppress error
+    await assert.doesNotReject(() => fresh.disconnect());
+  });
+});
+

@@ -294,3 +294,88 @@ describe('RuminationEngine — RUMINATION_INTERVAL', () => {
     assert.equal(RUMINATION_INTERVAL, 5 * 60 * 1000);
   });
 });
+
+describe('RuminationEngine — deepRuminate', () => {
+  let engine, zkMock;
+  beforeEach(() => {
+    zkMock = createMockZettelkasten({
+      'skill-a': { id: 'skill-a', status: 'active', links: ['skill-b'], successRate: 0.8, xp: 10, uses: 10, digestCount: 0, ruminationNotes: [] },
+      'skill-b': { id: 'skill-b', status: 'active', links: ['skill-a'], successRate: 0.7, xp: 20, uses: 10, digestCount: 0, ruminationNotes: [] },
+      'skill-c': { id: 'skill-c', status: 'active', links: [], successRate: 0.2, xp: 5, uses: 10, digestCount: 0, ruminationNotes: [] }
+    });
+    // mock board config
+    zkMock.board = {
+      setHashField: async () => {},
+      getConfig: async (key) => {
+        if (key.includes('skill-a::skill-b')) return { strength: 0.7, coOccurrences: 5 };
+        return null;
+      }
+    };
+    engine = new RuminationEngine(zkMock);
+  });
+
+  it('should find compound candidates based on links and success rates', async () => {
+    engine.board = zkMock.board; // share board mock
+    const result = await engine.deepRuminate();
+    assert.equal(result.discoveries.length, 1);
+    assert.equal(result.discoveries[0].type, 'compound_candidate');
+    assert.equal(result.discoveries[0].skillA, 'skill-a');
+    assert.equal(result.discoveries[0].skillB, 'skill-b');
+  });
+
+  it('should find dormant skills and redigest them', async () => {
+    engine.board = zkMock.board; 
+    let writes = 0;
+    zkMock._writeVaultNote = async () => { writes++; };
+    
+    const result = await engine.deepRuminate();
+    assert.equal(result.reDigested, 1); // skill-c
+    assert.equal(writes, 1);
+  });
+});
+
+describe('RuminationEngine — actions (Stomach 4 handling)', () => {
+  it('should execute actions based on insights (co_occurrence, effective_skill, failure_pattern)', async () => {
+    const published = [];
+    const zk = createMockZettelkasten({
+      'dig_v1': { id: 'dig_v1', digestCount: 0, ruminationNotes: [] }
+    });
+    let recorded = 0;
+    zk.recordUsage = async () => { recorded++; return true; };
+    zk.board.setHashField = async () => {};
+    
+    const engine = new RuminationEngine(zk);
+    engine.board = {
+      connect: async () => {},
+      publish: async (ch, data) => { published.push(data); },
+    };
+    
+    // effective skill (needs > 50% success and length >= 3)
+    for(let i=0; i<4; i++) engine.feed({ errorType: 'nav', skillUsed: 'jump_v2', succeeded: true });
+    
+    // co-occurrence (needs 2+ skills and > 60% success and length >= 3)
+    for(let i=0; i<4; i++) engine.feed({ errorType: 'build', skillUsed: 'place', coSkills: ['craft'], succeeded: true });
+    
+    // failure pattern (needs >= 3 failures and < 30% success)
+    for(let i=0; i<4; i++) engine.feed({ errorType: 'fight', skillUsed: 'dig_v1', succeeded: false });
+
+    // 1 failure experience of fight to trigger gomguk
+    const result = await engine.digest();
+    assert.ok(result.insights.length >= 3);
+    assert.ok(result.actions.length >= 3);
+    assert.ok(recorded > 0);
+  });
+});
+
+describe('RuminationEngine — init and start cycle', () => {
+  it('init() should connect board and start timer', async () => {
+    const engine = new RuminationEngine(createMockZettelkasten());
+    let connected = false;
+    engine.board.connect = async () => { connected = true; };
+    await engine.init();
+    assert.ok(connected);
+    assert.ok(engine.digestTimer);
+    await engine.shutdown();
+  });
+});
+

@@ -44,6 +44,7 @@ class ZettelkastenHooks {
 
     // Subscribe to skill events
     const sub = await this.board.createSubscriber();
+    this.subscriber = sub;
     sub.on('error', (err) => log.error('zettelkasten-hooks', 'Redis sub error', { error: err.message }));
 
     // Listen for skill deployments
@@ -348,6 +349,10 @@ class ZettelkastenHooks {
 
   async shutdown() {
     if (this.deepTimer) clearInterval(this.deepTimer);
+    if (this.subscriber) {
+      await this.subscriber.unsubscribe();
+      await this.subscriber.disconnect();
+    }
     await this.board.disconnect();
   }
 }
