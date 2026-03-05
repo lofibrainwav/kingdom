@@ -133,6 +133,14 @@ describe('Blackboard — Redis Integration', () => {
     );
   });
 
+
+  it('should reject known canonical events that miss required schema fields', async () => {
+    await assert.rejects(
+      () => board.publish('governance:review:approved', { author: 'test', projectId: 'p1', taskId: 't1' }),
+      { message: /requires field "file"/ }
+    );
+  });
+
   it('Should accept valid publish with author', async () => {
     await board.publish('test:valid', { author: 'test-agent', value: 42 });
     const result = await board.get('test:valid');

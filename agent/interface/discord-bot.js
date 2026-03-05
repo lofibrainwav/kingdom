@@ -575,17 +575,17 @@ class OctivDiscordBot {
 
   async _cmdHelp(msg) {
     const embed = new EmbedBuilder()
-      .setTitle('NeoStarz Commands')
+      .setTitle('Kingdom Command Surface')
       .setColor(0x3498db)
-      .setDescription('Control and monitor the Octiv bot team')
+      .setDescription('Control planning, execution, knowledge, and governance flows in the Kingdom operating system')
       .addFields(
         { name: '!help', value: 'Show this help message', inline: false },
-        { name: '!status', value: 'Current team state (HP, tasks, positions)', inline: false },
+        { name: '!status', value: 'Current system state across active agents and planes', inline: false },
         { name: '!team', value: 'List all agents and their roles', inline: false },
-        { name: '!assign <agent> <task>', value: 'Assign a task to an agent', inline: false },
-        { name: '!reflexion', value: 'Trigger group reflexion cycle', inline: false },
+        { name: '!assign <agent> <task>', value: 'Send new work intake into the planning plane', inline: false },
+        { name: '!reflexion', value: 'Trigger a shared reflexion cycle for learning and review', inline: false },
         { name: '!rc <subcmd>', value: 'Remote control: status, test, ac, log, agents', inline: false },
-        { name: '!confess <message>', value: 'Post to the Shinmungo forum', inline: false }
+        { name: '!confess <message>', value: 'Record a reflection in the Shinmungo forum', inline: false }
       )
       .setTimestamp();
 
@@ -606,11 +606,11 @@ class OctivDiscordBot {
       }
 
       if (statuses.length === 0) {
-        return msg.reply('No agents currently online.');
+        return msg.reply('No active Kingdom agents are reporting state.');
       }
 
       const embed = new EmbedBuilder()
-        .setTitle('Octiv Team Status')
+        .setTitle('Kingdom System Status')
         .setColor(0x3498db)
         .setTimestamp();
 
@@ -702,7 +702,7 @@ class OctivDiscordBot {
       }
 
       const embed = new EmbedBuilder()
-        .setTitle('Octiv Agent Team')
+        .setTitle('Kingdom Agent Team')
         .setColor(0x9b59b6)
         .setDescription(agents.map(a => `**${a.id}** \u2014 ${a.role}`).join('\n'))
         .setTimestamp();

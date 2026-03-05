@@ -5,6 +5,7 @@
 const { createClient } = require('redis');
 const T = require('../../config/timeouts');
 const { getLogger } = require('./logger');
+const { validateEventPayload } = require('./event-schemas');
 const log = getLogger();
 
 const REDIS_URL = process.env.BLACKBOARD_REDIS_URL || 'redis://localhost:6380';
@@ -382,6 +383,8 @@ class Blackboard {
     if (!/^[a-z0-9:_-]+$/.test(channel)) {
       throw new Error('[Blackboard] 美: channel must be lowercase alphanumeric with : _ -');
     }
+
+    validateEventPayload(this._getChannelFamily(channel)[0], data);
   }
 
   // ── Config helpers (avoid direct client access) ────────────

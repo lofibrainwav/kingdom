@@ -63,7 +63,8 @@ describe('Blackboard Channel Compatibility', () => {
     await board.publish('reviewer:task_approved', {
       author: 'channel-test',
       projectId: 'proj-1',
-      taskId: 'task-1'
+      taskId: 'task-1',
+      file: 'task_1.js'
     });
     await board.publish('skills:emergency', {
       author: 'channel-test',
@@ -107,7 +108,8 @@ describe('Blackboard Channel Compatibility', () => {
       author: 'channel-test',
       projectId: 'proj-2',
       taskId: 'task-2',
-      file: 'task_2.js'
+      file: 'task_2.js',
+      content: 'module.exports = "ok";'
     });
     await board.publish('got:reasoning-complete', {
       author: 'channel-test',
