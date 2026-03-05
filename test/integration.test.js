@@ -21,7 +21,6 @@ const { SafetyAgent } = require('../agent/safety');
 const { MemoryLogger } = require('../agent/memory-logger');
 const { SkillPipeline } = require('../agent/skill-pipeline');
 const { ReflexionEngine } = require('../agent/ReflexionEngine');
-const { createApiClients } = require('../agent/api-clients');
 const { SkillZettelkasten } = require('../agent/skill-zettelkasten');
 const { RuminationEngine } = require('../agent/rumination-engine');
 const { GoTReasoner } = require('../agent/got-reasoner');
@@ -40,8 +39,8 @@ describe('Integration — Learning Pipeline Assembly', () => {
     await board.connect();
 
     logger = new MemoryLogger();
-    const apiClients = createApiClients();
-    reflexion = new ReflexionEngine(apiClients);
+    // Empty clients: LLM calls fail fast → _fallbackSkill used deterministically
+    reflexion = new ReflexionEngine({});
     await reflexion.init();
     pipeline = new SkillPipeline(reflexion);
     await pipeline.init();
@@ -103,8 +102,8 @@ describe('Integration — Emergency Handler (Redis pub/sub)', () => {
     await board.connect();
 
     logger = new MemoryLogger();
-    const apiClients = createApiClients();
-    reflexion = new ReflexionEngine(apiClients);
+    // Empty clients: no live LLM calls in integration tests
+    reflexion = new ReflexionEngine({});
     await reflexion.init();
     pipeline = new SkillPipeline(reflexion);
     await pipeline.init();
