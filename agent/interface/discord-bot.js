@@ -685,7 +685,8 @@ class OctivDiscordBot {
           try {
             const data = JSON.parse(raw);
             return { id, role: data.role || 'unknown' };
-          } catch {
+          } catch (parseErr) {
+            log.warn('discord-bot', 'Failed to parse agent registry entry', { id, error: parseErr.message });
             return { id, role: 'unknown' };
           }
         });
@@ -769,12 +770,14 @@ class OctivDiscordBot {
           sub.disconnect().catch(() => {});
           try {
             resolve(JSON.parse(message));
-          } catch {
+          } catch (parseErr) {
+            log.warn('discord-bot', 'Failed to parse pub/sub message', { error: parseErr.message });
             resolve({ data: message });
           }
         });
-      } catch {
+      } catch (subErr) {
         clearTimeout(timeout);
+        log.error('discord-bot', 'Failed to set up pub/sub subscription', { error: subErr.message });
         resolve(null);
       }
     });

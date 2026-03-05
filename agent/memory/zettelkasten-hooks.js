@@ -44,6 +44,7 @@ class ZettelkastenHooks {
 
     // Subscribe to skill events
     const sub = await this.board.createSubscriber();
+    sub.on('error', (err) => log.error('zettelkasten-hooks', 'Redis sub error', { error: err.message }));
 
     // Listen for skill deployments
     sub.subscribe(Blackboard.PREFIX + 'skills:emergency', async (message) => {

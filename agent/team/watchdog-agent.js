@@ -74,7 +74,7 @@ class WatchdogAgent {
 
       await this.board.publish('watchdog:recovery', {
         agentId,
-        timestamp: now,
+        timestamp: Date.now(),
         action: 'restart'
       });
     }

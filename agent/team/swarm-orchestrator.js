@@ -21,6 +21,7 @@ class SwarmOrchestrator {
   async init() {
     await this.board.connect();
     this.subscriber = await this.board.createSubscriber();
+    this.subscriber.on('error', (err) => log.error('swarm-orchestrator', 'Redis sub error', { error: err.message }));
     
     // Listen for swarm requests (e.g., from PM or User)
     await this.subscriber.subscribe('swarm:spawn', (msg) => this.handleSpawn(msg));

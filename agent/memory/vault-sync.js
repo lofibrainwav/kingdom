@@ -209,6 +209,7 @@ class VaultAgent {
   async init(board) {
     this.board = board;
     this.subscriber = await this.board.createSubscriber();
+    this.subscriber.on('error', (err) => log.error('vault-sync', 'Redis sub error', { error: err.message }));
     
     // Listen for events that require documentation
     await this.subscriber.subscribe('reviewer:task_approved', (msg) => this.handleApproval(msg));

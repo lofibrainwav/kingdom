@@ -24,6 +24,7 @@ class DecomposerAgent {
     await this.llm.init();
     await this.got.init();
     this.subscriber = await this.board.createSubscriber();
+    this.subscriber.on('error', (err) => log.error('decomposer', 'Redis sub error', { error: err.message }));
     
     // Listen for design completion from Architect
     await this.subscriber.subscribe('architect:design_complete', (msg) => this.handleDesignComplete(msg));

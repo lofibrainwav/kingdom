@@ -24,6 +24,7 @@ class ReviewerAgent {
     await this.llm.init();
     await this.rumination.init();
     this.subscriber = await this.board.createSubscriber();
+    this.subscriber.on('error', (err) => log.error('reviewer', 'Redis sub error', { error: err.message }));
     
     // Listen for code completion from Coder
     await this.subscriber.subscribe('coder:task_complete', (msg) => this.handleTaskComplete(msg));

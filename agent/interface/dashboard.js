@@ -23,6 +23,7 @@ class DashboardServer {
   async start() {
     await this.board.connect();
     this.subscriber = await this.board.createSubscriber();
+    this.subscriber.on('error', (err) => log.error('dashboard', 'Redis sub error', { error: err.message }));
     this._subscribeUpdates();
 
     this.server = http.createServer((req, res) => this._handleRequest(req, res));

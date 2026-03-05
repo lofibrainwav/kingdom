@@ -8,6 +8,7 @@
 const { Blackboard } = require('../core/blackboard');
 const T = require('../../config/timeouts');
 const { getLogger } = require('../core/logger');
+const vm = require('node:vm');
 const log = getLogger();
 
 const DAILY_LIMIT = parseInt(process.env.SKILL_DAILY_LIMIT) || 5;
@@ -75,9 +76,32 @@ class SkillPipeline {
   }
 
   // 4.1: Sandbox validation via node:vm (3x dry-run)
-  async validateSkill(code, _attempts = 3) {
-    // Note: vm-sandbox removed during Minecraft cleanup. 
-    // TODO: Implement node:vm based validation for Vibe Coding.
+  // Blocks: require, process, eval, global — allows only safe Math/JSON/Date
+  async validateSkill(code, attempts = 3) {
+    for (let i = 0; i < attempts; i++) {
+      try {
+        const sandbox = vm.createContext({
+          Math,
+          JSON,
+          Date,
+          console: { log: () => {} },
+          // Explicitly block dangerous globals
+          require: undefined,
+          process: undefined,
+          eval: undefined,
+          Function: undefined,
+          global: undefined,
+        });
+        const script = new vm.Script(code);
+        script.runInContext(sandbox, { timeout: T.VM_TIMEOUT_MS });
+      } catch (err) {
+        log.warn('skill-pipeline', `vm validation failed (attempt ${i + 1}/3)`, {
+          error: err.message,
+        });
+        return false;
+      }
+    }
+    log.info('skill-pipeline', 'vm validation passed (3/3)');
     return true;
   }
 

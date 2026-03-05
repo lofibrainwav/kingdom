@@ -21,6 +21,7 @@ class ArchitectAgent {
     await this.board.connect();
     await this.llm.init();
     this.subscriber = await this.board.createSubscriber();
+    this.subscriber.on('error', (err) => log.error('architect', 'Redis sub error', { error: err.message }));
     
     // Listen for project initiation from PM
     await this.subscriber.subscribe('pm:project_init', (msg) => this.handleProjectInit(msg));

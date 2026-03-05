@@ -21,6 +21,7 @@ class DeployerAgent {
   async init() {
     await this.board.connect();
     this.subscriber = await this.board.createSubscriber();
+    this.subscriber.on('error', (err) => log.error('deployer', 'Redis sub error', { error: err.message }));
     
     // Listen for project completion
     await this.subscriber.subscribe('reviewer:project_approved', (msg) => this.handleProjectApproved(msg));

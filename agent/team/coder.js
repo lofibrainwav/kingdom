@@ -24,6 +24,7 @@ class CoderAgent {
     await this.board.connect();
     await this.llm.init();
     this.subscriber = await this.board.createSubscriber();
+    this.subscriber.on('error', (err) => log.error('coder', 'Redis sub error', { error: err.message }));
     
     // Listen for decomposition complete from Decomposer
     await this.subscriber.subscribe('decomposer:plan_complete', (msg) => this.handlePlanComplete(msg));

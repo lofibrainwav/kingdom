@@ -21,6 +21,7 @@ class FailureAgent {
     await this.board.connect();
     await this.llm.init();
     this.subscriber = await this.board.createSubscriber();
+    this.subscriber.on('error', (err) => log.error('failure-agent', 'Redis sub error', { error: err.message }));
     
     // Listen for code rejection from Reviewer
     await this.subscriber.subscribe('reviewer:task_rejected', (msg) => this.handleTaskRejection(msg));

@@ -19,6 +19,7 @@ class PMAgent {
   async init() {
     await this.board.connect();
     this.subscriber = await this.board.createSubscriber();
+    this.subscriber.on('error', (err) => log.error('pm-agent', 'Redis sub error', { error: err.message }));
     
     // Listen for manual assignments from Discord/Dashboard
     await this.subscriber.subscribe('commands:assign', (msg) => this.handleManualAssign(msg));

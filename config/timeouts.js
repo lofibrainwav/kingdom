@@ -21,35 +21,16 @@ module.exports = {
   /** Max reconnect attempts before giving up */
   MAX_RECONNECT_ATTEMPTS: 10,
 
-  // -- Navigation & Movement --
-
-  /** Pathfinder goto timeout */
-  PATHFINDER_TIMEOUT_MS: parseInt(process.env.PATHFINDER_TIMEOUT_MS) || 30000,
-
-  /** Wait for ground after spawn */
-  SPAWN_GROUND_WAIT_MS: parseInt(process.env.SPAWN_GROUND_WAIT_MS) || 2000,
-
   // -- Team Orchestration --
 
   /** Leader mission distribution interval */
   MISSION_LOOP_INTERVAL_MS: 10000,
-
-  /** Explorer execution loop interval */
-  EXPLORER_LOOP_INTERVAL_MS: 15000,
 
   /** Team status logging interval */
   STATUS_LOG_INTERVAL_MS: 30000,
 
   /** Force exit timeout during graceful shutdown */
   SHUTDOWN_TIMEOUT_MS: 10000,
-
-  /** Delay between sequential builder spawns */
-  BUILDER_SPAWN_INTERVAL_MS: 2000,
-
-  // -- Coordination --
-
-  /** AC-4 gathering check poll interval */
-  GATHERING_POLL_INTERVAL_MS: 5000,
 
   // -- Deduplication & Cooldowns --
 
