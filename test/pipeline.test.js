@@ -233,24 +233,24 @@ describe('ReflexionEngine — LLM Router & Config (Phase 4.3/4.5/4.6)', () => {
         await engine.shutdown();
     });
 
-    it('Should fallback to Groq when primary fails', async () => {
+    it('Should fallback to local model when primary fails', async () => {
         let usedModel = null;
         const mockAnthropic = {
             call: async () => { throw new Error('rate limited'); },
         };
-        const mockGroq = {
+        const mockLocal = {
             call: async (model, _prompt) => {
                 usedModel = model;
-                return 'groq response';
+                return 'local response';
             },
         };
 
-        const engine = new ReflexionEngine({ anthropic: mockAnthropic, groq: mockGroq });
+        const engine = new ReflexionEngine({ anthropic: mockAnthropic, local: mockLocal });
         await engine.init();
 
         const result = await engine.callLLM('test');
-        assert.equal(usedModel, 'qwen3-coder'); // groq: prefix stripped
-        assert.equal(result, 'groq response');
+        assert.equal(usedModel, 'qwen/qwen3.5-9b'); // local: prefix stripped
+        assert.equal(result, 'local response');
 
         await engine.shutdown();
     });

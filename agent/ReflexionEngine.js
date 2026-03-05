@@ -10,7 +10,7 @@ const log = getLogger();
 const DEFAULT_CONFIG = {
   model: 'claude-haiku-4-5-20251001',
   escalationModel: 'claude-sonnet-4-5-20241022',
-  fallbackModel: 'groq:qwen3-coder',
+  fallbackModel: 'local:qwen/qwen3.5-9b',
   temperature: 0.7,
   maxTokens: 1024,
   costPerAttempt: 0.01,
@@ -104,13 +104,15 @@ class ReflexionEngine {
   }
 
   async _callModel(model, prompt) {
+    if (model.startsWith('local:') && this.apiClients.local) {
+      return await this.apiClients.local.call(model.slice(6), prompt);
+    }
     if (model.startsWith('groq:') && this.apiClients.groq) {
       return await this.apiClients.groq.call(model.slice(5), prompt);
     }
     if (this.apiClients.anthropic) {
       return await this.apiClients.anthropic.call(model, prompt);
     }
-    // Mock response for testing
     throw new Error(`No API client for model: ${model}`);
   }
 
