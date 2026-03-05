@@ -165,27 +165,33 @@ class OctivDiscordBot {
     });
 
     // Agent health updates -> #neostarz-live
-    this.subscriber.pSubscribe(PREFIX + 'agent:*:health', (message) => {
+    this.subscriber.pSubscribe(PREFIX + 'agent:*:health', (message, channel) => {
       try {
-        this._postHealthEmbed(JSON.parse(message));
+        const data = JSON.parse(message);
+        data.agentId = data.agentId || _extractAgentId(channel);
+        this._postHealthEmbed(data);
       } catch (err) {
         log.error('discord', 'failed to parse health message', { error: err.message });
       }
     });
 
     // Agent inventory updates -> #neostarz-live
-    this.subscriber.pSubscribe(PREFIX + 'agent:*:inventory', (message) => {
+    this.subscriber.pSubscribe(PREFIX + 'agent:*:inventory', (message, channel) => {
       try {
-        this._postInventoryEmbed(JSON.parse(message));
+        const data = JSON.parse(message);
+        data.agentId = data.agentId || _extractAgentId(channel);
+        this._postInventoryEmbed(data);
       } catch (err) {
         log.error('discord', 'failed to parse inventory message', { error: err.message });
       }
     });
 
     // Agent ReAct pulses -> #neostarz-live (throttled)
-    this.subscriber.pSubscribe(PREFIX + 'agent:*:react', (message) => {
+    this.subscriber.pSubscribe(PREFIX + 'agent:*:react', (message, channel) => {
       try {
-        this._postReactPulse(JSON.parse(message));
+        const data = JSON.parse(message);
+        data.agentId = data.agentId || _extractAgentId(channel);
+        this._postReactPulse(data);
       } catch (err) {
         log.error('discord', 'failed to parse react message', { error: err.message });
       }
@@ -636,6 +642,14 @@ class OctivDiscordBot {
 }
 
 // --- Helpers ---
+
+/** Extract agent ID from channel like "octiv:agent:builder-01:react" */
+function _extractAgentId(channel) {
+  const parts = (channel || '').split(':');
+  // Pattern: PREFIX + agent:<id>:<event>
+  const agentIdx = parts.indexOf('agent');
+  return (agentIdx >= 0 && parts[agentIdx + 1]) ? parts[agentIdx + 1] : 'unknown';
+}
 
 function formatPos(pos) {
   if (!pos) return 'unknown';
