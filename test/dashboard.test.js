@@ -196,9 +196,11 @@ describe('ExplorerAgent — Spiral Search & Danger Avoidance (Phase 6.4)', () =>
             },
         };
 
-        await exp.execute(mockBot);
-        // Resources should be detected if waypoint is near origin
-        assert.ok(true); // scan runs without error
+        const result = await exp.execute(mockBot);
+        // execute() must return a valid exploration result
+        assert.equal(result.success, true, 'Explore execute should succeed');
+        assert.equal(typeof result.dangers, 'number', 'dangers should be a number');
+        assert.ok(result.totalDiscoveries >= 1, 'Should have at least 1 discovery');
 
         await exp.shutdown();
     });

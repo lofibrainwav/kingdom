@@ -149,8 +149,12 @@ describe('Integration — Emergency Handler (Redis pub/sub)', () => {
       const lib = await pipeline.getLibrary();
       assert.ok(lib[result.skill], 'Skill should exist in library');
     } else {
-      // Daily limit may be reached — that's valid behavior
-      assert.ok(true, 'Pipeline declined (daily limit or no LLM)');
+      // Daily limit or no LLM — must have a specific reason
+      assert.ok(result.reason, 'Failed pipeline should report a reason');
+      assert.ok(
+        ['daily_limit_reached', 'invalid_skill_json', 'vm2_validation_failed'].includes(result.reason),
+        `Unexpected failure reason: ${result.reason}`
+      );
     }
   });
 });
