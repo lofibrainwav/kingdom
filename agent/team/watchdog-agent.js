@@ -72,7 +72,7 @@ class WatchdogAgent {
         if (err) log.error(this.agentId, `Recovery failed for ${agentId}`, { error: err.message });
       });
 
-      await this.board.publish('watchdog:recovery', {
+      await this.board.publish('governance:watchdog:recovery', {
         agentId,
         timestamp: Date.now(),
         action: 'restart'

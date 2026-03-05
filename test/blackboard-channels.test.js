@@ -101,6 +101,26 @@ describe('Blackboard Channel Compatibility', () => {
     await subscriber.disconnect();
   });
 
+
+  it('publishing legacy review and reasoning channels should update canonical views', async () => {
+    await board.publish('coder:task_complete', {
+      author: 'channel-test',
+      projectId: 'proj-2',
+      taskId: 'task-2',
+      file: 'task_2.js'
+    });
+    await board.publish('got:reasoning-complete', {
+      author: 'channel-test',
+      totalSynergies: 3
+    });
+
+    const reviewRequested = await board.get('governance:review:requested');
+    const gotComplete = await board.get('knowledge:got:completed');
+
+    assert.equal(reviewRequested.taskId, 'task-2');
+    assert.equal(gotComplete.totalSynergies, 3);
+  });
+
   it('subscriber wrapper should receive legacy dispatch messages when subscribed to canonical execution channel', async () => {
     const subscriber = await board.createSubscriber();
     let received = null;

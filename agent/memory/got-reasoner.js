@@ -369,7 +369,7 @@ class GoTReasoner {
     await this._generateMermaidGraph();
 
     // Publish to Blackboard
-    await this.board.publish('got:reasoning-complete', {
+    await this.board.publish('knowledge:got:completed', {
       author: 'got-reasoner',
       ...result.summary,
     });

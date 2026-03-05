@@ -68,7 +68,7 @@ class CoderAgent {
         });
 
         // 4. Trigger Reviewer for this task
-        await this.board.publish('coder:task_complete', {
+        await this.board.publish('governance:review:requested', {
           projectId,
           taskId: task.id,
           file: fileName,

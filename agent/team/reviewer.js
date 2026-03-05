@@ -27,7 +27,7 @@ class ReviewerAgent {
     this.subscriber.on('error', (err) => log.error('reviewer', 'Redis sub error', { error: err.message }));
     
     // Listen for code completion from Coder
-    await this.subscriber.subscribe('coder:task_complete', (msg) => this.handleTaskComplete(msg));
+    await this.subscriber.subscribe('governance:review:requested', (msg) => this.handleTaskComplete(msg));
     
     log.info(this.agentId, 'initialized and ready to review');
     await this.updateStatus('idle', 'Awaiting code for review');

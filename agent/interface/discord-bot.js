@@ -253,7 +253,7 @@ class OctivDiscordBot {
     });
 
     // Safety threats -> #neostarz-alerts
-    this.subscriber.subscribe('safety:threat', (message) => {
+    this.subscriber.subscribe('governance:safety:threat', (message) => {
       try {
         this._postAlertEmbed('threat', typeof message === 'string' ? JSON.parse(message) : message);
       } catch (err) {
@@ -262,7 +262,7 @@ class OctivDiscordBot {
     });
 
     // Reflexion events -> #neostarz-alerts
-    this.subscriber.subscribe('leader:reflexion', (message) => {
+    this.subscriber.subscribe('knowledge:reflexion:triggered', (message) => {
       try {
         this._postAlertEmbed('reflexion', typeof message === 'string' ? JSON.parse(message) : message);
       } catch (err) {
@@ -280,7 +280,7 @@ class OctivDiscordBot {
     });
 
     // GoT reasoning complete -> #neostarz-alerts
-    this.subscriber.subscribe('got:reasoning-complete', (message) => {
+    this.subscriber.subscribe('knowledge:got:completed', (message) => {
       try {
         this._postAlertEmbed('got', typeof message === 'string' ? JSON.parse(message) : message);
       } catch (err) {

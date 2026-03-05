@@ -23,6 +23,7 @@ This document defines the canonical event vocabulary for Kingdom's Redis blackbo
 - `execution:broadcast:<agentId>`: broadcast command mirrored per agent
 - `execution:swarm:spawn`: request swarm creation
 - `execution:swarm:terminate`: request swarm termination
+- `execution:deployment:completed`: deployer finished a deployment
 
 ### Knowledge
 
@@ -30,13 +31,18 @@ This document defines the canonical event vocabulary for Kingdom's Redis blackbo
 - `knowledge:rumination:digested`: rumination cycle completed with insights
 - `knowledge:zettelkasten:tier-up`: a skill advanced to a new tier
 - `knowledge:zettelkasten:compound-created`: zettelkasten forged a compound skill
+- `knowledge:got:completed`: GoT reasoning cycle completed
+- `knowledge:reflexion:triggered`: leader/reflexion plane emitted a reflexion event
 
 ### Governance
 
+- `governance:review:requested`: coder published a task result for review
 - `governance:review:approved`: reviewer approved a task result
 - `governance:review:rejected`: reviewer rejected a task result
 - `governance:failure:retry-requested`: failure agent classified a failure and requested retry
 - `governance:project:approved`: reviewer approved a project for deployment
+- `governance:watchdog:recovery`: watchdog initiated a recovery action
+- `governance:safety:threat`: safety plane detected a threat
 
 ## Compatibility Rule
 

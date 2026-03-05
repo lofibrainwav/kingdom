@@ -47,7 +47,7 @@ class DeployerAgent {
       await this.board.setConfig(`${projectId}:status`, 'deployed');
 
       // 3. Notify Success
-      await this.board.publish('deployer:deployed', {
+      await this.board.publish('execution:deployment:completed', {
         projectId,
         status: 'success',
         timestamp: Date.now()

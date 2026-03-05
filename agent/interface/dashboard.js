@@ -69,14 +69,14 @@ class DashboardServer {
       } catch {}
     });
 
-    this.subscriber.pSubscribe('safety:*', (message, channel) => {
+    this.subscriber.pSubscribe('governance:safety:*', (message, channel) => {
       try {
         const data = typeof message === 'string' ? JSON.parse(message) : message;
         this._broadcast({ type: 'safety', channel, data });
       } catch {}
     });
 
-    this.subscriber.pSubscribe('leader:*', (message, channel) => {
+    this.subscriber.pSubscribe('knowledge:reflexion:*', (message, channel) => {
       try {
         const data = typeof message === 'string' ? JSON.parse(message) : message;
         this._broadcast({ type: 'leader', channel, data });

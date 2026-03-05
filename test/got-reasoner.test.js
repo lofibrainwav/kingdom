@@ -336,7 +336,7 @@ describe('GoTReasoner — fullReasoningCycle', () => {
     assert.equal(result.synergies.length, 1);
     assert.equal(result.summary.totalSynergies, 1);
     assert.ok(published);
-    assert.equal(published.channel, 'got:reasoning-complete');
+    assert.equal(published.channel, 'knowledge:got:completed');
     assert.equal(published.data.totalSynergies, 1);
   });
 });

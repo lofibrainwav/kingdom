@@ -68,6 +68,30 @@ const CHANNEL_RULES = [
     aliases: ['reviewer:project_approved'],
   },
   {
+    canonical: 'governance:review:requested',
+    aliases: ['coder:task_complete'],
+  },
+  {
+    canonical: 'execution:deployment:completed',
+    aliases: ['deployer:deployed'],
+  },
+  {
+    canonical: 'knowledge:got:completed',
+    aliases: ['got:reasoning-complete'],
+  },
+  {
+    canonical: 'governance:watchdog:recovery',
+    aliases: ['watchdog:recovery'],
+  },
+  {
+    canonical: 'governance:safety:threat',
+    aliases: ['safety:threat'],
+  },
+  {
+    canonical: 'knowledge:reflexion:triggered',
+    aliases: ['leader:reflexion'],
+  },
+  {
     match: /^execution:dispatch:(.+)$/ ,
     canonicalFromMatch: (match) => `execution:dispatch:${match[1]}`,
     aliasesFromMatch: (match) => [`command:${match[1]}:task`],
