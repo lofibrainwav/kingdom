@@ -63,6 +63,14 @@ async function autoMemory() {
     ki.latest_commit = latestCommit;
     ki.last_summary = summary;
     ki.git_log = gitLog.split('\n').map(l => l.trim());
+    
+    // 🔥 핵심 습관 규칙 (Core Habits) 🔥
+    ki.core_habits = [
+      "🚨 [치명적 룰] 새로운 파일이나 스킬을 생성/구현할 때는 *반드시* 테스트 파일을 병렬로 생성할 것.",
+      "⚠️ [커버리지 타협 불가] 테스트 커버리지를 한 번 빼먹기 시작하면 끝이 없음. 코드 품질과 커버리지를 최우선으로 확보하면서 개발할 것.",
+      "✅ 경험에서 우러나온 지혜: 커버리지를 개선하는 행위 자체가 시스템의 안정성을 보장하고, 새로운 자동화 스킬을 개발할 수 있는 기반이 됨."
+    ];
+
     fs.writeFileSync(KI_PATH, JSON.stringify(ki, null, 2));
     console.log(`  ✅ KI 메모리 업데이트: ${KI_PATH}`);
     console.log(`  └─ latest_commit: ${latestCommit}`);
