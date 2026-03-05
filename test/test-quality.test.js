@@ -37,10 +37,12 @@ function getTestFiles() {
     .filter(f => f.endsWith('.test.js'))
     .map(f => ({
       name: f,
-      path: path.join(TEST_DIR, f),
       content: fs.readFileSync(path.join(TEST_DIR, f), 'utf8'),
     }));
 }
+
+// Cache at module level — read disk once, reuse across all describe blocks
+const ALL_TEST_FILES = getTestFiles();
 
 function getAgentFiles() {
   const files = [];
@@ -69,7 +71,7 @@ function countPattern(content, pattern) {
 // ── 1. Banned Patterns ───────────────────────────────────────────────
 
 describe('Test Quality — Banned Patterns', () => {
-  const testFiles = getTestFiles();
+  const testFiles = ALL_TEST_FILES;
 
   it('NO assert.ok(true) in any test file', () => {
     const violations = [];
@@ -114,7 +116,7 @@ describe('Test Quality — Banned Patterns', () => {
 // ── 2. Assertion Density ─────────────────────────────────────────────
 
 describe('Test Quality — Assertion Density', () => {
-  const testFiles = getTestFiles();
+  const testFiles = ALL_TEST_FILES;
 
   it('every test file should have more assert calls than it() blocks', () => {
     const weak = [];
@@ -148,7 +150,7 @@ describe('Test Quality — Assertion Density', () => {
 // ── 3. Coverage Map ─────────────────────────────────────────────────
 
 describe('Test Quality — Agent Coverage Map', () => {
-  const testFiles = getTestFiles();
+  const testFiles = ALL_TEST_FILES;
   const allTestContent = testFiles.map(f => f.content).join('\n');
   const agentFiles = getAgentFiles();
 
@@ -181,9 +183,8 @@ describe('Test Quality — Agent Coverage Map', () => {
 
 describe('Test Quality — Threshold Guards', () => {
   it(`test file count should be >= ${THRESHOLDS.MIN_TEST_FILES}`, () => {
-    const testFiles = getTestFiles();
-    assert.ok(testFiles.length >= THRESHOLDS.MIN_TEST_FILES,
-      `Only ${testFiles.length} test files (minimum: ${THRESHOLDS.MIN_TEST_FILES}). Did a test file get deleted?`);
+    assert.ok(ALL_TEST_FILES.length >= THRESHOLDS.MIN_TEST_FILES,
+      `Only ${ALL_TEST_FILES.length} test files (minimum: ${THRESHOLDS.MIN_TEST_FILES}). Did a test file get deleted?`);
   });
 
   // Note: total test count and skip count are verified by verify-tests skill
@@ -193,7 +194,7 @@ describe('Test Quality — Threshold Guards', () => {
 // ── 5. Mock Quality ─────────────────────────────────────────────────
 
 describe('Test Quality — Mock Quality', () => {
-  const testFiles = getTestFiles();
+  const testFiles = ALL_TEST_FILES;
 
   it('test files with mock.fn() should also contain assert.rejects or error simulation', () => {
     const suspicious = [];
