@@ -52,7 +52,7 @@ class SkillZettelkasten {
   }
 
   async init() {
-    if (!this.board.client) {
+    if (!this.board.client.isOpen) {
       await this.board.connect();
     }
 
