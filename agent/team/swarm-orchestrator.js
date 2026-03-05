@@ -7,7 +7,7 @@
  */
 const { Blackboard } = require('../core/blackboard');
 const { getLogger } = require('../core/logger');
-const { exec } = require('child_process');
+const cp = require('child_process');
 const path = require('path');
 const log = getLogger();
 
@@ -42,7 +42,7 @@ class SwarmOrchestrator {
         const scriptPath = path.join(__dirname, `${agentType}.js`);
         
         // Spawn child process
-        const child = exec(`node ${scriptPath}`, {
+        const child = cp.exec(`node ${scriptPath}`, {
           env: { ...process.env, AGENT_ID: childId, SWARM_ID: swarmId }
         });
 

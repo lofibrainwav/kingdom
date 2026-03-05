@@ -1,36 +1,139 @@
-const { describe, it, before, after } = require('node:test');
+const { describe, it, beforeEach, afterEach, mock } = require('node:test');
 const assert = require('node:assert/strict');
+const child_process = require('child_process');
+const EventEmitter = require('events');
 const { SwarmOrchestrator } = require('../agent/team/swarm-orchestrator');
 
 describe('SwarmOrchestrator — Vibe Coding Parallel Execution', () => {
-    let swarm, redisClient;
+  let swarm;
+  let mockBoard;
+  let execCalls = [];
 
-    before(async () => {
-        const { createClient } = require('redis');
-        redisClient = createClient({ url: 'redis://localhost:6380' });
-        await redisClient.connect();
-        swarm = new SwarmOrchestrator();
+  beforeEach(() => {
+    execCalls = [];
+    
+    // Create a mock Blackboard
+    mockBoard = {
+      connect: async () => {},
+      disconnect: async () => {},
+      setHashField: async () => {},
+      createSubscriber: async () => {
+        return {
+          on: () => {},
+          subscribe: async () => {},
+          disconnect: async () => {}
+        };
+      }
+    };
+
+    // Override the constructor to inject our mock board setup
+    swarm = new SwarmOrchestrator();
+    swarm.board = mockBoard;
+
+    // Mock child_process.exec to return a dummy EventEmitter (mocking ChildProcess)
+    mock.method(child_process, 'exec', (cmd, options) => {
+      execCalls.push({ cmd, options });
+      const cp = new EventEmitter();
+      cp.kill = () => { cp.killed = true; };
+      return cp;
+    });
+  });
+
+  afterEach(() => {
+    mock.restoreAll();
+  });
+
+  it('Should initialize swarm orchestrator and register as agent', async () => {
+    let statusSaved = false;
+    mock.method(mockBoard, 'setHashField', async (key, field, val) => {
+      if (key === 'agents:status' && field === 'Octiv_Swarm') {
+        assert.equal(val.state, 'idle');
+        statusSaved = true;
+      }
     });
 
-    after(async () => {
-        await swarm.shutdown();
-        await redisClient.disconnect();
+    await swarm.init();
+    assert.ok(statusSaved, 'Should have saved initial status');
+  });
+
+  it('handleSpawn should spawn child processes and update swarm status', async () => {
+    let swarmSaved = false;
+    let orchestratingStatus = false;
+    
+    mock.method(mockBoard, 'setHashField', async (key, field, val) => {
+      if (key === 'agents:status' && field === 'Octiv_Swarm') {
+        if (val.state === 'orchestrating') orchestratingStatus = true;
+      }
+      if (key === 'swarms' && field === 'test-swarm') {
+        assert.equal(val.status, 'active');
+        assert.equal(val.agentCount, 2);
+        swarmSaved = true;
+      }
     });
 
-    it('Should initialize swarm orchestrator and register as agent', async () => {
-        await swarm.init();
-        assert.equal(swarm.agentId, 'Octiv_Swarm');
-        
-        const statusStr = await redisClient.hGet('octiv:agents:status', 'Octiv_Swarm');
-        assert.ok(statusStr);
-        const status = JSON.parse(statusStr);
-        assert.equal(status.state, 'idle');
+    await swarm.handleSpawn({ swarmId: 'test-swarm', agentType: 'worker', count: 2 });
+    
+    assert.ok(orchestratingStatus);
+    assert.ok(swarmSaved);
+    assert.equal(execCalls.length, 2);
+    assert.ok(execCalls[0].cmd.includes('worker.js'));
+    assert.equal(execCalls[0].options.env.AGENT_ID, 'test-swarm_worker_0');
+    assert.equal(execCalls[1].options.env.AGENT_ID, 'test-swarm_worker_1');
+    assert.equal(swarm.children.size, 2);
+
+    // Simulate child exit
+    const childIterator = swarm.children.values();
+    const firstChild = childIterator.next().value;
+    firstChild.emit('exit', 0);
+    assert.equal(swarm.children.size, 1, 'Child should be removed from map on exit');
+  });
+
+  it('handleSpawn graceful failure on bad input', async () => {
+    // string parse failure or something
+    await swarm.handleSpawn('invalid json {[');
+    assert.equal(execCalls.length, 0);
+  });
+
+  it('handleTerminate should kill corresponding children', async () => {
+    await swarm.handleSpawn({ swarmId: 'term-swarm', agentType: 'worker', count: 2 });
+    assert.equal(swarm.children.size, 2);
+    
+    let terminatedStatus = false;
+    mock.method(mockBoard, 'setHashField', async (key, field, val) => {
+      if (key === 'swarms' && field === 'term-swarm:status') {
+        assert.equal(val, 'terminated');
+        terminatedStatus = true;
+      }
     });
 
-    it('Should expose HandleSpawn correctly', async () => {
-        // We do not actually spawn full node processes in test to avoid orphaned tasks,
-        // but we ensure the payload shape causes proper updates.
-        // Wait for Redis events to flow not required if we just test the method shape.
-        assert.ok(typeof swarm.handleSpawn === 'function');
-    });
+    // We can extract one child to check if kill() was called
+    const childrenArr = Array.from(swarm.children.values());
+
+    await swarm.handleTerminate({ swarmId: 'term-swarm' });
+    
+    assert.ok(terminatedStatus);
+    assert.equal(swarm.children.size, 0, 'Children should be removed');
+    assert.ok(childrenArr[0].killed);
+    assert.ok(childrenArr[1].killed);
+  });
+
+  it('shutdown should kill all children and disconnect board', async () => {
+    await swarm.handleSpawn({ swarmId: 'shut-swarm', agentType: 'worker', count: 1 });
+    const childrenArr = Array.from(swarm.children.values());
+    
+    let disconnected = false;
+    mockBoard.disconnect = async () => { disconnected = true; };
+
+    // Fake an init to set subscriber
+    await swarm.init();
+    
+    let subDisconnected = false;
+    swarm.subscriber.disconnect = async () => { subDisconnected = true; };
+
+    await swarm.shutdown();
+
+    assert.ok(childrenArr[0].killed);
+    assert.ok(disconnected);
+    assert.ok(subDisconnected);
+  });
 });

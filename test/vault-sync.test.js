@@ -1,15 +1,21 @@
 /**
  * Vault Sync tests.
- * Tests Dashboard.md and Session-Sync.md auto-update logic.
+ * Tests Dashboard.md and Session-Sync.md auto-update logic using fsp mocks.
  */
-const { describe, it, beforeEach } = require('node:test');
+const { describe, it, beforeEach, afterEach, mock } = require('node:test');
 const assert = require('node:assert/strict');
 const fsp = require('fs').promises;
-const path = require('path');
-const os = require('os');
 
-// We test the regex replacement logic by creating temp files
-// that mimic the real Dashboard.md / Session-Sync.md structure.
+const {
+  gatherStats,
+  syncDashboard,
+  syncSessionState,
+  writePattern,
+  addDashboardLink,
+  VaultAgent,
+  DASHBOARD_PATH,
+  SESSION_SYNC_PATH
+} = require('../agent/memory/vault-sync');
 
 const DASHBOARD_TEMPLATE = `---
 tags: [dashboard]
@@ -17,7 +23,7 @@ tags: [dashboard]
 
 ## System Vitals
 
-> [!stat] TESTS
+> > [!stat] TESTS
 > > <div style="font-size: 2em; font-weight: bold; color: #3fb950;">408</div>
 > > <span style="font-size: 0.8em; color: gray;">404 PASS | 0 FAIL | 4 SKIP</span>
 
@@ -31,6 +37,10 @@ tags: [dashboard]
 | **Branch** | \`main\` |
 
 <p>Last Synced: <strong>2026-03-04</strong> | 408 Tests</p>
+
+<!-- INDEX:Recent Achievements -->
+
+<!-- INDEX:Learning Wall -->
 `;
 
 const SESSION_SYNC_TEMPLATE = `---
@@ -50,7 +60,6 @@ tags: [session]
 
 describe('vault-sync — gatherStats', () => {
   it('returns stats object with correct fields', () => {
-    const { gatherStats } = require('../agent/memory/vault-sync');
     const stats = gatherStats();
     assert.ok(stats.date);
     assert.equal(typeof stats.lastCommit, 'string');
@@ -59,7 +68,6 @@ describe('vault-sync — gatherStats', () => {
   });
 
   it('returns today date', () => {
-    const { gatherStats } = require('../agent/memory/vault-sync');
     const stats = gatherStats();
     const today = new Date().toISOString().slice(0, 10);
     assert.equal(stats.date, today);
@@ -67,125 +75,197 @@ describe('vault-sync — gatherStats', () => {
 });
 
 describe('vault-sync — syncDashboard', () => {
-  let tmpDir;
-  let dashPath;
+  let writtenData = {};
 
-  beforeEach(async () => {
-    tmpDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'vault-sync-'));
-    dashPath = path.join(tmpDir, 'Dashboard.md');
-    await fsp.writeFile(dashPath, DASHBOARD_TEMPLATE, 'utf-8');
+  beforeEach(() => {
+    writtenData = {};
+    mock.method(fsp, 'readFile', async (filepath) => {
+      if (filepath.includes('Dashboard.md')) return DASHBOARD_TEMPLATE;
+      throw new Error(`File not found: ${filepath}`);
+    });
+    mock.method(fsp, 'writeFile', async (filepath, data) => {
+      writtenData[filepath] = data;
+    });
   });
 
-  it('updates test count in TESTS stat card', async () => {
-    // Verify regex patterns match the Dashboard template structure
-    let content = await fsp.readFile(dashPath, 'utf-8');
-    const testsCardRe = /(>\s*>\s*<div[^>]*>)\d+(<\/div>\n>\s*>\s*<span[^>]*>)\d+ PASS \| \d+ FAIL \| \d+ SKIP(<\/span>)/;
-    const match = content.match(testsCardRe);
-    assert.ok(match, 'TESTS card pattern should match template');
-
-    content = content.replace(testsCardRe, `$1${454}$2${451} PASS | ${0} FAIL | ${3} SKIP$3`);
-    assert.ok(content.includes('454'));
-    assert.ok(content.includes('451 PASS'));
+  afterEach(() => {
+    mock.restoreAll();
   });
 
-  it('updates session state table fields', async () => {
-    let content = await fsp.readFile(dashPath, 'utf-8');
+  it('updates dashboard stat cards and session table', async () => {
+    const stats = {
+      tests: 454,
+      pass: 451,
+      fail: 0,
+      skip: 3,
+      date: '2026-03-05',
+      lastCommit: 'xyz789',
+      commitMsg: 'new msg',
+      branch: 'main'
+    };
 
-    const sessionRe = /(\|\s*\*\*Last Session\*\*\s*\|)\s*[^|]+\|/;
-    assert.ok(sessionRe.test(content));
-    content = content.replace(sessionRe, '$1 2026-03-05 |');
-    assert.ok(content.includes('2026-03-05'));
+    const changed = await syncDashboard(stats);
+    assert.equal(changed, true);
 
-    const commitRe = /(\|\s*\*\*Last Commit\*\*\s*\|)\s*[^|]+\|/;
-    assert.ok(commitRe.test(content));
-    content = content.replace(commitRe, '$1 `xyz789` new msg |');
-    assert.ok(content.includes('xyz789'));
+    const content = writtenData[DASHBOARD_PATH];
+    assert.ok(content, 'Dashboard should have been written');
+    
+    // Check TESTS stat card
+    assert.ok(content.includes('454</div>'));
+    assert.ok(content.includes('451 PASS | 0 FAIL | 3 SKIP'));
 
-    const testCountRe = /(\|\s*\*\*Test Count\*\*\s*\|)\s*[^|]+\|/;
-    assert.ok(testCountRe.test(content));
-    content = content.replace(testCountRe, '$1 454 (451 pass, 0 fail, 3 skip) |');
-    assert.ok(content.includes('454 (451'));
+    // Check generic fields
+    assert.ok(content.includes('2026-03-05 |'));
+    assert.ok(content.includes('\`xyz789\` new msg |'));
+    assert.ok(content.includes('454 (451 pass, 0 fail, 3 skip) |'));
+    assert.ok(content.includes('Last Synced: <strong>2026-03-05</strong> | 454 Tests'));
   });
 
-  it('updates footer timestamp', async () => {
-    let content = await fsp.readFile(dashPath, 'utf-8');
-    const footerRe = /(Last Synced: <strong>)\d{4}-\d{2}-\d{2}(<\/strong> \| )\d+( Tests)/;
-    assert.ok(footerRe.test(content));
-    content = content.replace(footerRe, '$12026-03-05$2454$3');
-    assert.ok(content.includes('2026-03-05'));
-    assert.ok(content.includes('454 Tests'));
+  it('returns false and logs error on file access failure', async () => {
+    // Override readFile to throw
+    mock.restoreAll();
+    mock.method(fsp, 'readFile', async () => { throw new Error('EACCES'); });
+    
+    const changed = await syncDashboard({ tests: 1, pass: 1, fail: 0, skip: 0 });
+    assert.equal(changed, false);
   });
 });
 
 describe('vault-sync — syncSessionState', () => {
-  let tmpDir;
-  let ssPath;
+  let writtenData = {};
 
-  beforeEach(async () => {
-    tmpDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'vault-sync-ss-'));
-    ssPath = path.join(tmpDir, 'Session-Sync.md');
-    await fsp.writeFile(ssPath, SESSION_SYNC_TEMPLATE, 'utf-8');
+  beforeEach(() => {
+    writtenData = {};
+    mock.method(fsp, 'readFile', async (filepath) => {
+      if (filepath.includes('Session-Sync.md')) return SESSION_SYNC_TEMPLATE;
+      throw new Error('Not found');
+    });
+    mock.method(fsp, 'writeFile', async (filepath, data) => {
+      writtenData[filepath] = data;
+    });
   });
 
-  it('matches session date pattern', async () => {
-    const content = await fsp.readFile(ssPath, 'utf-8');
-    const dateRe = /(\|\s*\*\*Session Date\*\*\s*\|)\s*[^|]+\|/;
-    assert.ok(dateRe.test(content));
+  afterEach(() => {
+    mock.restoreAll();
   });
 
-  it('matches commit pattern', async () => {
-    const content = await fsp.readFile(ssPath, 'utf-8');
-    const commitRe = /(\|\s*\*\*Last Commit\*\*\s*\|)\s*[^|]+\|/;
-    assert.ok(commitRe.test(content));
-  });
+  it('updates session state table correctly', async () => {
+    const session = {
+      tests: 460,
+      pass: 457,
+      fail: 0,
+      skip: 3,
+      date: '2026-03-05',
+      lastCommit: 'def456',
+      commitMsg: 'new commit msg',
+      branch: 'feature-branch',
+      lint: 2
+    };
 
-  it('matches tests pattern', async () => {
-    const content = await fsp.readFile(ssPath, 'utf-8');
-    const testsRe = /(\|\s*\*\*Tests\*\*\s*\|)\s*[^|]+\|/;
-    assert.ok(testsRe.test(content));
-  });
+    const changed = await syncSessionState(session);
+    assert.equal(changed, true);
 
-  it('matches lint pattern', async () => {
-    const content = await fsp.readFile(ssPath, 'utf-8');
-    const lintRe = /(\|\s*\*\*Lint\*\*\s*\|)\s*[^|]+\|/;
-    assert.ok(lintRe.test(content));
-  });
-
-  it('matches branch pattern', async () => {
-    const content = await fsp.readFile(ssPath, 'utf-8');
-    const branchRe = /(\|\s*\*\*Branch\*\*\s*\|)\s*[^|]+\|/;
-    assert.ok(branchRe.test(content));
-  });
-
-  it('replaces all fields correctly', async () => {
-    let content = await fsp.readFile(ssPath, 'utf-8');
-
-    const replacements = [
-      { re: /(\|\s*\*\*Session Date\*\*\s*\|)\s*[^|]+\|/, val: '$1 2026-03-05 |' },
-      { re: /(\|\s*\*\*Last Commit\*\*\s*\|)\s*[^|]+\|/, val: '$1 `def456` — new commit |' },
-      { re: /(\|\s*\*\*Tests\*\*\s*\|)\s*[^|]+\|/, val: '$1 460 total (457 pass, 0 fail, 3 skip) |' },
-      { re: /(\|\s*\*\*Lint\*\*\s*\|)\s*[^|]+\|/, val: '$1 0 errors |' },
-      { re: /(\|\s*\*\*Branch\*\*\s*\|)\s*[^|]+\|/, val: '$1 `main` |' },
-    ];
-
-    for (const { re, val } of replacements) {
-      content = content.replace(re, val);
-    }
-
-    assert.ok(content.includes('2026-03-05'));
-    assert.ok(content.includes('def456'));
-    assert.ok(content.includes('460 total'));
+    const content = writtenData[SESSION_SYNC_PATH];
+    assert.ok(content);
+    assert.ok(content.includes(' 2026-03-05 |'));
+    assert.ok(content.includes('\`def456\` — new commit msg |'));
+    assert.ok(content.includes('460 total (457 pass, 0 fail, 3 skip) |'));
+    assert.ok(content.includes('2 errors |'));
+    assert.ok(content.includes('\`feature-branch\` |'));
   });
 });
 
-describe('vault-sync — module exports', () => {
-  it('exports all expected functions', () => {
-    const mod = require('../agent/memory/vault-sync');
-    assert.equal(typeof mod.gatherStats, 'function');
-    assert.equal(typeof mod.syncDashboard, 'function');
-    assert.equal(typeof mod.syncSessionState, 'function');
-    assert.equal(typeof mod.VAULT_DIR, 'string');
-    assert.equal(typeof mod.DASHBOARD_PATH, 'string');
-    assert.equal(typeof mod.SESSION_SYNC_PATH, 'string');
+describe('vault-sync — writePattern & addDashboardLink', () => {
+  let writtenData = {};
+  let dirsCreated = [];
+
+  beforeEach(() => {
+    writtenData = {};
+    dirsCreated = [];
+    mock.method(fsp, 'readFile', async () => {
+      return DASHBOARD_TEMPLATE;
+    });
+    mock.method(fsp, 'writeFile', async (filepath, data) => {
+      writtenData[filepath] = data;
+    });
+    mock.method(fsp, 'mkdir', async (dir) => {
+      dirsCreated.push(dir);
+    });
+  });
+
+  afterEach(() => {
+    mock.restoreAll();
+  });
+
+  it('writePattern writes markdown to vault/patterns', async () => {
+    const p = await writePattern('Test Pattern 123', '# Some Content');
+    assert.ok(p.endsWith('Test-Pattern-123.md'));
+    assert.ok(dirsCreated.some(dir => dir.endsWith('patterns')));
+    assert.equal(writtenData[p], '# Some Content');
+  });
+
+  it('addDashboardLink appends link under INDEX:section', async () => {
+    await addDashboardLink('Recent Achievements', '[[Some Note]] - Cool thing');
+    const content = writtenData[DASHBOARD_PATH];
+    assert.ok(content);
+    assert.ok(content.includes('<!-- INDEX:Recent Achievements -->\n- [[Some Note]] - Cool thing'));
+  });
+});
+
+describe('vault-sync — VaultAgent', () => {
+  let writtenData = {};
+  
+  beforeEach(() => {
+    writtenData = {};
+    mock.method(fsp, 'readFile', async () => DASHBOARD_TEMPLATE);
+    mock.method(fsp, 'writeFile', async (filepath, data) => { writtenData[filepath] = data; });
+  });
+
+  afterEach(() => {
+    mock.restoreAll();
+  });
+
+  it('handleApproval adds a link to Dashboard', async () => {
+    const agent = new VaultAgent();
+    // Use dummy board just so we can test handleApproval manually
+    // Since handleApproval relies on addDashboardLink, it uses the global DASHBOARD_PATH
+    await agent.handleApproval({ projectId: 'ProjX', taskId: 'T-123', file: 'x.js' });
+    
+    const content = writtenData[DASHBOARD_PATH];
+    assert.ok(content, 'Dashboard should have been updated by handleApproval');
+    assert.ok(content.includes('[[ProjX]] - Task T-123 approved in x.js'));
+  });
+
+  it('handleFailure adds a link to Dashboard', async () => {
+    const agent = new VaultAgent();
+    await agent.handleFailure({ projectId: 'ProjY', taskId: 'T-999', category: 'lint', guardrail: 'no-console' });
+    
+    const content = writtenData[DASHBOARD_PATH];
+    assert.ok(content, 'Dashboard should have been updated by handleFailure');
+    assert.ok(content.includes('[[ProjY]] - lint failure on T-999. Guardrail: \`no-console\`'));
+  });
+
+  it('init wires up Redis subscriber correctly', async () => {
+    let _onCb, _subscrParams = {};
+    const mockBoard = {
+      createSubscriber: async () => ({
+        on: (event, cb) => { _onCb = cb; },
+        subscribe: async (channel, handler) => { _subscrParams[channel] = handler; }
+      })
+    };
+
+    const agent = new VaultAgent();
+    await agent.init(mockBoard);
+
+    assert.equal(typeof _onCb, 'function');
+    assert.equal(typeof _subscrParams['reviewer:task_approved'], 'function');
+    assert.equal(typeof _subscrParams['failure:retry_requested'], 'function');
+
+    // Simulate event
+    await _subscrParams['reviewer:task_approved'](JSON.stringify({ projectId: 'ProjString', taskId: 'T-ABC', file: 'y.mjs' }));
+    
+    const content = writtenData[DASHBOARD_PATH];
+    assert.ok(content);
+    assert.ok(content.includes('[[ProjString]] - Task T-ABC approved'));
   });
 });
