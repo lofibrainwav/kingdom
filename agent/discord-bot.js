@@ -33,6 +33,25 @@ const log = getLogger();
 /** Throttle window for ReAct pulse embeds (ms) */
 const REACT_THROTTLE_MS = 30000;
 
+/** Role -> embed color mapping (shared across all embed methods) */
+const ROLE_COLORS = {
+  leader:   0xe74c3c,
+  builder:  0x2ecc71,
+  safety:   0xe67e22,
+  explorer: 0x3498db,
+};
+const DEFAULT_COLOR = 0x95a5a6;
+
+/** Extract role name from agent ID string */
+function _roleFromAgentId(agentId, explicitRole) {
+  return explicitRole || agentId.split('-')[0].replace(/^OctivBot_/, '');
+}
+
+/** Get embed color for a role */
+function _roleColor(agentId, explicitRole) {
+  return ROLE_COLORS[_roleFromAgentId(agentId, explicitRole)] ?? DEFAULT_COLOR;
+}
+
 // Load channel config
 function loadConfig() {
   try {
@@ -152,13 +171,14 @@ class OctivDiscordBot {
     this.channels.chat = resolve(this.config.chatChannel, 'chat');
     this.channels.forum = resolve(this.config.forumChannel, 'forum');
 
-    // Cache forum tags for matching confessions to tags
+    // Cache forum tags for matching confessions to tags (clear stale entries on reconnect)
     if (this.channels.forum && this.channels.forum.availableTags) {
+      this._forumTagCache.clear();
       for (const tag of this.channels.forum.availableTags) {
         this._forumTagCache.set(tag.name.toLowerCase(), tag.id);
       }
       log.info('discord', 'forum tags cached', {
-        tags: [...this._forumTagCache.keys()].join(', ') || 'none'
+        tags: Array.from(this._forumTagCache.keys()).join(', ') || 'none'
       });
     }
 
@@ -271,10 +291,13 @@ class OctivDiscordBot {
 
     // Agent confessions -> #meta-shinmoongo (forum threads)
     this.subscriber.pSubscribe(PREFIX + 'agent:*:confess', (message, channel) => {
+      if (!this.channels.forum) return;
       try {
         const data = JSON.parse(message);
         data.agentId = data.agentId || _extractAgentId(channel);
-        this._postShinmungo(data);
+        this._postShinmungo(data).catch(err =>
+          log.error('discord', 'failed to post shinmungo', { error: err.message })
+        );
       } catch (err) {
         log.error('discord', 'failed to parse confess message', { error: err.message });
       }
@@ -467,17 +490,13 @@ class OctivDiscordBot {
     const agent = data.agentId || 'unknown';
     const anonymous = data.anonymous === true;
     const displayName = anonymous ? `Agent #${_anonymousHash(agent)}` : agent;
-
-    const roleColors = {
-      leader: 0xe74c3c, builder: 0x2ecc71, safety: 0xe67e22, explorer: 0x3498db,
-    };
-    const role = agent.split('-')[0].replace(/^OctivBot_/, '');
-    const color = anonymous ? 0x95a5a6 : (roleColors[role] || 0x95a5a6);
+    const color = anonymous ? DEFAULT_COLOR : _roleColor(agent, data.role);
+    const body = (data.message || data.text || '...').slice(0, 4096);
 
     const embed = new EmbedBuilder()
       .setAuthor({ name: displayName })
       .setColor(color)
-      .setDescription(data.message || data.text || '...')
+      .setDescription(body)
       .setTimestamp();
 
     if (data.context) {
@@ -490,11 +509,10 @@ class OctivDiscordBot {
       embed.setFooter({ text: `mood: ${data.mood}` });
     }
 
-    // Match tag name to cached tag ID
+    // Match tag name to cached tag ID (single lookup)
     const appliedTags = [];
-    if (data.tag && this._forumTagCache.has(data.tag.toLowerCase())) {
-      appliedTags.push(this._forumTagCache.get(data.tag.toLowerCase()));
-    }
+    const tagId = data.tag ? this._forumTagCache.get(data.tag.toLowerCase()) : undefined;
+    if (tagId !== undefined) appliedTags.push(tagId);
 
     const title = data.title || `${displayName}'s confession`;
 
@@ -513,14 +531,7 @@ class OctivDiscordBot {
     if (!this.channels.chat) return;
 
     const agent = data.agentId || 'unknown';
-    const roleColors = {
-      leader: 0xe74c3c,
-      builder: 0x2ecc71,
-      safety: 0xe67e22,
-      explorer: 0x3498db,
-    };
-    const role = data.role || agent.split('-')[0].replace(/^OctivBot_/, '');
-    const color = roleColors[role] || 0x95a5a6;
+    const color = _roleColor(agent, data.role);
 
     const embed = new EmbedBuilder()
       .setAuthor({ name: agent })
@@ -672,7 +683,7 @@ class OctivDiscordBot {
       message: check.sanitized,
       tag: 'thoughts',
     });
-    msg.reply('Your voice has been heard at the Shinmungo.');
+    await msg.reply('Your voice has been heard at the Shinmungo.');
   }
 
   async _cmdTeam(msg) {
@@ -810,7 +821,7 @@ function logSendError(err) {
   log.error('discord', 'failed to send message', { error: err.message });
 }
 
-module.exports = { OctivDiscordBot, REACT_THROTTLE_MS, _anonymousHash };
+module.exports = { OctivDiscordBot, REACT_THROTTLE_MS, ROLE_COLORS, DEFAULT_COLOR, _anonymousHash, _roleColor };
 
 // --- CLI Entry Point ---
 
