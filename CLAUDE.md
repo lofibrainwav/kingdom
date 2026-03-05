@@ -1,8 +1,15 @@
-# Octiv MVP — Claude Code Workflow
+# Kingdom — Vibe Coding Agent Workflow
 
 ## Language Rule
 - **Conversation with user**: Korean
 - **All code, comments, file content, commits**: English
+
+## 🌐 Browser Automation Global Safety Rules
+- **Always verify before acting**: 클릭/타입 전 반드시 스냅샷으로 확인 (`browser-recovery` SICAC)
+- **Draft Only**: 이메일, 결제, 폼 제출 → 반드시 인간 승인 후 실행
+- **Ask before acting**: 각 단계 완료 후 "Step X 완료, 계속할까요?" 확인
+- **Auto rollback**: 에러 발생 시 자동 롤백 + 최대 3회 재시도, 실패 시 인간 보고
+- **Max parallel**: Multi-Clauding 최대 10 세션 병렬 (세션 하나 느려도 나머지 보완)
 
 ---
 
