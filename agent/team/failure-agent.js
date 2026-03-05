@@ -32,19 +32,19 @@ class FailureAgent {
   async handleTaskRejection(message) {
     try {
       const { projectId, taskId, file, feedback } = typeof message === 'string' ? JSON.parse(message) : message;
-      log.info(this.agentId, `Classifying failure for task ${taskId}: ${feedback.slice(0, 30)}...`);
+      log.info(this.agentId, `Classifying failure for task ${taskId} in ${file}: ${feedback.slice(0, 30)}...`);
       await this.updateStatus('classifying', `Classifying ${taskId}`);
 
       // 1. Categorize Failure via LLM (3-pillar logic)
       const classification = await this.llm.callLLM(
-        `Classify this failure for project ${projectId}, task ${taskId}.\n` +
+        `Classify this failure for project ${projectId}, task ${taskId} in file ${file}.\n` +
         `Feedback: ${feedback}\n` +
         'Categorize into: \n' +
         '1. Task Failure (Logic/Requirement mismatch)\n' +
         '2. Skill Failure (Agent lacks specific coding knowledge)\n' +
         '3. Environment Failure (Tool/Workspace/System issue)\n' +
         'Return JSON: { category, reason, mustNotGuardrail }',
-        'critical' // Escalation to critical tier for failure analysis
+        'critical'
       );
 
       // 2. Save Classification and Guardrail to Blackboard

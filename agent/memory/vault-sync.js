@@ -168,4 +168,74 @@ async function syncSessionState(session) {
   }
 }
 
-module.exports = { gatherStats, syncDashboard, syncSessionState, VAULT_DIR, DASHBOARD_PATH, SESSION_SYNC_PATH };
+/**
+ * Write a new pattern note to the vault.
+ * @param {string} name - Pattern name
+ * @param {string} content - Pattern markdown content
+ * @returns {string} filePath
+ */
+async function writePattern(name, content) {
+  const fileName = `${name.replace(/\s+/g, '-')}.md`;
+  const filePath = path.join(VAULT_DIR, 'patterns', fileName);
+  await fsp.mkdir(path.join(VAULT_DIR, 'patterns'), { recursive: true });
+  await fsp.writeFile(filePath, content, 'utf-8');
+  log.info('vault-sync', `Pattern written: ${fileName}`);
+  return filePath;
+}
+
+/**
+ * Add a link to a note in the Dashboard indices.
+ * @param {string} section - Dashboard section (Projects, Patterns, etc)
+ * @param {string} link - Obsidian link [[Like This]]
+ */
+async function addDashboardLink(section, link) {
+  try {
+    let content = await fsp.readFile(DASHBOARD_PATH, 'utf-8');
+    const marker = `<!-- INDEX:${section} -->`;
+    if (content.includes(marker)) {
+      content = content.replace(marker, `${marker}\n- ${link}`);
+      await fsp.writeFile(DASHBOARD_PATH, content, 'utf-8');
+    }
+  } catch (err) {
+    log.error('vault-sync', `Link addition failed: ${err.message}`);
+  }
+}
+
+class VaultAgent {
+  constructor() {
+    this.board = null;
+  }
+
+  async init(board) {
+    this.board = board;
+    this.subscriber = await this.board.createSubscriber();
+    
+    // Listen for events that require documentation
+    await this.subscriber.subscribe('reviewer:task_approved', (msg) => this.handleApproval(msg));
+    await this.subscriber.subscribe('failure:retry_requested', (msg) => this.handleFailure(msg));
+    
+    log.info('VaultAgent', 'initialized and watching for events to sync');
+  }
+
+  async handleApproval(message) {
+    const { projectId, taskId, file } = typeof message === 'string' ? JSON.parse(message) : message;
+    await addDashboardLink('Recent Achievements', `[[${projectId}]] - Task ${taskId} approved in ${file}`);
+  }
+
+  async handleFailure(message) {
+    const { projectId, taskId, category, guardrail } = typeof message === 'string' ? JSON.parse(message) : message;
+    await addDashboardLink('Learning Wall', `[[${projectId}]] - ${category} failure on ${taskId}. Guardrail: \`${guardrail}\``);
+  }
+}
+
+module.exports = { 
+  gatherStats, 
+  syncDashboard, 
+  syncSessionState, 
+  writePattern,
+  addDashboardLink,
+  VaultAgent,
+  VAULT_DIR, 
+  DASHBOARD_PATH, 
+  SESSION_SYNC_PATH 
+};
