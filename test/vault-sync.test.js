@@ -258,11 +258,11 @@ describe('vault-sync — VaultAgent', () => {
     await agent.init(mockBoard);
 
     assert.equal(typeof _onCb, 'function');
-    assert.equal(typeof _subscrParams['reviewer:task_approved'], 'function');
-    assert.equal(typeof _subscrParams['failure:retry_requested'], 'function');
+    assert.equal(typeof _subscrParams['governance:review:approved'], 'function');
+    assert.equal(typeof _subscrParams['governance:failure:retry-requested'], 'function');
 
     // Simulate event
-    await _subscrParams['reviewer:task_approved'](JSON.stringify({ projectId: 'ProjString', taskId: 'T-ABC', file: 'y.mjs' }));
+    await _subscrParams['governance:review:approved']({ projectId: 'ProjString', taskId: 'T-ABC', file: 'y.mjs' });
     
     const content = writtenData[DASHBOARD_PATH];
     assert.ok(content);

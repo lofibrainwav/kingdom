@@ -22,7 +22,7 @@ class PMAgent {
     this.subscriber.on('error', (err) => log.error('pm-agent', 'Redis sub error', { error: err.message }));
     
     // Listen for manual assignments from Discord/Dashboard
-    await this.subscriber.subscribe('commands:assign', (msg) => this.handleManualAssign(msg));
+    await this.subscriber.subscribe('work:intake', (msg) => this.handleManualAssign(msg));
     
     log.info(this.agentId, 'initialized and listening for assignments');
     await this.updateStatus('idle', 'Ready for new projects');
@@ -46,7 +46,7 @@ class PMAgent {
       });
 
       // 2. Trigger Architect to define context
-      await this.board.publish('pm:project_init', {
+      await this.board.publish('work:planning:init', {
         projectId,
         goal: task,
         agentId: this.agentId

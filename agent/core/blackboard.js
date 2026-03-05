@@ -10,6 +10,85 @@ const log = getLogger();
 const REDIS_URL = process.env.BLACKBOARD_REDIS_URL || 'redis://localhost:6380';
 const PREFIX = 'octiv:';
 
+const CHANNEL_RULES = [
+  {
+    canonical: 'work:intake',
+    aliases: ['commands:assign'],
+  },
+  {
+    canonical: 'work:planning:init',
+    aliases: ['pm:project_init'],
+  },
+  {
+    canonical: 'execution:swarm:spawn',
+    aliases: ['swarm:spawn'],
+  },
+  {
+    canonical: 'execution:swarm:terminate',
+    aliases: ['swarm:terminate'],
+  },
+  {
+    canonical: 'knowledge:skills:deployed',
+    aliases: ['skills:emergency'],
+  },
+  {
+    canonical: 'knowledge:rumination:digested',
+    aliases: ['rumination:digested'],
+  },
+  {
+    canonical: 'knowledge:zettelkasten:tier-up',
+    aliases: ['zettelkasten:tier-up'],
+  },
+  {
+    canonical: 'knowledge:zettelkasten:compound-created',
+    aliases: ['zettelkasten:compound-created'],
+  },
+  {
+    canonical: 'work:planning:designed',
+    aliases: ['architect:design_complete'],
+  },
+  {
+    canonical: 'work:planning:decomposed',
+    aliases: ['decomposer:plan_complete'],
+  },
+  {
+    canonical: 'governance:review:approved',
+    aliases: ['reviewer:task_approved'],
+  },
+  {
+    canonical: 'governance:review:rejected',
+    aliases: ['reviewer:task_rejected'],
+  },
+  {
+    canonical: 'governance:failure:retry-requested',
+    aliases: ['failure:retry_requested'],
+  },
+  {
+    canonical: 'governance:project:approved',
+    aliases: ['reviewer:project_approved'],
+  },
+  {
+    match: /^execution:dispatch:(.+)$/ ,
+    canonicalFromMatch: (match) => `execution:dispatch:${match[1]}`,
+    aliasesFromMatch: (match) => [`command:${match[1]}:task`],
+  },
+  {
+    match: /^command:(.+):task$/ ,
+    canonicalFromMatch: (match) => `execution:dispatch:${match[1]}`,
+    aliasesFromMatch: (match) => [`command:${match[1]}:task`],
+  },
+  {
+    match: /^execution:broadcast:(.+)$/ ,
+    canonicalFromMatch: (match) => `execution:broadcast:${match[1]}`,
+    aliasesFromMatch: (match) => [`command:${match[1]}:broadcast`],
+  },
+  {
+    match: /^command:(.+):broadcast$/ ,
+    canonicalFromMatch: (match) => `execution:broadcast:${match[1]}`,
+    aliasesFromMatch: (match) => [`command:${match[1]}:broadcast`],
+  },
+];
+
 class Blackboard {
   constructor(redisUrl, options = {}) {
     const url = redisUrl || REDIS_URL;
@@ -47,22 +126,68 @@ class Blackboard {
     }
   }
 
+  _stripPrefix(channel) {
+    return channel && channel.startsWith(PREFIX) ? channel.slice(PREFIX.length) : channel;
+  }
+
+  _getChannelFamily(channel) {
+    const normalized = this._stripPrefix(channel);
+
+    for (const rule of CHANNEL_RULES) {
+      if (rule.canonical && (normalized === rule.canonical || rule.aliases.includes(normalized))) {
+        return [rule.canonical, ...rule.aliases];
+      }
+
+      if (rule.match) {
+        const match = normalized.match(rule.match);
+        if (match) {
+          return [rule.canonicalFromMatch(match), ...rule.aliasesFromMatch(match)];
+        }
+      }
+    }
+
+    return [normalized];
+  }
+
+  _parsePayload(payload) {
+    if (typeof payload !== 'string') return payload;
+    try {
+      return JSON.parse(payload);
+    } catch {
+      return payload;
+    }
+  }
+
+  _normalizePattern(pattern) {
+    return PREFIX + this._stripPrefix(pattern);
+  }
+
   /**
    * Publish agent status (眞善美孝永 validated)
    */
   async publish(channel, data) {
     this._validate(channel, data);
+    const family = this._getChannelFamily(channel);
     const payload = JSON.stringify({ ts: Date.now(), ...data });
-    await this.client.publish(PREFIX + channel, payload);
-    await this.client.set(PREFIX + channel + ':latest', payload, { EX: T.REDIS_KEY_EXPIRY_SECONDS });
+    const multi = this.client.multi();
+
+    for (const entry of family) {
+      multi.publish(PREFIX + entry, payload);
+      multi.set(PREFIX + entry + ':latest', payload, { EX: T.REDIS_KEY_EXPIRY_SECONDS });
+    }
+
+    await multi.exec();
   }
 
   /**
    * Read latest status
    */
   async get(channel) {
-    const val = await this.client.get(PREFIX + channel + ':latest');
-    return val ? JSON.parse(val) : null;
+    for (const entry of this._getChannelFamily(channel)) {
+      const val = await this.client.get(PREFIX + entry + ':latest');
+      if (val) return JSON.parse(val);
+    }
+    return null;
   }
 
   /**
@@ -124,13 +249,19 @@ class Blackboard {
     }
     const multi = this.client.multi();
     const now = Date.now();
+    let operations = 0;
+
     for (const { channel, data } of entries) {
       const payload = JSON.stringify({ ts: now, ...data });
-      multi.publish(PREFIX + channel, payload);
-      multi.set(PREFIX + channel + ':latest', payload, { EX: T.REDIS_KEY_EXPIRY_SECONDS });
+      for (const entry of this._getChannelFamily(channel)) {
+        multi.publish(PREFIX + entry, payload);
+        multi.set(PREFIX + entry + ':latest', payload, { EX: T.REDIS_KEY_EXPIRY_SECONDS });
+        operations += 2;
+      }
     }
+
     const results = await multi.exec();
-    return { count: entries.length, results: results.length };
+    return { count: entries.length, results: results.length, operations };
   }
 
   /**
@@ -279,9 +410,47 @@ class Blackboard {
    * Create a duplicate client for pub/sub subscribers
    */
   async createSubscriber() {
-    const sub = this.client.duplicate();
-    await sub.connect();
-    return sub;
+    const raw = this.client.duplicate();
+    await raw.connect();
+
+    return {
+      get isReady() {
+        return raw.isReady;
+      },
+      on: (...args) => raw.on(...args),
+      quit: async () => raw.quit(),
+      disconnect: async () => raw.disconnect(),
+      subscribe: async (channel, handler) => {
+        for (const entry of this._getChannelFamily(channel)) {
+          await raw.subscribe(PREFIX + entry, (message) => handler(this._parsePayload(message)));
+        }
+      },
+      unsubscribe: async (channel) => {
+        if (!channel) {
+          await raw.unsubscribe();
+          return;
+        }
+
+        for (const entry of this._getChannelFamily(channel)) {
+          await raw.unsubscribe(PREFIX + entry);
+        }
+      },
+      pSubscribe: async (pattern, handler) => {
+        const normalizedPattern = this._normalizePattern(pattern);
+        await raw.pSubscribe(normalizedPattern, (message, channel) => {
+          handler(this._parsePayload(message), this._stripPrefix(channel));
+        });
+      },
+      pUnsubscribe: async (pattern) => {
+        if (!pattern) {
+          await raw.pUnsubscribe();
+          return;
+        }
+
+        await raw.pUnsubscribe(this._normalizePattern(pattern));
+      },
+      raw,
+    };
   }
 
   /**

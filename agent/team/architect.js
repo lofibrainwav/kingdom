@@ -24,7 +24,7 @@ class ArchitectAgent {
     this.subscriber.on('error', (err) => log.error('architect', 'Redis sub error', { error: err.message }));
     
     // Listen for project initiation from PM
-    await this.subscriber.subscribe('pm:project_init', (msg) => this.handleProjectInit(msg));
+    await this.subscriber.subscribe('work:planning:init', (msg) => this.handleProjectInit(msg));
     
     log.info(this.agentId, 'initialized and waiting for projects');
     await this.updateStatus('idle', 'Awaiting PM initiation');
@@ -51,7 +51,7 @@ class ArchitectAgent {
       });
 
       // 3. Trigger Decomposer to break down tasks
-      await this.board.publish('architect:design_complete', {
+      await this.board.publish('work:planning:designed', {
         projectId,
         goal,
         architecture: context

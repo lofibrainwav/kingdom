@@ -24,7 +24,7 @@ describe('Integration — Vibe Coding Mappings (Phase 6)', () => {
         const sub = await board.createSubscriber();
         let received = null;
         
-        await sub.subscribe('octiv:pm:to:architect', (msg) => {
+        await sub.subscribe('pm:to:architect', (msg) => {
             received = typeof msg === 'string' ? JSON.parse(msg) : msg;
         });
 

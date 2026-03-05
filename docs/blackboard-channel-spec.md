@@ -1,0 +1,49 @@
+# Blackboard Channel Spec
+
+This document defines the canonical event vocabulary for Kingdom's Redis blackboard.
+
+## Principles
+
+- Producers and consumers should use canonical channel names.
+- Legacy channel names remain as compatibility aliases in [`agent/core/blackboard.js`](../agent/core/blackboard.js).
+- Prefix handling and JSON parsing belong to the Blackboard subscriber wrapper, not to individual agents.
+
+## Planes
+
+### Work
+
+- `work:intake`: initial human or interface task intake
+- `work:planning:init`: PM starts planning for a project
+- `work:planning:designed`: architect completes design context
+- `work:planning:decomposed`: decomposer publishes task plan
+
+### Execution
+
+- `execution:dispatch:<agentId>`: direct task dispatch to an agent
+- `execution:broadcast:<agentId>`: broadcast command mirrored per agent
+- `execution:swarm:spawn`: request swarm creation
+- `execution:swarm:terminate`: request swarm termination
+
+### Knowledge
+
+- `knowledge:skills:deployed`: skill pipeline deployed a new skill
+- `knowledge:rumination:digested`: rumination cycle completed with insights
+- `knowledge:zettelkasten:tier-up`: a skill advanced to a new tier
+- `knowledge:zettelkasten:compound-created`: zettelkasten forged a compound skill
+
+### Governance
+
+- `governance:review:approved`: reviewer approved a task result
+- `governance:review:rejected`: reviewer rejected a task result
+- `governance:failure:retry-requested`: failure agent classified a failure and requested retry
+- `governance:project:approved`: reviewer approved a project for deployment
+
+## Compatibility Rule
+
+When renaming a channel:
+
+1. Add the canonical-to-legacy alias in `Blackboard`.
+2. Move producers to the canonical name.
+3. Move consumers to the canonical name.
+4. Keep one compatibility test at the Blackboard layer.
+5. Remove the alias only after all consumers and operators are migrated.

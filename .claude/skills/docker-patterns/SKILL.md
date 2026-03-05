@@ -1,18 +1,18 @@
 ---
 name: docker-patterns
-description: Docker/PaperMC/Redis container best practices for Octiv. Covers health checks, volumes, security hardening, multi-stage builds, and dev/prod environment separation.
+description: Docker and container best practices for Kingdom. Covers Redis Blackboard, supporting services, optional legacy adapters, and secure local-to-prod environment separation.
 ---
 
 # Docker Patterns
 
 ## Purpose
-Best practices for Docker configuration in the Octiv project.
-Covers PaperMC server, Redis, and development environment.
+Best practices for Docker configuration in Kingdom.
+Covers Redis Blackboard, supporting services, and optional legacy adapters.
 
 ## Current Infrastructure
 - **Redis**: Docker container, port 6379 -> 6380 (host)
-- **PaperMC**: localhost:25565 (offline-mode)
-- **RCON**: localhost:25575
+- **Supporting services**: local containers as needed
+- **Legacy adapter**: PaperMC/RCON only for origin-story experiments
 
 ## Docker Compose Best Practices
 
@@ -62,11 +62,11 @@ RUN npm ci --production
 
 # Runtime stage
 FROM node:20-alpine
-RUN addgroup -S octiv && adduser -S octiv -G octiv
+RUN addgroup -S kingdom && adduser -S kingdom -G kingdom
 WORKDIR /app
 COPY --from=builder /app/node_modules ./node_modules
 COPY . .
-USER octiv
+USER kingdom
 CMD ["node", "agent/team.js"]
 ```
 
@@ -86,7 +86,7 @@ services:
     command: redis-server --requirepass ${REDIS_PASSWORD}
 ```
 
-## Octiv-Specific Patterns
+## Kingdom-Specific Patterns
 
 ### Redis Container Management
 ```bash
@@ -104,7 +104,9 @@ docker logs octiv-redis --tail 50
 docker compose stop redis
 ```
 
-### PaperMC Container (future)
+### Legacy PaperMC Adapter
+Use only when a task explicitly targets the Minecraft origin adapter.
+
 ```yaml
 services:
   papermc:
@@ -129,6 +131,7 @@ Use this skill when:
 - Adding new containers to the stack
 - Debugging container connectivity issues
 - Planning production deployment
+- Isolating legacy adapter containers from the main system
 
 ## Anti-Patterns
 - Using `latest` tag in production

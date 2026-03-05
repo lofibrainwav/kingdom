@@ -1,44 +1,51 @@
 ---
 name: health-monitor
-description: Monitor health of Octiv infrastructure — Redis Blackboard, PaperMC server, and agent status. Use to diagnose connection issues and check system state.
+description: Monitor health of Kingdom infrastructure — Blackboard, agent workflows, knowledge sync paths, and optional legacy adapters. Use to diagnose system-state issues before deeper debugging.
 ---
 
 # Health Monitor Skill
 
-Monitors the Octiv sandbox infrastructure.
+Monitors the Kingdom operating system infrastructure.
 
 ## When to Use
-- Checking if Redis is running and connected
-- Verifying PaperMC server is accessible
-- Checking agent heartbeats in Blackboard
-- Diagnosing why bots fail to connect
+- Checking if Redis Blackboard is running and reachable
+- Verifying current agent/workflow status
+- Checking whether knowledge sync paths are healthy
+- Diagnosing infrastructure blockers before debugging code
+- Checking legacy adapter health only when relevant
 
 ## Instructions
 
-1. **Check Redis** (port 6380):
+1. **Check Blackboard / Redis**:
    ```bash
    docker compose ps
    docker exec octiv-redis redis-cli ping
    docker exec octiv-redis redis-cli keys "octiv:*"
    ```
 
-2. **Check PaperMC** (port 25565):
+2. **Check process and port conflicts**:
    ```bash
-   docker compose logs minecraft --tail 20
+   lsof -nP -iTCP -sTCP:LISTEN
    ```
 
-3. **Check agent status in Redis**:
+3. **Check Blackboard status channels**:
    ```bash
-   docker exec octiv-redis redis-cli get octiv:bot:status:latest
-   docker exec octiv-redis redis-cli keys "octiv:agent:*"
+   docker exec octiv-redis redis-cli keys "octiv:*status*"
+   docker exec octiv-redis redis-cli keys "octiv:*knowledge*"
    ```
 
-4. **Run tests**:
+4. **Run baseline tests**:
    ```bash
    npm test
    ```
 
+5. **Check legacy adapter only if needed**:
+   ```bash
+   docker compose logs minecraft --tail 20
+   ```
+
 ## Common Issues
 - Redis not responding: `docker compose up -d redis`
-- PaperMC slow start: wait 2-3 min on first run (downloads plugins)
-- Bot not spawning: check `server.properties` has `online-mode=false`
+- Test baseline red: fix suite before trusting new runtime refactors
+- Knowledge sync stale: verify Obsidian path, NotebookLM auth, and latest docs
+- Legacy adapter unavailable: only relevant for Minecraft-specific tasks

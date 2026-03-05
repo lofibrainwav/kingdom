@@ -212,8 +212,8 @@ class VaultAgent {
     this.subscriber.on('error', (err) => log.error('vault-sync', 'Redis sub error', { error: err.message }));
     
     // Listen for events that require documentation
-    await this.subscriber.subscribe('reviewer:task_approved', (msg) => this.handleApproval(msg));
-    await this.subscriber.subscribe('failure:retry_requested', (msg) => this.handleFailure(msg));
+    await this.subscriber.subscribe('governance:review:approved', (msg) => this.handleApproval(msg));
+    await this.subscriber.subscribe('governance:failure:retry-requested', (msg) => this.handleFailure(msg));
     
     log.info('VaultAgent', 'initialized and watching for events to sync');
   }

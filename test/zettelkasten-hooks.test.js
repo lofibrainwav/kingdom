@@ -88,9 +88,8 @@ describe('ZettelkastenHooks - Unit Tests & Coverage', () => {
     });
 
     it('should handle skills:emergency events and log', async () => {
-      const fn = callbacks['octiv:skills:emergency'];
-      // Valid JSON
-      await fn(JSON.stringify({ newSkill: 'test-skill' }));
+      const fn = callbacks['knowledge:skills:deployed'];
+      await fn({ newSkill: 'test-skill' });
       assert.equal(loggerMock.logEvent.mock.callCount(), 1);
 
       // JSON parsing error should be caught
@@ -98,12 +97,12 @@ describe('ZettelkastenHooks - Unit Tests & Coverage', () => {
 
       // Exception inside logger should be caught
       loggerMock.logEvent.mock.mockImplementation(async () => { throw new Error('log fail'); });
-      await fn(JSON.stringify({ newSkill: 'fail-log' }));
+      await fn({ newSkill: 'fail-log' });
       assert.equal(loggerMock.logEvent.mock.callCount(), 2);
     });
 
     it('should handle rumination:digested events and optionally trigger GoT', async () => {
-      const fn = callbacks['octiv:rumination:digested'];
+      const fn = callbacks['knowledge:rumination:digested'];
       // reasoningThreshold is 2
       gotMock.fullReasoningCycle.mock.mockImplementation(async () => ({ summary: { totalSynergies: 0 } }));
       
@@ -133,8 +132,8 @@ describe('ZettelkastenHooks - Unit Tests & Coverage', () => {
     });
 
     it('should handle zettelkasten:tier-up', async () => {
-      const fn = callbacks['octiv:zettelkasten:tier-up'];
-      await fn(JSON.stringify({ skill: 'dig', newTier: 'Master', xp: 100 }));
+      const fn = callbacks['knowledge:zettelkasten:tier-up'];
+      await fn({ skill: 'dig', newTier: 'Master', xp: 100 });
       assert.equal(loggerMock.logEvent.mock.callCount(), 1);
 
       // Invalid json
@@ -142,8 +141,8 @@ describe('ZettelkastenHooks - Unit Tests & Coverage', () => {
     });
 
     it('should handle zettelkasten:compound-created', async () => {
-      const fn = callbacks['octiv:zettelkasten:compound-created'];
-      await fn(JSON.stringify({ compound: 'dig-build', sources: [] }));
+      const fn = callbacks['knowledge:zettelkasten:compound-created'];
+      await fn({ compound: 'dig-build', sources: [] });
       assert.equal(loggerMock.logEvent.mock.callCount(), 1);
 
       // Invalid json

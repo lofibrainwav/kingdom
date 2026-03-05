@@ -1,17 +1,26 @@
 ---
 name: mcporter
-description: Minecraft bot control via mineflayer. Use for spawning bots, controlling movement, mining, building, and crafting in the PaperMC server.
+description: Legacy Minecraft adapter skill. Use only when explicitly working on the original Kingdom sandbox, bot control, or adapter maintenance.
 ---
 
 # MCPorter Skill
 
-Controls Minecraft bots via mineflayer on the Octiv PaperMC server.
+Controls the legacy Minecraft adapter via mineflayer.
 
 ## When to Use
+- Only when the task explicitly targets the Minecraft origin adapter
 - Spawning a bot and verifying connection
 - Implementing bot movement and pathfinding
 - Mining blocks or building structures
 - Crafting items in Minecraft
+
+## Role In Kingdom
+
+This is not the default Kingdom runtime.
+It is preserved as:
+- origin-story proof
+- sandbox experimentation adapter
+- legacy integration target
 
 ## Connection Details
 - **Host**: localhost:25565

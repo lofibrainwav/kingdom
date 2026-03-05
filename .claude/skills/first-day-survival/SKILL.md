@@ -3,14 +3,22 @@ name: first-day-survival
 version: 1.3.1
 author: OpenClaw Legion Reflexion Engine v2
 description: |
-  The legion's first survival mission. Agents survive the first night while autonomously creating new skills through Self-Improvement. 
-  Full Hierarchical Collaboration support with reinforced protection against fatal failures.
+  Legacy origin mission for the first Kingdom sandbox. Preserved as proof of the initial agent collaboration pattern, not as the default Kingdom mission.
 user-invocable: true
 requires:
   bins: [node, jq, redis-cli]
   env: [BLACKBOARD_REDIS_URL]
   apis: [mineflayer, node:vm-sandbox]
 ---
+
+## Legacy Origin Mission
+
+This skill is retained as a historical and experimental artifact.
+
+Use it only when:
+- maintaining the Minecraft adapter
+- comparing current orchestration against the original MVP
+- extracting patterns from the first Kingdom mission
 
 ## User Story (BMAD Format)
 As a member of the Autonomous Survival Legion,  

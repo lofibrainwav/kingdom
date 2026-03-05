@@ -1,11 +1,16 @@
 ---
 name: weather
-description: Get Minecraft in-game weather and time information for scheduling agent tasks. Use to plan daylight-dependent activities.
+description: Legacy Minecraft adapter weather and time skill. Use only when explicitly working on the original Kingdom sandbox adapter.
 ---
 
 # Weather Skill
 
-Manages in-game time and weather for agent scheduling.
+Manages in-game time and weather for the legacy Minecraft adapter.
+
+## Role In Kingdom
+
+This skill is preserved only for origin-story adapter work.
+It is not part of the default real-world Kingdom operating model.
 
 ## When to Use
 - Scheduling wood collection during daylight (safer)

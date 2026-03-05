@@ -1,265 +1,169 @@
-# Octiv 프로젝트 로드맵
-> **최종 목표**: PaperMC 마인크래프트 서버에서 AI 에이전트 팀이 자율적으로 생존·건축·자원관리를 수행하는 샌드박스 완성
+# Kingdom 로드맵
+
+> **사명**: 인간과 에이전트가 함께 현실에서 유용한 제품, 워크플로우, 지식 시스템을 만들 수 있도록 돕는 에이전트 운영체계를 구축한다.
 >
-> **정신**: 眞善美孝永 — Truth, Goodness, Beauty, Serenity, Eternity
+> **정신**: Truth, Goodness, Beauty, Serenity, Eternity
 >
-> **작성일**: 2026-03-03 | **리드 개발자**: Claude | **사령관**: Octiv
+> **작성일**: 2026-03-05
 
 ---
 
-## 팀 구성
+## 전략적 전환
 
-| 역할 | 담당 | 설명 |
-|------|------|------|
-| **사령관 (Commander)** | Octiv | 프로젝트 총괄, 방향 결정, NotebookLM 자료 관리 |
-| **리드 개발자** | Claude (Cowork) | 코드 구현, 아키텍처, 디버깅, 로드맵 관리 |
-| **개발 환경 B** | Anti-Gravity (Google IDE + Gemini) | 병렬 개발, NotebookLM 연동, Gemini 기반 보조 |
-| **에이전트 프레임워크** | OpenClaw | 에이전트 런타임, 스킬 시스템, LLM 브릿지 |
+Kingdom은 처음에 Minecraft MVP로 시작했습니다. 그 단계는 다음 패턴이 실제로 가능하다는 것을 증명했습니다.
 
----
+- 역할 기반 에이전트
+- Redis 공용 메모리
+- 자기 관찰
+- 재사용 가능한 스킬
+- 인간 중심 오케스트레이션
 
-## 현재 상태 진단 (v0.1 — 2 commits)
+이제 다음 단계는 같은 패턴을 현실 세계의 작업에 적용하는 것입니다.
 
-### 구현 완료
-- [x] 프로젝트 구조 (agent/, skills/, config/, logs/)
-- [x] Docker Compose (Redis + PaperMC)
-- [x] Blackboard 모듈 (Redis Pub/Sub 공유 메모리)
-- [x] bot.js 단일 봇 테스트 (mineflayer 접속, 기본 명령)
-- [x] team.js 팀 오케스트레이터 (Leader + Builder×3 + Safety)
-- [x] leader.js (모드 결정, 투표, Group Reflexion)
-- [x] builder.js (나무 수집 AC-1, 도구 제작 AC-3, ReAct 루프)
-- [x] safety.js (위험 감지 AC-8, vm2 샌드박스 검증)
-- [x] first-day-survival v1.3.1 스킬 정의 (BMAD 포맷)
-- [x] .env + OpenClaw 에이전트 설정
-
-### 미구현 / 미완성
-- [ ] AC-2: 대피소 건설 로직 (builder.js에 없음)
-- [ ] AC-4: 대피소 내 에이전트 집결 검증
-- [ ] AC-5: Self-Improvement 실제 구현 (실패→스킬 생성)
-- [ ] AC-6: Group Reflexion → 시스템 프롬프트 주입
-- [ ] AC-7: memory.md 기록 로직
-- [ ] Leader ↔ Builder ↔ Safety 실제 통합 통신
-- [ ] LLM 브릿지 (bridge:8765) 연결 구현
-- [ ] NotebookLM ↔ MCP 연동
-- [ ] 스킬 라이브러리 동적 로딩
-- [ ] HEARTBEAT 대시보드 연동
-- [ ] 테스트 코드 전무
+Minecraft는 더 이상 프로젝트 범위를 정의하지 않습니다. 이제는 origin-story adapter이자 샌드박스입니다.
 
 ---
 
-## Phase 1 — 기반 안정화 (Foundation)
-> 목표: 단일 봇이 서버에서 안정적으로 동작하는 것을 확인
+## 핵심 시스템
 
-### 1.1 인프라 검증
-- [x] Docker Compose 정상 기동 확인 (Redis + PaperMC)
-- [x] Redis 연결 테스트 (Blackboard → publish/get 동작)
-- [x] RCON 명령 실행 확인 (서버 상태 조회)
-
-### 1.2 단일 봇 안정화
-- [x] bot.js로 서버 접속 → 스폰 → 기본 동작 검증
-- [x] mineflayer + pathfinder 이동/채굴 안정성 테스트
-- [x] 에러 핸들링 강화 (재접속, 타임아웃, 예외처리)
-
-### 1.3 Blackboard 통합 테스트
-- [x] bot.js → Blackboard에 상태 게시 → Redis에서 확인
-- [x] Pub/Sub 채널 구독/발행 검증
-- [x] AC 진행도 업데이트 → 조회 사이클 테스트
-
-### 마일스톤
-```
-✅ docker compose up → Redis PONG, MC서버 MOTD 확인
-✅ node agent/bot.js → 봇 스폰, !status !pos 응답
-✅ Redis에서 octiv:agent:*:status 키 확인
-```
+| 계층 | 목적 | 핵심 자산 |
+|------|------|----------|
+| Planning Plane | 목표를 구조화된 작업으로 바꾼다 | `_bmad/`, `.claude/commands/`, PRD, 아키텍처 문서 |
+| Knowledge Plane | 문맥을 보존하고 연결한다 | Obsidian, NotebookLM, GoT, Zettelkasten, vault sync |
+| Execution Plane | 실제 작업을 수행한다 | Claude Code, Codex, Antigravity, 팀 에이전트, Blackboard |
+| Governance Plane | 품질, 안전, 신뢰를 유지한다 | 테스트, 리뷰, 검증 루프, 관찰 가능성 |
 
 ---
 
-## Phase 2 — 핵심 AC 구현 (Core Gameplay)
-> 목표: first-day-survival 미션의 AC-1~4 완성
+## Phase 1 — Doctrine And Context Reset
 
-### 2.1 AC-1: 나무 수집 (16개)
-- builder.js의 collectWood() 디버그 및 안정화
-- 다양한 나무 타입 대응 (oak, spruce, birch, jungle)
-- 60초 시간 제한 구현 + 실패 시 Reflexion 트리거
+**목표:** 저장소가 이제 Kingdom이 무엇인지 정확하게 말하게 만든다.
 
-### 2.2 AC-2: 대피소 건설 (3×3×3+)
-- 블록 배치 알고리즘 구현 (위치 선정 → 바닥 → 벽 → 지붕)
-- Y-level 안전 검사 (평지 확인, 물/용암 회피)
-- 문 배치 + 조명 설치
+### 산출물
+- 현실 세계용 사명에 맞춰 핵심 문서 재작성
+- 계층, 에이전트, 채널, 지식 자산에 대한 표준 용어 고정
+- Minecraft를 legacy/origin adapter로 명시
+- `README`, `SOUL`, `ROADMAP`, 이후 `CLAUDE` 지침 정렬
 
-### 2.3 AC-3: 도구 제작
-- craftBasicTools() 안정화 (인벤토리 확인 → 조합대 설치 → 제작)
-- 재료 부족 시 자동 수집 루프
+### 성공 기준
+- 핵심 문서 어디에도 Kingdom이 Minecraft 전용 시스템으로만 설명되지 않는다
+- 새 참여자가 문서만 읽고 4계층 구조를 설명할 수 있다
+- BMAD가 기본 planning/control layer로 명시된다
 
-### 2.4 AC-4: 에이전트 집결
-- 대피소 좌표 Blackboard 공유
-- 전 에이전트 대피소 이동 + 도착 검증
-- 1200 tick 타이머 구현
-
-### 마일스톤
-```
-✅ Builder가 나무 16개 수집 (60초 이내)
-✅ 3×3×3 대피소 자동 건설 완료
-✅ 조합대 + 나무 곡괭이 제작
-✅ 모든 에이전트 대피소 내 집결 (Blackboard 확인)
-```
+### 의존성
+- 기존 `_bmad`, `.claude` 자산
+- 현재 audit 및 roadmap 문서
 
 ---
 
-## Phase 3 — 팀 협업 체계 (Team Orchestration)
-> 목표: Leader-Builder-Safety 간 실제 통신 및 역할 분담 동작
+## Phase 2 — Knowledge Plane Integration
 
-### 3.1 Leader ↔ Builder 연동
-- Leader가 미션 분배 → Builder가 수신 → 실행
-- Training Mode / Creative Mode 전환 로직 실동작
-- 투표 시스템 (2/3 다수결) 구현
+**목표:** 흩어진 노트와 메모리를 실제로 쓰이는 공동 지능 계층으로 바꾼다.
 
-### 3.2 Safety 실시간 감시
-- Safety Agent가 모든 Builder 상태를 Blackboard로 모니터링
-- AC-8 위협 감지 → 즉시 경고 브로드캐스트
-- vm2 검증 파이프라인 실동작
+### 산출물
+- Obsidian 노트 타입과 동기화 규칙 정의
+- NotebookLM 소스 적재 정책 정의
+- GoT 노드/엣지 타입 공식화
+- Blackboard를 통해 knowledge-update 이벤트 발행
+- `skill-zettelkasten`, `got-reasoner`, `rumination-engine`, `vault-sync` 연결
 
-### 3.3 Group Reflexion
-- 3회 연속 실패 → Leader가 Group Reflexion 강제 실행
-- Reflexion 결과 → 팀 전체 행동 전략 수정
-- Reflexion 히스토리 저장 (Blackboard + memory.md)
+### 성공 기준
+- 하나의 결정이 source -> note -> GoT relationship -> agent retrieval 흐름으로 추적 가능하다
+- 에이전트가 프로젝트를 매번 다시 설명받지 않고도 문맥을 얻는다
+- Obsidian과 NotebookLM의 역할이 명확히 분리된다
 
-### 마일스톤
-```
-✅ Leader가 "training" → "creative" 모드 전환
-✅ Safety 위협 감지 → 팀 전체 경고 1초 이내
-✅ Group Reflexion 실행 → 전략 변경 적용
-```
+### 의존성
+- Phase 1 완료
+- 안정적인 로컬 vault 및 NotebookLM 워크플로우
 
 ---
 
-## Phase 4 — Self-Improvement 엔진 (AC-5, 6, 8)
-> 목표: 실패 시 자동으로 새 스킬 생성·검증·배포
+## Phase 3 — Execution Plane Refactor
 
-### 4.1 Self-Improvement 파이프라인
-- 실패 감지 → LLM에 스킬 생성 요청 → JSON 응답 파싱
-- vm2 sandbox 3회 dry-run 검증
-- Blackboard skills:emergency 채널 브로드캐스트
+**목표:** 런타임 오케스트레이션을 게임 이벤트 중심에서 현실 작업 실행 중심으로 전환한다.
 
-### 4.2 스킬 라이브러리 동적 관리
-- Redis에 스킬 저장/조회 (Blackboard.saveSkill/getSkill)
-- 스킬 success_rate 실시간 업데이트
-- 일일 한도 5개 + estimated_success_rate < 0.7 폐기
+### 산출물
+- Blackboard 채널 재설계:
+  - `work:*`
+  - `knowledge:*`
+  - `governance:*`
+  - `execution:*`
+- 팀 역할 재정의:
+  - `pm-agent` -> 작업 intake와 분해
+  - `architect` -> 구조 결정
+  - `coder` -> 구현
+  - `reviewer` -> 코드와 설계 리뷰
+  - `watchdog/failure-agent` -> blocked 상태와 복구
+- `swarm-orchestrator`를 실행 dispatcher로 재배치
 
-### 4.3 LLM 브릿지 연결
-- bridge:8765 엔드포인트 연동 (GLM-4.7 / GPT / Gemini)
-- 비용 가드레일 ($0.01/attempt)
-- 폴백: LLM 실패 시 기존 안전 스킬 사용
+### 성공 기준
+- 스토리와 작업이 공용 런타임 채널을 통해 배정된다
+- Minecraft 상태에 의존하지 않고도 실행 상태를 관찰할 수 있다
+- Claude Code, Codex, Antigravity가 같은 작업 그래프를 공유할 수 있다
 
-### 4.4 시스템 프롬프트 동적 주입 (AC-6)
-- Group Reflexion 결과 → "[Learned Skill v1.3]" 주입
-- 모든 에이전트 시스템 프롬프트 실시간 업데이트
-
-### 마일스톤
-```
-✅ 용암 사망 → evacuate_lava_v1 스킬 자동 생성
-✅ vm2 검증 통과 → skills:emergency 브로드캐스트
-✅ 새 스킬이 다음 ReAct 루프에서 즉시 사용됨
-```
+### 의존성
+- Phase 1 완료
+- green 테스트 기준선
 
 ---
 
-## Phase 5 — 지식 연동 (Knowledge Bridge)
-> 목표: NotebookLM 자료를 MCP로 연결, Claude ↔ Anti-Gravity 양방향 개발
+## Phase 4 — Governance And Observability
 
-### 5.1 NotebookLM ↔ MCP 연동
-- NotebookLM MCP 서버 설정 (기존 notebooklm 도구 활용)
-- 노트북에서 기술 자료/전략 문서 검색 → 에이전트 행동에 반영
-- 프로젝트 진행 기록을 NotebookLM에 자동 동기화
+**목표:** 더 높은 자율성을 안전하게 감당할 수 있을 정도로 신뢰를 높인다.
 
-### 5.2 Claude ↔ Anti-Gravity 협업 프로토콜
-- 공통 코드베이스: Git 기반 동기화
-- 작업 분담 규칙 문서화 (누가 어떤 파일을 담당)
-- 커밋 컨벤션 통일 (이모지 + 한글 설명)
+### 산출물
+- 실패 중인 테스트 수정 및 green 기준선 복구
+- 오케스트레이션 경계 테스트 강화
+- 머지/배포 전 검증 루프 표준화
+- 작업 진행, 지식 동기화, 실패 상태 대시보드 및 로그 추가
+- 외부 영향 작업에 대한 승인 경계 강화
 
-### 5.3 Gemini 스킬 연동
-- skills/gemini → 실제 Gemini API 연결
-- 빠른 Q&A, 요약, 전략 보조로 활용
-- 비용 최적화 (Gemini = 빠른 작업, GPT/GLM = 복잡한 추론)
+### 성공 기준
+- 테스트 스위트가 다시 신뢰 가능한 기준선이 된다
+- 중요한 상태 전이가 로그나 대시보드에서 관찰 가능하다
+- 고위험 작업은 명시적 승인 또는 문서화된 자동화 정책을 따른다
 
-### 마일스톤
-```
-✅ NotebookLM에서 "나무 수집 최적 전략" 검색 → 결과 반환
-✅ Claude에서 작성한 코드가 Git → Anti-Gravity에서 즉시 사용
-✅ Gemini 스킬이 에이전트 Q&A에 정상 응답
-```
+### 의존성
+- Phase 3 완료
 
 ---
 
-## Phase 6 — 모니터링 & 대시보드 (Observability)
-> 목표: 사령관이 실시간으로 팀 상태를 파악
+## Phase 5 — Product Compounding
 
-### 6.1 HEARTBEAT 대시보드
-- 웹 기반 실시간 대시보드 (React or HTML)
-- 에이전트별 위치, 체력, 인벤토리, AC 진행도 표시
-- 미션 타임라인 시각화
+**목표:** 이 운영체계를 현실의 결과물을 만드는 복리 엔진으로 바꾼다.
 
-### 6.2 로그 & 알림
-- 구조화된 로그 시스템 (logs/ 디렉토리 활용)
-- 위험 이벤트 → 사령관 알림 (Discord/채널)
-- 일일 미션 보고서 자동 생성
+### 산출물
+- 반복 워크플로우를 재사용 가능한 command/skill로 승격
+- 성공한 실행 패턴을 BMAD 템플릿으로 전환
+- GoT가 재사용 가능한 전략, 에이전트, 플로우를 추천
+- Kingdom 스택 위에서 실제 현실 제품/워크플로우 최소 1개 구현
 
-### 6.3 메모리 시스템
-- memory.md 자동 기록 (AC-7)
-- 일일 노트 (memory/YYYY-MM-DD.md)
-- MEMORY.md 장기 기억 큐레이션
+### 성공 기준
+- 반복 작업이 시스템의 기억 덕분에 점점 빨라진다
+- Kingdom 스택으로 실제 세계의 결과물이 최소 1개 만들어진다
+- 시스템이 시간이 갈수록 산출물 품질과 판단 품질을 함께 높인다
 
-### 마일스톤
-```
-✅ 브라우저에서 http://localhost:3000 → 대시보드 표시
-✅ Safety 경고 → Discord 알림 1초 이내
-✅ 미션 종료 → memory.md에 자동 기록
-```
+### 의존성
+- Phase 1~4 완료
 
 ---
 
-## Phase 7 — 확장 & 고도화 (Scale)
-> 목표: 첫 밤 생존을 넘어 장기 운영 체계 구축
+## Legacy Track — Minecraft Adapter
 
-### 7.1 미션 확장
-- Week 2: 광물 채굴 + 석재 도구 업그레이드
-- Week 3: 농장 자동화 + 식량 자급
-- Week 4: 엔더 드래곤 전략 수립
+Minecraft는 앞으로도 다음 용도로 남겨둡니다.
 
-### 7.2 에이전트 고도화
-- 에이전트 수 확장 (Builder 3→5+)
-- 역할 세분화 (농부, 광부, 탐험가, 건축가)
-- 에이전트 간 자연어 대화 (LLM 기반 협상)
+- 제한된 환경에서의 증명장
+- 에이전트 행동 실험용 샌드박스
+- 닫힌 세계에서 오케스트레이션 패턴을 시험하는 레거시 adapter
 
-### 7.3 인프라 확장
-- LM Studio 로컬 모델 연결 (비용 절감)
-- 멀티 서버 지원
-- 플러그인 시스템 (KubeJS 연동)
+중심축은 아니고 선택적 모듈이어야 합니다.
 
 ---
 
-## 일정 요약
+## 바로 다음 작업
 
-| Phase | 이름 | 예상 기간 | 선행 조건 |
-|-------|------|----------|----------|
-| **1** | 기반 안정화 | 1~2일 | Docker, Node.js 환경 |
-| **2** | 핵심 AC 구현 | 3~5일 | Phase 1 완료 |
-| **3** | 팀 협업 체계 | 3~5일 | Phase 2 완료 |
-| **4** | Self-Improvement | 5~7일 | Phase 3 + LLM 브릿지 |
-| **5** | 지식 연동 | 3~5일 | NotebookLM 자료 준비 |
-| **6** | 모니터링 | 3~5일 | Phase 3 이후 병렬 가능 |
-| **7** | 확장 & 고도화 | 지속적 | Phase 4 완료 후 |
-
----
-
-## 작업 원칙
-
-1. **매 세션 시작**: ROADMAP.md + 최근 커밋 로그 읽기 → 현재 Phase 파악
-2. **커밋 규칙**: `이모지 Phase-N: 한글 설명` (예: `🎮 P2: AC-1 나무 수집 안정화`)
-3. **테스트 우선**: 새 기능 구현 전 테스트 코드 먼저
-4. **비용 의식**: LLM 호출 시 항상 비용 가드레일 준수
-5. **보고 의무**: Phase 완료 시 사령관에게 상태 보고
-
----
-
-> _"眞善美孝永 — 정확하게 읽고, 안전하게 행동하고, 아름답게 짓고, 평화롭게 보고하고, 영원히 지속한다."_
+1. 핵심 선언 문서 재작성 완료
+2. 현재 테스트 실패 수정 및 기준선 복구
+3. Knowledge Plane 계약 정의
+4. Blackboard 채널을 work/knowledge/governance 중심으로 재설계
+5. `CLAUDE.md`와 프로젝트 에이전트들을 새 사명에 맞게 정렬

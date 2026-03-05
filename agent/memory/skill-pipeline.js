@@ -65,7 +65,7 @@ class SkillPipeline {
     await this._saveDailyMeta();
 
     // Broadcast emergency channel
-    await this.board.publish('skills:emergency', {
+    await this.board.publish('knowledge:skills:deployed', {
       author: 'skill-pipeline',
       newSkill: skillJson.name,
       trigger: failureContext.error,

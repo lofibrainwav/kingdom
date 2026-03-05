@@ -27,7 +27,7 @@ class DecomposerAgent {
     this.subscriber.on('error', (err) => log.error('decomposer', 'Redis sub error', { error: err.message }));
     
     // Listen for design completion from Architect
-    await this.subscriber.subscribe('architect:design_complete', (msg) => this.handleDesignComplete(msg));
+    await this.subscriber.subscribe('work:planning:designed', (msg) => this.handleDesignComplete(msg));
     
     log.info(this.agentId, 'initialized and waiting for designs');
     await this.updateStatus('idle', 'Awaiting architect design');
@@ -59,7 +59,7 @@ class DecomposerAgent {
       });
 
       // 4. Trigger Coder to start working
-      await this.board.publish('decomposer:plan_complete', {
+      await this.board.publish('work:planning:decomposed', {
         projectId,
         goal,
         tasks

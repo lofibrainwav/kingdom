@@ -27,7 +27,7 @@ class CoderAgent {
     this.subscriber.on('error', (err) => log.error('coder', 'Redis sub error', { error: err.message }));
     
     // Listen for decomposition complete from Decomposer
-    await this.subscriber.subscribe('decomposer:plan_complete', (msg) => this.handlePlanComplete(msg));
+    await this.subscriber.subscribe('work:planning:decomposed', (msg) => this.handlePlanComplete(msg));
     
     log.info(this.agentId, 'initialized and ready to build');
     await this.updateStatus('idle', 'Waiting for task plans');

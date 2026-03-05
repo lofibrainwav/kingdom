@@ -24,7 +24,7 @@
 const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
 const { readFileSync } = require('fs');
 const { join } = require('path');
-const { Blackboard, PREFIX } = require('../core/blackboard');
+const { Blackboard } = require('../core/blackboard');
 const T = require('../../config/timeouts');
 const { getLogger } = require('../core/logger');
 const log = getLogger();
@@ -192,9 +192,9 @@ class OctivDiscordBot {
 
   _subscribeBlackboard() {
     // Agent status updates -> #neostarz-live
-    this.subscriber.pSubscribe(PREFIX + '*:status', (message, channel) => {
+    this.subscriber.pSubscribe('*:status', (message, channel) => {
       try {
-        const data = JSON.parse(message);
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
         this._postStatusEmbed(channel, data);
       } catch (err) {
         log.error('discord', 'failed to parse status message', { error: err.message });
@@ -202,9 +202,9 @@ class OctivDiscordBot {
     });
 
     // Agent health updates -> #neostarz-live
-    this.subscriber.pSubscribe(PREFIX + 'agent:*:health', (message, channel) => {
+    this.subscriber.pSubscribe('agent:*:health', (message, channel) => {
       try {
-        const data = JSON.parse(message);
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
         data.agentId = data.agentId || _extractAgentId(channel);
         this._postHealthEmbed(data);
       } catch (err) {
@@ -213,9 +213,9 @@ class OctivDiscordBot {
     });
 
     // Agent inventory updates -> #neostarz-live
-    this.subscriber.pSubscribe(PREFIX + 'agent:*:inventory', (message, channel) => {
+    this.subscriber.pSubscribe('agent:*:inventory', (message, channel) => {
       try {
-        const data = JSON.parse(message);
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
         data.agentId = data.agentId || _extractAgentId(channel);
         this._postInventoryEmbed(data);
       } catch (err) {
@@ -224,9 +224,9 @@ class OctivDiscordBot {
     });
 
     // Agent ReAct pulses -> #neostarz-live (throttled)
-    this.subscriber.pSubscribe(PREFIX + 'agent:*:react', (message, channel) => {
+    this.subscriber.pSubscribe('agent:*:react', (message, channel) => {
       try {
-        const data = JSON.parse(message);
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
         data.agentId = data.agentId || _extractAgentId(channel);
         this._postReactPulse(data);
       } catch (err) {
@@ -235,64 +235,64 @@ class OctivDiscordBot {
     });
 
     // Builder arrived at destination -> #neostarz-live
-    this.subscriber.subscribe(PREFIX + 'builder:arrived', (message) => {
+    this.subscriber.subscribe('builder:arrived', (message) => {
       try {
-        this._postMilestoneEmbed(JSON.parse(message));
+        this._postMilestoneEmbed(typeof message === 'string' ? JSON.parse(message) : message);
       } catch (err) {
         log.error('discord', 'failed to parse arrived message', { error: err.message });
       }
     });
 
     // Builder collecting resources -> #neostarz-live
-    this.subscriber.subscribe(PREFIX + 'builder:collecting', (message) => {
+    this.subscriber.subscribe('builder:collecting', (message) => {
       try {
-        this._postMilestoneEmbed(JSON.parse(message));
+        this._postMilestoneEmbed(typeof message === 'string' ? JSON.parse(message) : message);
       } catch (err) {
         log.error('discord', 'failed to parse collecting message', { error: err.message });
       }
     });
 
     // Safety threats -> #neostarz-alerts
-    this.subscriber.subscribe(PREFIX + 'safety:threat', (message) => {
+    this.subscriber.subscribe('safety:threat', (message) => {
       try {
-        this._postAlertEmbed('threat', JSON.parse(message));
+        this._postAlertEmbed('threat', typeof message === 'string' ? JSON.parse(message) : message);
       } catch (err) {
         log.error('discord', 'failed to parse threat message', { error: err.message });
       }
     });
 
     // Reflexion events -> #neostarz-alerts
-    this.subscriber.subscribe(PREFIX + 'leader:reflexion', (message) => {
+    this.subscriber.subscribe('leader:reflexion', (message) => {
       try {
-        this._postAlertEmbed('reflexion', JSON.parse(message));
+        this._postAlertEmbed('reflexion', typeof message === 'string' ? JSON.parse(message) : message);
       } catch (err) {
         log.error('discord', 'failed to parse reflexion message', { error: err.message });
       }
     });
 
     // Emergency skill creation -> #neostarz-alerts
-    this.subscriber.subscribe(PREFIX + 'skills:emergency', (message) => {
+    this.subscriber.subscribe('knowledge:skills:deployed', (message) => {
       try {
-        this._postSkillEmbed(JSON.parse(message));
+        this._postSkillEmbed(typeof message === 'string' ? JSON.parse(message) : message);
       } catch (err) {
         log.error('discord', 'failed to parse emergency skill message', { error: err.message });
       }
     });
 
     // GoT reasoning complete -> #neostarz-alerts
-    this.subscriber.subscribe(PREFIX + 'got:reasoning-complete', (message) => {
+    this.subscriber.subscribe('got:reasoning-complete', (message) => {
       try {
-        this._postAlertEmbed('got', JSON.parse(message));
+        this._postAlertEmbed('got', typeof message === 'string' ? JSON.parse(message) : message);
       } catch (err) {
         log.error('discord', 'failed to parse GoT message', { error: err.message });
       }
     });
 
     // Agent confessions -> #meta-shinmoongo (forum threads)
-    this.subscriber.pSubscribe(PREFIX + 'agent:*:confess', (message, channel) => {
+    this.subscriber.pSubscribe('agent:*:confess', (message, channel) => {
       if (!this.channels.forum) return;
       try {
-        const data = JSON.parse(message);
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
         data.agentId = data.agentId || _extractAgentId(channel);
         this._postShinmungo(data).catch(err =>
           log.error('discord', 'failed to post shinmungo', { error: err.message })
@@ -303,9 +303,9 @@ class OctivDiscordBot {
     });
 
     // Agent-to-agent chat -> #neostarz-chat
-    this.subscriber.pSubscribe(PREFIX + 'agent:*:chat', (message, channel) => {
+    this.subscriber.pSubscribe('agent:*:chat', (message, channel) => {
       try {
-        const data = JSON.parse(message);
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
         data.agentId = data.agentId || _extractAgentId(channel);
         this._postChatMessage(data);
       } catch (err) {
@@ -637,7 +637,7 @@ class OctivDiscordBot {
     const task = taskParts.join(' ');
 
     try {
-      await this.board.publish('commands:assign', {
+      await this.board.publish('work:intake', {
         author: 'discord-bot',
         agentId,
         task: task,

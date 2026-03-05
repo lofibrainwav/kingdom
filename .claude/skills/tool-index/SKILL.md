@@ -1,13 +1,13 @@
 ---
 name: tool-index
-description: Master index of ALL tools available in the Octiv project — agents, skills, MCP servers, CLI tools, npm scripts, Docker commands. Use when unsure which tool to use for a task.
+description: Master index of Kingdom tools — agents, skills, MCP servers, CLI tools, workflows, and legacy adapters. Use when unsure which tool or workflow should be used next.
 ---
 
-# Octiv Tool Index — Complete Reference
+# Kingdom Tool Index — Complete Reference
 
 ---
 
-## Agents (13 Claude Subagents)
+## Agents
 
 ### Orchestration
 | Agent | When | Model |
@@ -77,11 +77,11 @@ description: Master index of ALL tools available in the Octiv project — agents
 ### Project Reference
 | Skill | When |
 |-------|------|
-| `/health-monitor` | Diagnose Redis/PaperMC/agent issues |
-| `/mcporter` | Minecraft bot control reference |
+| `/health-monitor` | Diagnose Blackboard/agent/knowledge infrastructure issues |
+| `/mcporter` | Legacy Minecraft adapter reference |
 | `/dev-tool-belt` | Tests, Docker, git, GitHub CLI |
-| `/weather` | Minecraft weather commands |
-| `/first-day-survival` | AC definitions and mission spec |
+| `/weather` | Legacy Minecraft adapter weather/time commands |
+| `/first-day-survival` | Legacy origin mission spec |
 | `/automated-debugging` | Crash investigation guide |
 | `/capability-registry` | Agent↔MCP↔Skill mapping |
 | `/tool-index` | **This file** — find any tool |
@@ -93,7 +93,7 @@ description: Master index of ALL tools available in the Octiv project — agents
 ### Active (7 — always available)
 | MCP | Purpose | Primary Agents |
 |-----|---------|---------------|
-| `context7` | Library docs (mineflayer, Redis, discord.js) | dev-agent, architect, planner |
+| `context7` | Library docs (Redis, SDKs, framework APIs) | dev-agent, architect, planner |
 | `sequentialthinking` | Multi-step reasoning, task decomposition | orchestrator, architect, planner, debug-agent |
 | `playwright` | Browser automation, E2E testing | notebooklm-agent |
 | `notebooklm` | Project knowledge base queries | notebooklm-agent |
@@ -130,17 +130,16 @@ description: Master index of ALL tools available in the Octiv project — agents
 | Command | What it does |
 |---------|-------------|
 | `npm test` | Run all tests (requires Redis:6380) |
-| `npm run test:bot` | Run bot.test.js only |
 | `npm run test:blackboard` | Run blackboard.test.js only |
-| `npm run bot` | Start single bot |
-| `npm run team` | Start full team (5 agents) |
+| `npm run start` | Start dashboard |
+| `npm run start:pipeline` | Start PM pipeline agent |
 | `npm run redis:check` | Ping Redis on port 6380 |
 | `npm run status` | Show team status from Redis |
 
 ### Docker (infrastructure)
 | Command | What it does |
 |---------|-------------|
-| `docker compose up -d` | Start Redis + PaperMC |
+| `docker compose up -d` | Start configured services |
 | `docker compose down` | Stop everything |
 | `docker compose ps` | Check status |
 | `docker compose logs -f` | Follow logs |
@@ -154,7 +153,9 @@ description: Master index of ALL tools available in the Octiv project — agents
 | `redis-cli -p 6380 monitor` | Live command stream |
 | `redis-cli -p 6380 hgetall octiv:team:status:latest` | Team status |
 
-### RCON (Minecraft admin)
+### Legacy Adapter Admin
+Use only for origin-story adapter work.
+
 | Command | What it does |
 |---------|-------------|
 | `docker exec octiv-mc rcon-cli gamemode creative OctivBot_builder-01` | Creative mode |
@@ -176,10 +177,9 @@ description: Master index of ALL tools available in the Octiv project — agents
 
 | Package | Version | Purpose |
 |---------|---------|---------|
-| `mineflayer` | ^4.35.0 | Minecraft bot framework |
-| `mineflayer-pathfinder` | ^2.4.5 | Pathfinding for bots |
 | `redis` | ^5.11.0 | Redis client (Blackboard) |
-| `node:vm` | built-in | Sandbox for dynamic skill code (`agent/vm-sandbox.js`) |
+| `@anthropic-ai/sdk` | project dependency | LLM integration |
+| `groq-sdk` | project dependency | LLM fallback |
 | `discord.js` | ^14 | Discord bot (Phase 5.4) |
 
 ---
@@ -188,16 +188,16 @@ description: Master index of ALL tools available in the Octiv project — agents
 
 | File | Purpose |
 |------|---------|
-| `agent/OctivBot.js` | Base bot class |
-| `agent/blackboard.js` | Redis pub/sub hub |
-| `agent/builder.js` | AC-1, AC-3 implementation |
-| `agent/safety.js` | AC-8 threat detection |
-| `agent/discord-bot.js` | Discord integration (Phase 5.4) |
+| `agent/core/blackboard.js` | Redis pub/sub hub |
+| `agent/memory/got-reasoner.js` | Knowledge graph reasoning |
+| `agent/memory/skill-zettelkasten.js` | Knowledge persistence layer |
+| `agent/memory/vault-sync.js` | Obsidian sync bridge |
+| `agent/interface/dashboard.js` | Dashboard server |
 | `test/*.test.js` | Test suite |
 | `.claude/agents/` | All Claude agents (13) |
-| `skills/` | Project skills (11) |
+| `.claude/skills/` | Project skills |
 | `CLAUDE.md` | Session workflow guide |
-| `ROADMAP.md` | 7-phase project roadmap |
+| `ROADMAP.md` | Current roadmap |
 
 ---
 

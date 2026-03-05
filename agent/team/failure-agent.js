@@ -24,7 +24,7 @@ class FailureAgent {
     this.subscriber.on('error', (err) => log.error('failure-agent', 'Redis sub error', { error: err.message }));
     
     // Listen for code rejection from Reviewer
-    await this.subscriber.subscribe('reviewer:task_rejected', (msg) => this.handleTaskRejection(msg));
+    await this.subscriber.subscribe('governance:review:rejected', (msg) => this.handleTaskRejection(msg));
     
     log.info(this.agentId, 'initialized and ready to classify failures');
     await this.updateStatus('idle', 'Awaiting failure reports');
@@ -56,7 +56,7 @@ class FailureAgent {
 
       // 3. Publish for recovery
       log.warn(this.agentId, `Failure classified as ${classification.category}. Guardrail: ${classification.mustNotGuardrail}`);
-      await this.board.publish('failure:retry_requested', {
+      await this.board.publish('governance:failure:retry-requested', {
         projectId,
         taskId,
         category: classification.category,

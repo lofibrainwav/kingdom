@@ -48,40 +48,36 @@ class ZettelkastenHooks {
     sub.on('error', (err) => log.error('zettelkasten-hooks', 'Redis sub error', { error: err.message }));
 
     // Listen for skill deployments
-    sub.subscribe(Blackboard.PREFIX + 'skills:emergency', async (message) => {
+    await sub.subscribe('knowledge:skills:deployed', async (message) => {
       try {
-        const data = JSON.parse(message);
-        await this._onSkillDeployed(data);
+        await this._onSkillDeployed(typeof message === 'string' ? JSON.parse(message) : message);
       } catch (err) {
         log.error('zk-hooks', 'skills:emergency handler error', { error: err.message });
       }
     });
 
     // Listen for rumination completions
-    sub.subscribe(Blackboard.PREFIX + 'rumination:digested', async (message) => {
+    await sub.subscribe('knowledge:rumination:digested', async (message) => {
       try {
-        const data = JSON.parse(message);
-        await this._onDigestionComplete(data);
+        await this._onDigestionComplete(typeof message === 'string' ? JSON.parse(message) : message);
       } catch (err) {
         log.error('zk-hooks', 'rumination:digested handler error', { error: err.message });
       }
     });
 
     // Listen for tier-ups (celebration!)
-    sub.subscribe(Blackboard.PREFIX + 'zettelkasten:tier-up', async (message) => {
+    await sub.subscribe('knowledge:zettelkasten:tier-up', async (message) => {
       try {
-        const data = JSON.parse(message);
-        await this._onTierUp(data);
+        await this._onTierUp(typeof message === 'string' ? JSON.parse(message) : message);
       } catch (err) {
         log.error('zk-hooks', 'zettelkasten:tier-up handler error', { error: err.message });
       }
     });
 
     // Listen for compound creation
-    sub.subscribe(Blackboard.PREFIX + 'zettelkasten:compound-created', async (message) => {
+    await sub.subscribe('knowledge:zettelkasten:compound-created', async (message) => {
       try {
-        const data = JSON.parse(message);
-        await this._onCompoundCreated(data);
+        await this._onCompoundCreated(typeof message === 'string' ? JSON.parse(message) : message);
       } catch (err) {
         log.error('zk-hooks', 'zettelkasten:compound-created handler error', { error: err.message });
       }

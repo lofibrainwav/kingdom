@@ -52,7 +52,7 @@ class MCPOrchestrator {
 
   async assignTask(agentId, task) {
     if (!this.agents.has(agentId)) throw new Error(`Agent not registered: ${agentId}`);
-    await this.board.publish(`command:${agentId}:task`, { author: 'orchestrator', ...task });
+    await this.board.publish(`execution:dispatch:${agentId}`, { author: 'orchestrator', ...task });
     log.info('orchestrator', `task assigned: ${agentId} → ${task.action}`);
     return { agentId, task, status: 'assigned' };
   }
@@ -61,7 +61,7 @@ class MCPOrchestrator {
     const targets = [];
     const entries = [];
     for (const [id] of this.agents) {
-      entries.push({ channel: `command:${id}:broadcast`, data: { author: 'orchestrator', ...command } });
+      entries.push({ channel: `execution:broadcast:${id}`, data: { author: 'orchestrator', ...command } });
       targets.push(id);
     }
     // Use batchPublish for ~77% latency reduction vs sequential publishes

@@ -52,9 +52,9 @@ class DashboardServer {
   }
 
   _subscribeUpdates() {
-    this.subscriber.pSubscribe('octiv:agent:*', (message, channel) => {
+    this.subscriber.pSubscribe('agent:*', (message, channel) => {
       try {
-        const data = JSON.parse(message);
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
         const parts = channel.split(':');
         const agentId = parts[2];
         const eventType = parts.slice(3).join(':');
@@ -69,16 +69,16 @@ class DashboardServer {
       } catch {}
     });
 
-    this.subscriber.pSubscribe('octiv:safety:*', (message, channel) => {
+    this.subscriber.pSubscribe('safety:*', (message, channel) => {
       try {
-        const data = JSON.parse(message);
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
         this._broadcast({ type: 'safety', channel, data });
       } catch {}
     });
 
-    this.subscriber.pSubscribe('octiv:leader:*', (message, channel) => {
+    this.subscriber.pSubscribe('leader:*', (message, channel) => {
       try {
-        const data = JSON.parse(message);
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
         this._broadcast({ type: 'leader', channel, data });
       } catch {}
     });

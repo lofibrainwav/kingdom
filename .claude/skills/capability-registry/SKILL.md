@@ -1,6 +1,6 @@
 ---
 name: capability-registry
-description: Central registry mapping agents to MCP tools, skills to agents, and MCP status. Use when unsure which agent can use which tool, or which skill belongs to which agent.
+description: Central registry mapping Kingdom agents to MCP tools, skills, workflows, and legacy adapters. Use when unsure which capability should own a task.
 ---
 
 # Capability Registry — Agent/MCP/Skill Mapping
@@ -13,8 +13,8 @@ Which MCP tools each agent can leverage:
 |-------|-----------|-------|
 | `octiv-orchestrator` | sequentialthinking, memory | Delegates others to specialized agents |
 | `pm-agent` | github, memory | Issues, project tracking |
-| `planner` | sequentialthinking, serena, context7 | Task decomposition + codebase mapping |
-| `architect` | serena, context7, sequentialthinking, memory | Design decisions with full context |
+| `planner` | sequentialthinking, serena, context7 | Task decomposition + plan generation |
+| `architect` | serena, context7, sequentialthinking, memory | Design decisions with system context |
 | `dev-agent` | context7, serena, filesystem | API docs + code navigation |
 | `tdd-guide` | serena | Find test targets |
 | `code-reviewer` | github, serena | PR review + reference tracking |
@@ -45,7 +45,7 @@ Which agent is responsible for executing each skill category:
 | `systematic-debugging` | debug-agent | Complex bug methodology |
 | `browser-recovery` | notebooklm-agent | Playwright failure recovery |
 | `verification-loop` | code-reviewer, github-agent | Pre-PR 6-phase check |
-| `first-day-survival` | pm-agent, planner | AC definitions |
+| `first-day-survival` | pm-agent, planner | Legacy origin mission |
 | `manage-skills` | skill-agent | Skill lifecycle |
 
 ## MCP Status Matrix
@@ -77,7 +77,7 @@ Which agent is responsible for executing each skill category:
 | Review code | code-reviewer | github, serena | verification-loop |
 | Check security | security-reviewer | github | verify-dependencies |
 | Run all verifications | octiv-orchestrator | — | verify-implementation |
-| Query Minecraft docs | notebooklm-agent | notebooklm | — |
+| Query grounded project docs | notebooklm-agent | notebooklm | — |
 | Commit and push | github-agent | github | dev-tool-belt |
 | Create/update skills | skill-agent | filesystem, memory | manage-skills |
 | Document decisions | obsidian-agent | filesystem, memory | — |

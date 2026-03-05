@@ -1,5 +1,15 @@
 # Kingdom — Vibe Coding Agent Workflow
 
+## Mission Reset
+- `kingdom` is now a real-world agentic operating system.
+- Minecraft remains an origin-story adapter and optional sandbox, not the product boundary.
+- When older sections mention Minecraft- or Octiv-specific runtime details, treat them as legacy implementation context unless a task explicitly targets the Minecraft adapter.
+- Default orientation for new work:
+  - `BMAD` is the planning plane
+  - `Obsidian + NotebookLM + GoT` are the knowledge plane
+  - `Claude Code + Codex + Antigravity` are the execution plane
+  - tests, review, and verification loops are the governance plane
+
 ## Language Rule
 - **Conversation with user**: Korean
 - **All code, comments, file content, commits**: English
@@ -123,7 +133,7 @@ Choose the right pattern for the task at hand:
 | `cost-aware-llm-pipeline` | LLM model routing, cost optimization |
 | `verification-loop` | 6-phase verification before PR |
 | `search-first` | Search codebase before writing new code |
-| `docker-patterns` | Docker/PaperMC/Redis container best practices |
+| `docker-patterns` | Docker and supporting service patterns |
 | `autonomous-loops` | Loop pattern theory for `/loop` commands |
 | `tool-index` | Full tool/agent/skill reference |
 | `verify-implementation` | Verify feature implementation completeness |
@@ -135,9 +145,9 @@ Choose the right pattern for the task at hand:
 | `manage-skills` | Skill lifecycle management |
 | `health-monitor` | System health monitoring |
 | `dev-tool-belt` | Developer utility collection |
-| `mcporter` | MCP server porting utilities |
-| `weather` | Minecraft weather control |
-| `first-day-survival` | Minecraft first-day survival guide |
+| `mcporter` | Legacy Minecraft adapter maintenance |
+| `weather` | Legacy Minecraft adapter weather control |
+| `first-day-survival` | Legacy origin mission reference |
 | `browser-recovery` | Playwright MCP + Patchright failure recovery |
 | `automated-debugging` | Automated debug workflows |
 | `capability-registry` | Agent↔MCP↔Skill mapping reference |
@@ -184,7 +194,7 @@ See `~/.claude/skills/{skill-name}/SKILL.md` for details.
 **Global** (`~/.claude/settings.json` + `~/.claude.json` user scope) — available in ALL projects:
 | MCP | Purpose | Access | Status |
 |-----|---------|--------|--------|
-| `context7` | Library docs (mineflayer, Redis, discord.js) | read-only | ✅ Active |
+| `context7` | Library docs (Redis, SDKs, framework APIs) | read-only | ✅ Active |
 | `notebooklm` | Knowledge base queries | read-only | ✅ Active |
 | `github` | PR, CI, code search, issues | fine-grained PAT | ✅ Active |
 | `filesystem` | Local file operations | project root only | ✅ Active |
@@ -363,24 +373,20 @@ See `~/.claude/skills/{skill-name}/SKILL.md` for details.
 
 ---
 
-## AC Status
-| AC | Description | Status |
-|----|-------------|--------|
-| AC-1 | Collect 16 wood logs | done |
-| AC-2 | Build 3x3x3 shelter | done |
-| AC-3 | Craft basic tools | done |
-| AC-4 | All agents gather in shelter | done |
-| AC-5 | Self-improvement on failure | done |
-| AC-6 | Group Reflexion → prompt inject | done |
-| AC-7 | Memory logging to disk | done |
-| AC-8 | Threat detection | done |
+## Current Operating Focus
+- Doctrine reset completed
+- Agent definitions are being aligned to the new real-world mission
+- Next priorities:
+  1. skill/control-layer cleanup
+  2. green test baseline restoration
+  3. Blackboard channel refactor for `work:*`, `knowledge:*`, `execution:*`, `governance:*`
 
 ---
 
 ## Key Infrastructure
 - **Redis**: `localhost:6380` (Docker: 6379→6380)
-- **PaperMC**: `localhost:25565` (offline-mode)
-- **RCON**: `localhost:25575` / pw in `.env`
+- **Legacy PaperMC Adapter**: `localhost:25565` (only for Minecraft adapter work)
+- **Legacy RCON**: `localhost:25575` / pw in `.env` (only for adapter work)
 - **CI**: `.github/workflows/ci.yml`
 - **Repo**: https://github.com/octivofficial/mvp (main)
 
@@ -388,7 +394,7 @@ See `~/.claude/skills/{skill-name}/SKILL.md` for details.
 | Name | ID | URL | Role |
 |------|-----|-----|------|
 | **1기** Octiv Project Roadmap | `ae1281fe...` | `notebook/ae1281fe-6370-493f-a1bd-afed03263a88` | Director (총괄 감독) — blueprints, roadmap |
-| **2기** OpenClaw Phase 2 | `4f8bd626...` | `notebook/4f8bd626-c548-454a-b36b-fb080d335530` | Field deployment planning |
+| **2기** OpenClaw Phase 2 | `4f8bd626...` | `notebook/4f8bd626-c548-454a-b36b-fb080d335530` | Legacy origin reference |
 
 ### NotebookLM Workflow
 - **Source update** (session end / major milestone): `add_source.py --all --source-file report.txt`

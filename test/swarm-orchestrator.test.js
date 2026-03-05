@@ -8,9 +8,11 @@ describe('SwarmOrchestrator — Vibe Coding Parallel Execution', () => {
   let swarm;
   let mockBoard;
   let execCalls = [];
+  let subscribedChannels = [];
 
   beforeEach(() => {
     execCalls = [];
+    subscribedChannels = [];
     
     // Create a mock Blackboard
     mockBoard = {
@@ -20,7 +22,7 @@ describe('SwarmOrchestrator — Vibe Coding Parallel Execution', () => {
       createSubscriber: async () => {
         return {
           on: () => {},
-          subscribe: async () => {},
+          subscribe: async (channel) => { subscribedChannels.push(channel); },
           disconnect: async () => {}
         };
       }
@@ -41,6 +43,14 @@ describe('SwarmOrchestrator — Vibe Coding Parallel Execution', () => {
 
   afterEach(() => {
     mock.restoreAll();
+  });
+
+  it('Should subscribe to canonical execution swarm channels during init', async () => {
+    await swarm.init();
+    assert.deepEqual(subscribedChannels, [
+      'execution:swarm:spawn',
+      'execution:swarm:terminate'
+    ]);
   });
 
   it('Should initialize swarm orchestrator and register as agent', async () => {
