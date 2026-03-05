@@ -38,14 +38,23 @@ const TIERS = [
 ];
 
 class SkillZettelkasten {
-  constructor(options = {}) {
-    this.board = new Blackboard();
-    this.vaultDir = options.vaultDir || VAULT_DIR;
-    this.logger = options.logger || null;
+  constructor(boardOrOptions, vaultDirStr) {
+    if (boardOrOptions instanceof Blackboard) {
+      this.board = boardOrOptions;
+      this.vaultDir = vaultDirStr || VAULT_DIR;
+      this.logger = null;
+    } else {
+      const options = boardOrOptions || {};
+      this.board = options.board || new Blackboard();
+      this.vaultDir = options.vaultDir || VAULT_DIR;
+      this.logger = options.logger || null;
+    }
   }
 
   async init() {
-    await this.board.connect();
+    if (!this.board.client) {
+      await this.board.connect();
+    }
 
     // Ensure vault directories (async)
     for (const sub of ['atomic', 'compound', 'deprecated']) {
