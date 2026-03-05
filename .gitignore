@@ -59,6 +59,9 @@ Untitled Kanban.md
 setup-claude.sh
 claude_desktop_config.json
 
+# API key test files (never commit hardcoded keys)
+test_gemini_api.js
+
 # npm
 npm-debug.log*
 

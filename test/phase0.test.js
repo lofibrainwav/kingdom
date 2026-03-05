@@ -640,3 +640,104 @@ describe('ReflexionEngine — Live LLM Call (conditional)', () => {
     }
   });
 });
+
+// ── Mocked LLM Call (always runs — no API key needed) ────────────
+describe('ReflexionEngine — Mocked LLM Call (always runs)', () => {
+  const { ReflexionEngine } = require('../agent/ReflexionEngine');
+
+  it('callLLM with mock client returns response', async () => {
+    const mockClients = {
+      anthropic: { call: async () => 'OCTIV_OK' },
+    };
+    const engine = new ReflexionEngine(mockClients);
+    await engine.init();
+
+    try {
+      const result = await engine.callLLM('Reply with exactly: OCTIV_OK');
+      assert.equal(result, 'OCTIV_OK', 'Should return mock response');
+      assert.ok(result.length > 0, 'Response should have content');
+    } finally {
+      await engine.shutdown();
+    }
+  });
+
+  it('totalCalls and dailyCost increment after mock call', async () => {
+    const mockClients = {
+      anthropic: { call: async () => 'OK' },
+    };
+    const engine = new ReflexionEngine(mockClients);
+    await engine.init();
+
+    try {
+      const callsBefore = engine.totalCalls;
+      const costBefore = engine.dailyCost;
+      await engine.callLLM('Say OK');
+      assert.equal(engine.totalCalls, callsBefore + 1, 'Call count should increment');
+      assert.ok(engine.dailyCost > costBefore, 'Daily cost should increment');
+      const stats = engine.getStats();
+      assert.ok(stats.totalCalls >= 1, 'Stats should reflect the call');
+    } finally {
+      await engine.shutdown();
+    }
+  });
+
+  it('generateSkill with mock returns parsed skill JSON', async () => {
+    const skillJson = JSON.stringify({
+      name: 'fix_oak_log_v1',
+      code: 'bot.chat("searching for oak_log");',
+      description: 'Find oak logs in wider radius',
+      errorType: 'inventory',
+    });
+    const mockClients = {
+      anthropic: { call: async () => skillJson },
+    };
+    const engine = new ReflexionEngine(mockClients);
+    await engine.init();
+
+    try {
+      const skill = await engine.generateSkill({
+        error: 'No oak_log found within search radius',
+        errorType: 'inventory',
+        agentId: 'test-mock',
+      });
+      assert.ok(skill, 'Should return parsed skill');
+      assert.equal(skill.name, 'fix_oak_log_v1', 'Skill name should match');
+      assert.equal(skill.code, 'bot.chat("searching for oak_log");', 'Skill code should match');
+      assert.equal(skill.errorType, 'inventory', 'Skill errorType should match');
+    } finally {
+      await engine.shutdown();
+    }
+  });
+
+  it('callLLM returns null when daily cost limit reached', async () => {
+    const mockClients = {
+      anthropic: { call: async () => 'should not reach' },
+    };
+    const engine = new ReflexionEngine(mockClients);
+    await engine.init();
+
+    try {
+      engine.dailyCost = engine.config.maxCostPerDay; // Hit the limit
+      const result = await engine.callLLM('test');
+      assert.equal(result, null, 'Should return null when cost limit reached');
+    } finally {
+      await engine.shutdown();
+    }
+  });
+
+  it('callLLM falls back when primary model fails', async () => {
+    const mockClients = {
+      anthropic: { call: async () => { throw new Error('API error'); } },
+      local: { call: async () => 'fallback response' },
+    };
+    const engine = new ReflexionEngine(mockClients);
+    await engine.init();
+
+    try {
+      const result = await engine.callLLM('test');
+      assert.equal(result, 'fallback response', 'Should fall back to local model');
+    } finally {
+      await engine.shutdown();
+    }
+  });
+});

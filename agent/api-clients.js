@@ -37,27 +37,37 @@ function createApiClients() {
   }
 
   // LM Studio client (local fallback — OpenAI-compatible API)
-  clients.local = {
-    call: async (model, prompt) => {
-      const url = `${LM_STUDIO_BASE_URL}/v1/chat/completions`;
-      const body = JSON.stringify({
-        model,
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: 1024,
-        temperature: 0.7,
-      });
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body,
-        signal: AbortSignal.timeout(60000),
-      });
-      if (!res.ok) throw new Error(`LM Studio ${res.status}: ${await res.text()}`);
-      const data = await res.json();
-      return data.choices?.[0]?.message?.content || '';
-    },
-  };
-  log.info('api-clients', `LM Studio client ready (${LM_STUDIO_BASE_URL})`);
+  if (process.env.LM_STUDIO_ENABLED === 'false') {
+    log.info('api-clients', 'LM Studio disabled via LM_STUDIO_ENABLED=false');
+  } else {
+    clients.local = {
+      call: async (model, prompt) => {
+        // 2s pre-check: fail fast if LM Studio is not running
+        const check = await fetch(`${LM_STUDIO_BASE_URL}/v1/models`, {
+          signal: AbortSignal.timeout(2000),
+        }).catch(() => null);
+        if (!check?.ok) throw new Error('LM Studio not reachable');
+
+        const url = `${LM_STUDIO_BASE_URL}/v1/chat/completions`;
+        const body = JSON.stringify({
+          model,
+          messages: [{ role: 'user', content: prompt }],
+          max_tokens: 1024,
+          temperature: 0.7,
+        });
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body,
+          signal: AbortSignal.timeout(60000),
+        });
+        if (!res.ok) throw new Error(`LM Studio ${res.status}: ${await res.text()}`);
+        const data = await res.json();
+        return data.choices?.[0]?.message?.content || '';
+      },
+    };
+    log.info('api-clients', `LM Studio client ready (${LM_STUDIO_BASE_URL})`);
+  }
 
   // Groq client (optional cloud fallback)
   if (process.env.GROQ_API_KEY) {
