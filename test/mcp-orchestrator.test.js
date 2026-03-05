@@ -56,4 +56,25 @@ describe('MCPOrchestrator — Vibe Coding Agent Registry', () => {
         assert.ok(res.targets.includes('bc-agent2'));
         assert.equal(res.status, 'broadcast');
     });
+
+    it('Should get agents by role', async () => {
+        await orch.registerAgent('role-agent-1', 'special-role');
+        await orch.registerAgent('role-agent-2', 'special-role');
+        await orch.registerAgent('role-agent-3', 'other-role');
+        
+        const specials = await orch.getAgentsByRole('special-role');
+        assert.ok(specials['role-agent-1']);
+        assert.ok(specials['role-agent-2']);
+        assert.equal(specials['role-agent-3'], undefined);
+    });
+
+    it('Should handle invalid JSON during init registry parsing', async () => {
+        await redisClient.hSet('octiv:agents:registry', 'broken-agent', '{ invalid json ');
+        const badOrch = new MCPOrchestrator();
+        await badOrch.init();
+        
+        const all = await badOrch.getAllAgents();
+        assert.equal(all['broken-agent'], undefined);
+        await badOrch.shutdown();
+    });
 });

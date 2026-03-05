@@ -440,3 +440,87 @@ describe('SkillZettelkasten — Vault Persistence', () => {
     assert.ok(content.includes('Novice'), 'File should contain tier');
   });
 });
+
+// ── Supplemental Coverage for SkillZettelkasten ─────────────────
+
+describe('SkillZettelkasten — Supplemental Coverage (100% Lines)', () => {
+  let cleanupBoard;
+
+  before(async () => {
+    cleanupBoard = new Blackboard();
+    await cleanupBoard.connect();
+    await cleanZkKeys(cleanupBoard);
+  });
+
+  after(async () => {
+    await cleanZkKeys(cleanupBoard);
+    await cleanupBoard.disconnect();
+  });
+
+  it('Constructor should accept Blackboard instance directly', () => {
+    const directZk = new SkillZettelkasten(cleanupBoard, '/tmp/zk-test');
+    assert.equal(directZk.board, cleanupBoard);
+    assert.equal(directZk.vaultDir, '/tmp/zk-test');
+    assert.equal(directZk.logger, null);
+  });
+
+  it('Logger should receive logEvent calls on createNote and recordUsage', async () => {
+    let logEvents = [];
+    const mockLogger = { logEvent: (sys, data) => logEvents.push(data) };
+    const logZk = new SkillZettelkasten({ board: cleanupBoard, logger: mockLogger, vaultDir: path.join(TEMP_VAULT, 'logger-test') });
+    await logZk.init();
+
+    await logZk.createNote({ name: 'log-skill', errorType: 'err', agentId: 'bot' });
+    assert.equal(logEvents.length, 1);
+    assert.equal(logEvents[0].type, 'note_created');
+
+    await logZk.recordUsage('log-skill', true);
+    assert.equal(logEvents.length, 2);
+    assert.equal(logEvents[1].type, 'usage_recorded');
+  });
+
+  it('Analytics methods (getStats, getByTier, getStrongestLinks, deprecateNote)', async () => {
+    const aZk = new SkillZettelkasten({ board: cleanupBoard, vaultDir: path.join(TEMP_VAULT, 'analytics') });
+    await aZk.init();
+
+    await aZk.createNote({ name: 'a1', agentId: 'test' });
+    await aZk.createNote({ name: 'a2', agentId: 'test' });
+    await aZk.createNote({ name: 'a3', agentId: 'test' });
+    
+    // artificially rank up a1 to Apprentice
+    for(let i=0; i<4; i++) await aZk.recordUsage('a1', true, { coSkills: ['a2'] });
+
+    // getByTier
+    const novices = await aZk.getByTier('Novice');
+    const apprentices = await aZk.getByTier('Apprentice');
+    assert.ok(novices.length >= 2);
+    assert.ok(apprentices.length >= 1);
+    
+    // getStrongestLinks
+    const links = await aZk.getStrongestLinks(0.1, 5);
+    assert.ok(links.length > 0);
+    assert.equal(links[0].a, 'a1');
+    assert.equal(links[0].b, 'a2');
+
+    // deprecateNote
+    const depNull = await aZk.deprecateNote('missing-node');
+    assert.equal(depNull, null);
+    
+    const depNode = await aZk.deprecateNote('a3', 'test_reason');
+    assert.equal(depNode.status, 'deprecated');
+
+    // test deprecate with non-existent file path fallback (silent catch)
+    const depNode2 = await aZk.deprecateNote('a2', 'test2');
+    assert.equal(depNode2.status, 'deprecated');
+    // second time file doesn't exist, hits catch block
+    await aZk.deprecateNote('a2', 'test2_again');
+
+    // getStats
+    const stats = await aZk.getStats();
+    assert.ok(stats.totalNotes >= 3);
+    assert.ok(stats.deprecatedSkills >= 2);
+    assert.ok(stats.activeSkills >= 1);
+    assert.ok(stats.totalXP > 0);
+    assert.ok(stats.tierDistribution['Apprentice'] >= 1);
+  });
+});

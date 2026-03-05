@@ -120,6 +120,16 @@ describe('ZettelkastenHooks - Unit Tests & Coverage', () => {
       gotMock.fullReasoningCycle.mock.mockImplementation(async () => { throw new Error('GoT Fail'); });
       hooks.ruminationsSinceReasoning = 1;
       await fn('{}'); // will catch GoT failure
+
+      // Test processGoTFeedback fire-and-forget catch
+      hooks.wireToLeader({ 
+        triggerGroupReflexion: async () => {},
+        processGoTFeedback: async () => { throw new Error('Feed error'); } 
+      });
+      gotMock.fullReasoningCycle.mock.mockImplementation(async () => ({ result: true }));
+      hooks.ruminationsSinceReasoning = 1;
+      await fn('{}');
+      await new Promise(r => setTimeout(r, 20)); // wait for background promise
     });
 
     it('should handle zettelkasten:tier-up', async () => {
@@ -198,6 +208,13 @@ describe('ZettelkastenHooks - Unit Tests & Coverage', () => {
       await leader.triggerGroupReflexion();
       assert.equal(gotMock.fullReasoningCycle.mock.callCount(), 1);
       assert.equal(loggerMock.logEvent.mock.callCount(), 1);
+
+      // Trigger error in GoT Feedback
+      leader.processGoTFeedback = async () => { throw new Error('GoT Feedback Error'); };
+      await leader.triggerGroupReflexion();
+      // Wait for processGoTFeedback unhandled rejection to fire on the macro-queue
+      await new Promise(r => setTimeout(r, 20));
+      assert.ok(1);
     });
 
     it('wireToSkillPipeline should create atomic note on deploy', async () => {
@@ -223,13 +240,22 @@ describe('ZettelkastenHooks - Unit Tests & Coverage', () => {
   });
 
   describe('Deep Rumination & Stats', () => {
-    it('deepTimer triggers deepRuminate', async () => {
-      // Manually trigger interval
+    it('deepTimer triggers deepRuminate and handles errors', async () => {
+      let cbToRun = null;
+      const ogInterval = global.setInterval;
+      global.setInterval = (cb) => { cbToRun = cb; return 999; };
+      
       await hooks.init();
-      assert.ok(hooks.deepTimer);
-      // Fast-forward or just call the logic
-      // We can mock SetInterval or just call it directly but we can't easily capture the setInterval callback.
-      // So we'll skip deep-timer execution in strict test, but we test getFullStats.
+      global.setInterval = ogInterval;
+
+      // trigger success
+      await cbToRun();
+      assert.equal(ruminationMock.deepRuminate.mock.callCount(), 1);
+
+      // trigger error
+      ruminationMock.deepRuminate.mock.mockImplementation(async () => { throw new Error('deep error'); });
+      await cbToRun(); // shouldn't throw
+      assert.equal(ruminationMock.deepRuminate.mock.callCount(), 2);
     });
 
     it('getFullStats should combine zk and rumination stats', async () => {

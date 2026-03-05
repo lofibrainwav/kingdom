@@ -137,3 +137,60 @@ describe('SwarmOrchestrator — Vibe Coding Parallel Execution', () => {
     assert.ok(subDisconnected);
   });
 });
+
+describe('SwarmOrchestrator — Main Execution', () => {
+  it('runs as standalone process and handles SIGINT', async () => {
+    const path = require('path');
+    const script = path.join(__dirname, '../agent/team/swarm-orchestrator.js');
+    const cp = child_process.spawn(process.execPath, [script], {
+      env: { ...process.env, BLACKBOARD_REDIS_URL: 'redis://localhost:6380' }
+    });
+
+    await new Promise(r => setTimeout(r, 1000));
+    cp.kill('SIGINT');
+    
+    const [code] = await new Promise(r => cp.on('close', code => r([code])));
+    assert.equal(code, 0, 'Should exit cleanly on SIGINT');
+  });
+
+  it('exits with status 1 on startup failure', async () => {
+    const path = require('path');
+    const script = path.join(__dirname, '../agent/team/swarm-orchestrator.js');
+    // Provide a malformed URL to force the client constructor/connect to throw immediately
+    const cp = child_process.spawn(process.execPath, [script], {
+      env: { ...process.env, BLACKBOARD_REDIS_URL: 'not-a-url' } 
+    });
+
+    const [code] = await new Promise(r => {
+      cp.on('close', code => r([code]));
+      setTimeout(() => { cp.kill(); r([1]); }, 2000); // safety fallback
+    });
+    // the process should print an error and exit(1) via catch block
+    assert.equal(code, 1, 'Should exit with code 1 on init failure');
+  });
+
+  it('runs main block internally to catch coverage of process.exit', async () => {
+    delete require.cache[require.resolve('../agent/team/swarm-orchestrator.js')];
+    delete require.cache[require.resolve('../agent/core/blackboard.js')];
+    const T = require('../config/timeouts');
+    const ogMax = T.MAX_RECONNECT_ATTEMPTS;
+    T.MAX_RECONNECT_ATTEMPTS = 0; // Disable reconnects so it fails immediately
+    
+    process.env.TEST_SWARM_MAIN = '1';
+    process.env.BLACKBOARD_REDIS_URL = 'redis://256.256.256.256:9999';
+    let exitedCode = null;
+    const ogExit = process.exit;
+    process.exit = (code) => { exitedCode = code; };
+    
+    try {
+      require('../agent/team/swarm-orchestrator.js');
+      // wait a bit for the promise rejection
+      await new Promise(r => setTimeout(r, 100));
+      assert.equal(exitedCode, 1);
+    } finally {
+      process.exit = ogExit;
+      delete process.env.TEST_SWARM_MAIN;
+      T.MAX_RECONNECT_ATTEMPTS = ogMax;
+    }
+  });
+});

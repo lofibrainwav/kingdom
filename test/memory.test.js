@@ -75,4 +75,28 @@ describe('MemoryLogger — Disk Persistence (AC-7)', () => {
         const history = await logger.getHistory('no-such-agent');
         assert.deepEqual(history, []);
     });
+
+    it('Should handle appendFile errors', async () => {
+        const fsp = require('fs').promises;
+        const ogAppend = fsp.appendFile;
+        fsp.appendFile = async () => { throw new Error('mock append error'); };
+        let errLog = '';
+        const ogConsoleError = console.error;
+        console.error = (msg) => { errLog = msg; };
+        
+        await logger.logEvent('err-agent', { test: true });
+        
+        console.error = ogConsoleError;
+        fsp.appendFile = ogAppend;
+        assert.ok(errLog.includes('mock append error'));
+    });
+
+    it('Should throw non-ENOENT error from getHistory', async () => {
+        const fsp = require('fs').promises;
+        const ogRead = fsp.readFile;
+        fsp.readFile = async () => { const e = new Error('mock read err'); e.code = 'EACCES'; throw e; };
+        
+        await assert.rejects(() => logger.getHistory('err-agent-2'), /mock read err/);
+        fsp.readFile = ogRead;
+    });
 });

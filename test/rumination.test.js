@@ -377,5 +377,23 @@ describe('RuminationEngine — init and start cycle', () => {
     assert.ok(engine.digestTimer);
     await engine.shutdown();
   });
-});
 
+  it('should handle errors in periodic digestion cycle', async () => {
+    const { RuminationEngine } = require('../agent/memory/rumination-engine');
+    const engine = new RuminationEngine({ getStats: () => ({}) });
+    engine.board = { connect: async () => {} };
+    let digestCb = null;
+    const ogSetInterval = global.setInterval;
+    global.setInterval = (cb) => { digestCb = cb; return 999; };
+    
+    engine._startDigestionCycle();
+    global.setInterval = ogSetInterval;
+
+    engine.logger = { info: () => {} };
+    engine.digest = async () => { throw new Error('periodic testing error'); };
+
+    await digestCb();
+    await new Promise(setImmediate); // Wait for the background promise to settle
+    assert.ok(1); // the global log.error catches the error
+  });
+});

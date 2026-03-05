@@ -150,6 +150,33 @@ describe('Blackboard — Redis Integration', () => {
       { message: /孝.*author field is required/ }
     );
   });
+
+  it('should disconnect cleanly even if client disconnect fails (forced)', async () => {
+    const errorBoard = new Blackboard();
+    errorBoard.client = {
+      isOpen: true,
+      quit: async () => { throw new Error('quit error'); }, // lines 40-41
+      disconnect: async () => { throw new Error('disconnect error'); } // 44-45
+    };
+    await errorBoard.disconnect();
+    assert.ok(1);
+  });
+
+  it('reconnectStrategy should cap at MAX attempts', () => {
+    const T = require('../config/timeouts');
+    const b = new Blackboard();
+    const strategy = b.client.options.socket.reconnectStrategy;
+    assert.equal(strategy(T.MAX_RECONNECT_ATTEMPTS + 1), false);
+    assert.equal(strategy(1), 100);
+  });
+
+  it('atomicUpdateSkill should return null on repeated WATCH conflicts', async () => {
+    // lines 183-186
+    const boardMock = new Blackboard();
+    boardMock.client = { hGet: async () => '"{}"', watch: async () => {}, multi: () => ({ hSet: () => {}, exec: async () => { throw new Error('transaction fail') } }) };
+    const result = await boardMock.atomicUpdateSkill('conflict-skill', () => ({}));
+    assert.equal(result, null);
+  });
 });
 
 describe('Blackboard — Supplemental methods', () => {

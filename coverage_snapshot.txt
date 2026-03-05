@@ -1,0 +1,428 @@
+[INFO] [blackboard] Connected: redis://localhost:6380
+▶ Blackboard — Redis Integration
+  ✔ Should successfully connect to Redis (1.213375ms)
+  ✔ Should support publish -> get roundtrip (6.909416ms)
+  ✔ Should set TTL on :latest keys (300s) (4.473416ms)
+  ✔ Should return null for non-existent channels (1.679208ms)
+  ✔ Should manage AC progress correctly (3.482584ms)
+  ✔ Should maintain a maximum of 50 reflexion logs (75.399792ms)
+  ✔ 孝: Should reject publish without author (0.774834ms)
+  ✔ 眞: Should reject publish with empty channel (0.173209ms)
+  ✔ 眞: Should reject publish with non-object data (0.141875ms)
+  ✔ 善: Should reject publish with oversized payload (>10KB) (0.157667ms)
+  ✔ 美: Should reject publish with invalid channel name (0.216583ms)
+  ✔ Should accept valid publish with author (4.053834ms)
+  ✔ 孝: batchPublish should reject entries without author (0.368375ms)
+✔ Blackboard — Redis Integration (162.042708ms)
+[INFO] [blackboard] Connected: redis://localhost:6380
+[INFO] [blackboard] Skill saved: sup:jump
+▶ Blackboard — Supplemental methods
+  ✔ saveSkill and getSkill should work (1.769708ms)
+  ✔ batchPublish and batchGet should work (2.069875ms)
+  ✔ batchUpdateAC should update multiple ACs (1.366292ms)
+[INFO] [blackboard] Skill saved: sup:dig
+  ✔ atomicUpdateSkill should safely read-modify-write (7.921875ms)
+  ✔ getConfig and setConfig should work (1.913042ms)
+  ✔ Hash fields: setHashField, getHashField, getHash, deleteHashField (4.412125ms)
+  ✔ getListRange should retrieve list elements (2.820625ms)
+  ✔ createSubscriber should return an open duplicate client (1.733458ms)
+  ✔ disconnect force cleanup block handles error (0.434209ms)
+✔ Blackboard — Supplemental methods (29.956084ms)
+[INFO] [got] synergy discovery: 1 potential synergies
+[INFO] [got] synergy discovery: 0 potential synergies
+[INFO] [got] optimal builds: 2 builds evaluated
+[INFO] [got] optimal builds: 0 builds evaluated
+[INFO] [got] gap analysis: 1 gaps (0 critical)
+[INFO] [got] gap analysis: 0 gaps (0 critical)
+▶ GoTReasoner — Constructor
+  ✔ should initialize with zettelkasten reference (38.508375ms)
+  ✔ should accept optional llmClient and logger (0.437333ms)
+✔ GoTReasoner — Constructor (40.233583ms)
+▶ GoTReasoner — buildGraph
+  ✔ should build nodes and edges from zettelkasten notes (0.820459ms)
+  ✔ should skip deprecated notes (0.344792ms)
+  ✔ should handle empty zettelkasten (1.71975ms)
+✔ GoTReasoner — buildGraph (3.024875ms)
+▶ GoTReasoner — discoverSynergies
+  ✔ should find unlinked skills with shared error type (2.45325ms)
+  ✔ should ignore pairs below score threshold (0.714167ms)
+✔ GoTReasoner — discoverSynergies (3.309459ms)
+▶ GoTReasoner — findOptimalBuilds
+  ✔ should build from high-XP skills outward (0.934458ms)
+  ✔ should filter out compound and low-success skills (0.503042ms)
+✔ GoTReasoner — findOptimalBuilds (1.540292ms)
+▶ GoTReasoner — identifyGaps
+  ✔ should find error types with weak coverage (0.637334ms)
+  ✔ should return empty for well-covered error types (0.416916ms)
+✔ GoTReasoner — identifyGaps (1.136042ms)
+▶ GoTReasoner — predictEvolutionPaths
+  ✔ should calculate uses to Master for non-master skills (0.550084ms)
+  ✔ should skip Master and Grandmaster skills (0.331333ms)
+✔ GoTReasoner — predictEvolutionPaths (0.965041ms)
+▶ GoTReasoner — _explainSynergy
+  ✔ should explain shared tags (0.32575ms)
+  ✔ should explain same error type (0.264583ms)
+  ✔ should return default when no specific reason (0.26725ms)
+✔ GoTReasoner — _explainSynergy (0.947083ms)
+▶ GoTReasoner — shutdown
+  ✔ should disconnect board (0.327042ms)
+✔ GoTReasoner — shutdown (0.38575ms)
+▶ GoTReasoner — vault persistence
+  ✔ uses fixed filenames without timestamps (14.755833ms)
+  ✔ writes valid YAML frontmatter (5.485417ms)
+  ✔ overwrites same file on repeated calls (2.523709ms)
+[INFO] [got] Skill graph updated
+  ✔ generates Mermaid skill graph (3.411667ms)
+✔ GoTReasoner — vault persistence (26.517959ms)
+[INFO] [blackboard] Connected: redis://localhost:6380
+▶ Integration — Vibe Coding Mappings (Phase 6)
+  ✔ Should enable cross-agent communication via Blackboard primitives (112.580375ms)
+  ✔ Should support Zettelkasten XP tracking through Blackboard Hash maps (2.3225ms)
+✔ Integration — Vibe Coding Mappings (Phase 6) (169.169625ms)
+▶ Logger
+  ▶ constructor
+    ✔ creates with default options (2.878334ms)
+    ✔ respects minLevel option (0.120375ms)
+    ✔ respects console=false option (0.090625ms)
+    ✔ creates MemoryLogger when persist=true (0.14375ms)
+    ✔ does not create MemoryLogger when persist=false (0.063791ms)
+    ✔ accepts custom MemoryLogger instance (0.074125ms)
+  ✔ constructor (4.662084ms)
+  ▶ level filtering
+    ✔ filters out debug when minLevel=info (0.353042ms)
+    ✔ allows all levels when minLevel=debug (0.292458ms)
+    ✔ only allows error when minLevel=error (0.361666ms)
+  ✔ level filtering (1.264917ms)
+  ▶ console output
+    ✔ formats info output as [INFO] [agentId] message (0.996542ms)
+    ✔ formats warn output with console.warn (0.181083ms)
+    ✔ formats error output with console.error (0.174334ms)
+    ✔ includes data object when provided (1.423584ms)
+    ✔ omits data when empty object (0.153792ms)
+    ✔ does not output when console=false (0.123583ms)
+  ✔ console output (3.2575ms)
+[Logger] persist error: disk full
+  ▶ persistence
+    ✔ calls memoryLogger.logEvent with structured data (11.179334ms)
+    ✔ handles memoryLogger errors gracefully (10.985792ms)
+  ✔ persistence (22.465083ms)
+  ▶ convenience methods
+    ✔ has debug, info, warn, error methods (0.178708ms)
+  ✔ convenience methods (0.423042ms)
+  ▶ getLogger singleton
+    ✔ returns a Logger instance (0.553041ms)
+    ✔ returns the same instance on subsequent calls (0.448541ms)
+    ✔ reset() causes next call to create a new instance (0.487833ms)
+    ✔ configure() replaces the singleton with custom options (0.358833ms)
+    ✔ configure() overrides a previously created singleton (0.364708ms)
+    ✔ getLogger() takes no options parameter (0.171791ms)
+  ✔ getLogger singleton (2.766709ms)
+✔ Logger (35.858917ms)
+[INFO] [blackboard] Connected: redis://localhost:6380
+[INFO] [orchestrator] initialized, 0 agents registered
+[INFO] [orchestrator] registered: test-coder (coder)
+[INFO] [orchestrator] deregistered: test-coder
+▶ MCPOrchestrator — Vibe Coding Agent Registry
+  ✔ Should register and deregister agents via Redis (12.474584ms)
+[INFO] [orchestrator] registered: ui-coder (coder)
+[INFO] [orchestrator] task assigned: ui-coder → implement_header
+  ✔ Should assign specific tasks to registered agents (5.996792ms)
+  ✔ Should throw when assigning task to unregistered agent (1.119042ms)
+[INFO] [orchestrator] registered: bc-agent (test)
+[INFO] [orchestrator] registered: bc-agent2 (test2)
+[INFO] [orchestrator] broadcast to 3 agents: standup
+  ✔ Should broadcast command to all registered agents (7.959333ms)
+✔ MCPOrchestrator — Vibe Coding Agent Registry (112.2995ms)
+▶ MemoryLogger — Disk Persistence (AC-7)
+  ✔ Should create JSONL file and append entries (13.2215ms)
+  ✔ Should return all logged events via getHistory (13.673333ms)
+  ✔ Should filter events by type via getByType (10.899292ms)
+  ✔ Should clear agent log file (1.41325ms)
+  ✔ Should return empty array for non-existent agent (1.557583ms)
+✔ MemoryLogger — Disk Persistence (AC-7) (46.041ms)
+[INFO] [rumination] digestion #1: 4 experiences
+[INFO] [rumination] digestion #1: 4 experiences
+[INFO] [rumination] deep rumination (gomguk mode)...
+[INFO] [rumination] deep rumination: 1 compound candidates, 1 re-digested
+[INFO] [rumination] deep rumination (gomguk mode)...
+[INFO] [rumination] deep rumination: 1 compound candidates, 1 re-digested
+[INFO] [rumination] digestion #1: 12 experiences
+[INFO] [rumination] initialized, cycle: 300s
+▶ RuminationEngine — Constructor
+  ✔ should initialize with empty buffer (36.900083ms)
+  ✔ should accept optional logger (0.378ms)
+✔ RuminationEngine — Constructor (38.473458ms)
+▶ RuminationEngine — feed / feedFailure
+  ✔ should add experience to rawBuffer (0.603542ms)
+  ✔ should add multiple experiences (0.3595ms)
+  ✔ should mark failures with nutrition multiplier (0.418291ms)
+✔ RuminationEngine — feed / feedFailure (1.5275ms)
+▶ RuminationEngine — _filterPatterns (Stomach 2)
+  ✔ should group experiences by error type (0.55925ms)
+  ✔ should collect co-skills (0.393375ms)
+  ✔ should use "general" key when no error type or skill (0.322667ms)
+✔ RuminationEngine — _filterPatterns (Stomach 2) (1.395417ms)
+▶ RuminationEngine — _extractInsights (Stomach 3)
+  ✔ should find effective skills (>50% success, 3+ samples) (0.552708ms)
+  ✔ should find co-occurrence patterns (2+ skills, >60% success) (0.349125ms)
+  ✔ should find failure patterns (3+ failures, <30% success) (0.361541ms)
+  ✔ should skip patterns with fewer than MIN_EXPERIENCES (0.304917ms)
+✔ RuminationEngine — _extractInsights (Stomach 3) (1.688ms)
+▶ RuminationEngine — digest (Stomach 4)
+  ✔ should return early if buffer too small (0.493708ms)
+  ✔ should process full digestion cycle (1.951459ms)
+  ✔ should call logger if provided (0.522ms)
+✔ RuminationEngine — digest (Stomach 4) (3.061625ms)
+▶ RuminationEngine — getStats
+  ✔ should return current buffer size and digestion count (0.307542ms)
+✔ RuminationEngine — getStats (0.36025ms)
+▶ RuminationEngine — shutdown
+  ✔ should clear timer and disconnect board (0.809333ms)
+✔ RuminationEngine — shutdown (0.857667ms)
+▶ RuminationEngine — RUMINATION_INTERVAL
+  ✔ should be 5 minutes in milliseconds (0.070166ms)
+✔ RuminationEngine — RUMINATION_INTERVAL (0.13775ms)
+▶ RuminationEngine — deepRuminate
+  ✔ should find compound candidates based on links and success rates (1.298209ms)
+  ✔ should find dormant skills and redigest them (0.7375ms)
+✔ RuminationEngine — deepRuminate (2.139208ms)
+▶ RuminationEngine — actions (Stomach 4 handling)
+  ✔ should execute actions based on insights (co_occurrence, effective_skill, failure_pattern) (0.656375ms)
+✔ RuminationEngine — actions (Stomach 4 handling) (0.719209ms)
+▶ RuminationEngine — init and start cycle
+  ✔ init() should connect board and start timer (1.026333ms)
+✔ RuminationEngine — init and start cycle (1.136875ms)
+[INFO] [Octiv_Swarm] initialized and ready to orchestrate swarms
+[INFO] [Octiv_Swarm] Spawning swarm test-swarm: 2 workers
+[WARN] [Octiv_Swarm] Child test-swarm_worker_0 exited with code 0
+[ERROR] [Octiv_Swarm] Swarm spawn failed { error: `Unexpected token 'i', "invalid json {[" is not valid JSON` }
+[INFO] [Octiv_Swarm] Spawning swarm term-swarm: 2 workers
+[INFO] [Octiv_Swarm] Terminating swarm term-swarm
+[INFO] [Octiv_Swarm] Spawning swarm shut-swarm: 1 workers
+[INFO] [Octiv_Swarm] initialized and ready to orchestrate swarms
+▶ SwarmOrchestrator — Vibe Coding Parallel Execution
+  ✔ Should initialize swarm orchestrator and register as agent (34.132417ms)
+  ✔ handleSpawn should spawn child processes and update swarm status (1.672ms)
+  ✔ handleSpawn graceful failure on bad input (2.23075ms)
+  ✔ handleTerminate should kill corresponding children (1.044959ms)
+  ✔ shutdown should kill all children and disconnect board (0.851291ms)
+✔ SwarmOrchestrator — Vibe Coding Parallel Execution (41.501208ms)
+▶ Test Quality — Banned Patterns
+  ✔ NO assert.ok(true) in any test file (1.523709ms)
+  ✔ NO eval() or new Function() in test files (1.041208ms)
+✔ Test Quality — Banned Patterns (4.693458ms)
+▶ Test Quality — Assertion Density
+  ✔ every test file should have more assert calls than it() blocks (0.382166ms)
+  ✔ no it() block should be completely empty (0 lines of body) (0.344125ms)
+✔ Test Quality — Assertion Density (0.802459ms)
+▶ Test Quality — Agent Coverage Map
+  ✔ every non-exempt agent/*.js should be imported by at least one test (0.113292ms)
+✔ Test Quality — Agent Coverage Map (0.161709ms)
+▶ Test Quality — Threshold Guards
+  ✔ test file count should be >= 11 (0.114416ms)
+✔ Test Quality — Threshold Guards (0.15925ms)
+▶ Test Quality — Mock Quality
+  ✔ test files with mock.fn() should also contain assert.rejects or error simulation (0.139916ms)
+✔ Test Quality — Mock Quality (0.190083ms)
+[INFO] [vault-sync] Dashboard updated: 454 tests, commit xyz789
+[ERROR] [vault-sync] Dashboard sync failed: EACCES
+[INFO] [vault-sync] Session-Sync updated: 460 tests, commit def456
+[INFO] [vault-sync] Pattern written: Test-Pattern-123.md
+[INFO] [VaultAgent] initialized and watching for events to sync
+▶ vault-sync — gatherStats
+  ✔ returns stats object with correct fields (95.933334ms)
+  ✔ returns today date (64.766625ms)
+✔ vault-sync — gatherStats (162.004792ms)
+▶ vault-sync — syncDashboard
+  ✔ updates dashboard stat cards and session table (3.383292ms)
+  ✔ returns false and logs error on file access failure (0.615209ms)
+✔ vault-sync — syncDashboard (4.150875ms)
+▶ vault-sync — syncSessionState
+  ✔ updates session state table correctly (1.030167ms)
+✔ vault-sync — syncSessionState (1.098958ms)
+▶ vault-sync — writePattern & addDashboardLink
+  ✔ writePattern writes markdown to vault/patterns (0.507333ms)
+  ✔ addDashboardLink appends link under INDEX:section (0.218084ms)
+✔ vault-sync — writePattern & addDashboardLink (0.820333ms)
+▶ vault-sync — VaultAgent
+  ✔ handleApproval adds a link to Dashboard (0.307584ms)
+  ✔ handleFailure adds a link to Dashboard (0.209333ms)
+  ✔ init wires up Redis subscriber correctly (0.395959ms)
+✔ vault-sync — VaultAgent (1.016625ms)
+[INFO] [zk-hooks] initialized, listening for skill events
+[INFO] [zk-hooks] initialized, listening for skill events
+[ERROR] [zettelkasten-hooks] Redis sub error { error: 'sub error' }
+[INFO] [zk-hooks] initialized, listening for skill events
+[INFO] [zk-hooks] new skill deployed: test-skill
+[ERROR] [zk-hooks] skills:emergency handler error { error: "Cannot read properties of undefined (reading 'catch')" }
+[ERROR] [zk-hooks] skills:emergency handler error { error: `Unexpected token 'i', "invalid json" is not valid JSON` }
+[INFO] [zk-hooks] new skill deployed: fail-log
+[ERROR] [zk-hooks] log persist error { error: 'log fail' }
+[INFO] [zk-hooks] initialized, listening for skill events
+[INFO] [zk-hooks] triggering GoT reasoning after rumination cycle
+[ERROR] [zk-hooks] rumination:digested handler error { error: `Unexpected token 'i', "invalid json" is not valid JSON` }
+[INFO] [zk-hooks] triggering GoT reasoning after rumination cycle
+[ERROR] [zk-hooks] GoT reasoning failed { error: 'GoT Fail' }
+[INFO] [zk-hooks] initialized, listening for skill events
+[INFO] [zk-hooks] TIER UP: dig → Master (XP: 100)
+[ERROR] [zk-hooks] zettelkasten:tier-up handler error { error: "Cannot read properties of undefined (reading 'catch')" }
+[ERROR] [zk-hooks] zettelkasten:tier-up handler error { error: `Unexpected token 'o', "not json" is not valid JSON` }
+[INFO] [zk-hooks] initialized, listening for skill events
+[INFO] [zk-hooks] COMPOUND FORGED: dig-build
+[ERROR] [zk-hooks] zettelkasten:compound-created handler error { error: "Cannot read properties of undefined (reading 'catch')" }
+[ERROR] [zk-hooks] zettelkasten:compound-created handler error { error: `Unexpected token 'o', "not json" is not valid JSON` }
+[INFO] [zk-hooks] wired to builder: bob
+[WARN] [zk-hooks] builder has no _tryLearnedSkill, skipping wire
+[INFO] [zk-hooks] wired to builder: alice
+[ERROR] [zk-hooks] recordUsage error { error: 'ZK DB fail' }
+[INFO] [zk-hooks] wired to builder: alice
+[INFO] [zk-hooks] wired to builder: bob
+[INFO] [zk-hooks] wired to leader
+[INFO] [zk-hooks] wired to skill pipeline
+[ERROR] [zk-hooks] GoT reasoning failed { error: "Cannot read properties of undefined (reading 'catch')" }
+[ERROR] [zk-hooks] note creation failed { error: 'zk failed' }
+[ERROR] [zk-hooks] updateSuccessRate mirror error { error: 'db err' }
+[INFO] [zk-hooks] initialized, listening for skill events
+▶ ZettelkastenHooks - Unit Tests & Coverage
+  ▶ Init & Shutdown
+    ✔ should initialize connections and subscribe to events (44.662708ms)
+    ✔ should handle sub errors gracefully (3.121ms)
+    ✔ should shutdown safely even if subscriber is missing (0.553958ms)
+  ✔ Init & Shutdown (49.16775ms)
+  ▶ Event Handlers (Subscriber Callbacks)
+    ✔ should handle skills:emergency events and log (1.836042ms)
+    ✔ should handle rumination:digested events and optionally trigger GoT (1.129ms)
+    ✔ should handle zettelkasten:tier-up (0.998583ms)
+    ✔ should handle zettelkasten:compound-created (0.985458ms)
+  ✔ Event Handlers (Subscriber Callbacks) (5.115625ms)
+  ▶ Wiring to Agents
+    ✔ wireToBuilder should intercept tryLearnedSkill and feed rumination & zk (0.870334ms)
+    ✔ wireToBuilder should handle missing methods or errors (0.967542ms)
+    ✔ wireToBuilder should intercept _selfImprove (0.638833ms)
+    ✔ wireToLeader should trigger GoT after reflexion (0.778708ms)
+    ✔ wireToSkillPipeline should create atomic note on deploy (0.910291ms)
+  ✔ Wiring to Agents (4.320417ms)
+  ▶ Deep Rumination & Stats
+    ✔ deepTimer triggers deepRuminate (0.613708ms)
+    ✔ getFullStats should combine zk and rumination stats (0.492542ms)
+  ✔ Deep Rumination & Stats (1.173209ms)
+✔ ZettelkastenHooks - Unit Tests & Coverage (60.595167ms)
+[INFO] [blackboard] Connected: redis://localhost:6380
+[INFO] [blackboard] Connected: redis://localhost:6380
+[INFO] [zettelkasten] initialized, vault: /var/folders/mp/7m5m295d1jb17rnk1j9761xh0000gn/T/octiv-zk-test-1772749920343/crud
+[INFO] [zettelkasten] created: avoid-lava
+▶ SkillZettelkasten — CRUD + XP
+  ✔ createNote should create an atomic note with Novice tier (4.342625ms)
+  ✔ getNote should retrieve a stored note (1.719583ms)
+  ✔ recordUsage should add XP and update stats (3.096125ms)
+  ✔ recordUsage with failure should give 1 XP (2.264541ms)
+  ✔ recordUsage should return null for non-existent skill (1.154125ms)
+✔ SkillZettelkasten — CRUD + XP (88.848834ms)
+[INFO] [blackboard] Connected: redis://localhost:6380
+[INFO] [blackboard] Connected: redis://localhost:6380
+[INFO] [zettelkasten] initialized, vault: /var/folders/mp/7m5m295d1jb17rnk1j9761xh0000gn/T/octiv-zk-test-1772749920343/xp-flow
+[INFO] [zettelkasten] created: xp-test-skill
+[INFO] [zettelkasten] TIER UP: xp-test-skill → Apprentice (XP: 12)
+▶ SkillZettelkasten — Full XP Flow (Novice → Apprentice)
+  ✔ should tier up from Novice to Apprentice after 10+ XP (11.176083ms)
+✔ SkillZettelkasten — Full XP Flow (Novice → Apprentice) (26.148792ms)
+[INFO] [blackboard] Connected: redis://localhost:6380
+[INFO] [blackboard] Connected: redis://localhost:6380
+[INFO] [zettelkasten] initialized, vault: /var/folders/mp/7m5m295d1jb17rnk1j9761xh0000gn/T/octiv-zk-test-1772749920343/rumination
+[INFO] [blackboard] Connected: redis://localhost:6380
+[INFO] [rumination] initialized, cycle: 300s
+[INFO] [rumination] digestion #1: 3 experiences
+▶ RuminationEngine — Feed + Digest
+  ✔ feed should buffer experiences (0.229875ms)
+  ✔ digest should process buffered experiences and produce insights (3.2115ms)
+  ✔ digest with empty buffer should return 0 (0.176708ms)
+✔ RuminationEngine — Feed + Digest (16.507208ms)
+[INFO] [blackboard] Connected: redis://localhost:6380
+[INFO] [blackboard] Connected: redis://localhost:6380
+[INFO] [zettelkasten] initialized, vault: /var/folders/mp/7m5m295d1jb17rnk1j9761xh0000gn/T/octiv-zk-test-1772749920343/got
+[INFO] [blackboard] Connected: redis://localhost:6380
+[INFO] [got] initialized
+▶ GoTReasoner — Graph + Synergies
+  ✔ buildGraph with empty Zettelkasten should return empty graph (1.068875ms)
+[INFO] [got] synergy discovery: 0 potential synergies
+  ✔ discoverSynergies with empty graph should return 0 synergies (2.124667ms)
+[INFO] [zettelkasten] created: skill-a
+[INFO] [zettelkasten] created: skill-b
+  ✔ buildGraph should include created notes (3.005084ms)
+✔ GoTReasoner — Graph + Synergies (23.099458ms)
+[INFO] [blackboard] Connected: redis://localhost:6380
+[INFO] [blackboard] Connected: redis://localhost:6380
+[INFO] [zettelkasten] initialized, vault: /var/folders/mp/7m5m295d1jb17rnk1j9761xh0000gn/T/octiv-zk-test-1772749920343/hooks
+[INFO] [blackboard] Connected: redis://localhost:6380
+[INFO] [rumination] initialized, cycle: 300s
+[INFO] [blackboard] Connected: redis://localhost:6380
+[INFO] [got] initialized
+[INFO] [blackboard] Connected: redis://localhost:6380
+[INFO] [zk-hooks] initialized, listening for skill events
+[INFO] [zk-hooks] wired to builder: builder-test
+[INFO] [zk-hooks] wired to leader
+[INFO] [zk-hooks] wired to skill pipeline
+▶ ZettelkastenHooks — Wiring
+  ✔ wireToBuilder should feed rumination on _tryLearnedSkill (1.284792ms)
+  ✔ wireToLeader should trigger GoT and pass result to leader (0.428917ms)
+[INFO] [zettelkasten] created: hooked-skill
+  ✔ wireToSkillPipeline should create Zettelkasten note on deploy (2.675ms)
+[INFO] [zk-hooks] new skill deployed: avoid_lava_v1
+✔ ZettelkastenHooks — Wiring (23.704416ms)
+▶ ZettelkastenHooks — newSkill Guard
+  ✔ should ignore events without newSkill field (0.146375ms)
+  ✔ should process events with valid newSkill (0.177667ms)
+✔ ZettelkastenHooks — newSkill Guard (0.725666ms)
+[INFO] [blackboard] Connected: redis://localhost:6380
+[INFO] [blackboard] Connected: redis://localhost:6380
+[INFO] [zettelkasten] initialized, vault: /var/folders/mp/7m5m295d1jb17rnk1j9761xh0000gn/T/octiv-zk-test-1772749920343/compound
+[INFO] [zettelkasten] created: dig-down
+[INFO] [zettelkasten] created: place-torch
+[INFO] [zettelkasten] TIER UP: dig-down → Apprentice (XP: 12)
+[INFO] [zettelkasten] created: compound-dig-down-place-torch
+[INFO] [zettelkasten] COMPOUND: compound-dig-down-place-torch (dig_down + place_torch, XP: 7)
+[INFO] [zettelkasten] created: compound-dig-down-place-torch
+[INFO] [zettelkasten] COMPOUND: compound-dig-down-place-torch (dig_down + place_torch, XP: 8)
+▶ SkillZettelkasten — Compound Creation
+  ✔ should create compound note after 5+ co-occurrences with 70%+ strength (34.718125ms)
+✔ SkillZettelkasten — Compound Creation (43.639667ms)
+[INFO] [blackboard] Connected: redis://localhost:6380
+[INFO] [blackboard] Connected: redis://localhost:6380
+[INFO] [zettelkasten] initialized, vault: /var/folders/mp/7m5m295d1jb17rnk1j9761xh0000gn/T/octiv-zk-test-1772749920343/vault-persist
+[INFO] [zettelkasten] created: vault-test
+▶ SkillZettelkasten — Vault Persistence
+  ✔ should write .md file to vault on createNote (0.937666ms)
+✔ SkillZettelkasten — Vault Persistence (8.489083ms)
+ℹ tests 155
+ℹ suites 56
+ℹ pass 155
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 707.675291
+ℹ start of coverage report
+ℹ --------------------------------------------------------------------------------------------------------------
+ℹ file                    | line % | branch % | funcs % | uncovered lines
+ℹ --------------------------------------------------------------------------------------------------------------
+ℹ agent                   |        |          |         | 
+ℹ  core                   |        |          |         | 
+ℹ   blackboard.js         |  97.64 |    90.00 |   92.31 | 20-21 40-41 183-184 186
+ℹ   logger.js             | 100.00 |    92.00 |  100.00 | 
+ℹ   memory-logger.js      |  92.73 |    80.00 |  100.00 | 25-26 36-37
+ℹ  interface              |        |          |         | 
+ℹ   mcp-orchestrator.js   |  90.00 |    91.67 |   88.89 | 20-21 46-51
+ℹ  memory                 |        |          |         | 
+ℹ   got-reasoner.js       |  90.76 |    80.23 |   75.00 | 134-135 310-312 345-379 417-419 447
+ℹ   rumination-engine.js  |  98.58 |    98.18 |   92.86 | 330-334
+ℹ   skill-zettelkasten.js |  82.42 |    73.97 |   80.00 | 43-45 120-125 173-181 318-341 349-351 357-375 381-403
+ℹ   vault-sync.js         |  97.93 |    78.26 |   83.33 | 166-168 200-201
+ℹ   zettelkasten-hooks.js |  97.50 |    86.89 |   80.00 | 278-280 327-332
+ℹ  team                   |        |          |         | 
+ℹ   swarm-orchestrator.js |  90.09 |    88.24 |   58.33 | 99-109
+ℹ config                  |        |          |         | 
+ℹ  timeouts.js            | 100.00 |   100.00 |  100.00 | 
+ℹ --------------------------------------------------------------------------------------------------------------
+ℹ all files               |  93.24 |    85.05 |   83.05 | 
+ℹ --------------------------------------------------------------------------------------------------------------
+ℹ end of coverage report
