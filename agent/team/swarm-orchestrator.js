@@ -53,7 +53,7 @@ class SwarmOrchestrator {
         this.children.set(childId, child);
       }
 
-      await this.board.set(`swarm:${swarmId}`, {
+      await this.board.setHashField('swarms', swarmId, {
         status: 'active',
         agentCount: count,
         type: agentType,
@@ -75,11 +75,11 @@ class SwarmOrchestrator {
         this.children.delete(id);
       }
     }
-    await this.board.set(`swarm:${swarmId}:status`, 'terminated');
+    await this.board.setHashField('swarms', swarmId + ':status', 'terminated');
   }
 
   async updateStatus(state, details) {
-    await this.board.updateStatus(this.agentId, {
+    await this.board.setHashField('agents:status', this.agentId, {
       state,
       task: details,
       health: 20,

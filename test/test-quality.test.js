@@ -27,7 +27,7 @@ const THRESHOLDS = {
   MIN_TOTAL_TESTS: 110,       // current: 119 — bump when adding tests
   MAX_SKIPPED: 6,             // current: 4 — alarm if skips creep up
   MIN_ASSERT_RATIO: 1.0,     // assert calls per it() block
-  MIN_TEST_FILES: 8,        // current: 8 — never drop below
+  MIN_TEST_FILES: 11,        // current: 11 — never drop below
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────
