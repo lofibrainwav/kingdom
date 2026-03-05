@@ -8,8 +8,8 @@ const { getLogger } = require('./logger');
 const log = getLogger();
 
 const DEFAULT_CONFIG = {
-  model: 'claude-sonnet-4-6-20250514',
-  escalationModel: 'claude-opus-4-6-20250514',
+  model: 'claude-haiku-4-5-20251001',
+  escalationModel: 'claude-sonnet-4-5-20241022',
   fallbackModel: 'groq:qwen3-coder',
   temperature: 0.7,
   maxTokens: 1024,
