@@ -82,7 +82,7 @@ If NotebookLM is unavailable:
 
 ---
 
-## Additional MCP Tools
+## Available MCP Tools
 
 | MCP | Purpose | Usage |
 |-----|---------|-------|
