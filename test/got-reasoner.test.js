@@ -8,7 +8,7 @@ const assert = require('node:assert/strict');
 const fsp = require('fs').promises;
 const path = require('path');
 const os = require('os');
-const { GoTReasoner } = require('../agent/got-reasoner');
+const { GoTReasoner } = require('../agent/memory/got-reasoner');
 
 // ── Mock Helpers ────────────────────────────────────────────
 

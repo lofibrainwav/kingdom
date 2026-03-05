@@ -3,7 +3,7 @@
  */
 const { describe, it, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
-const { Logger } = require('../agent/logger');
+const { Logger } = require('../agent/core/logger');
 
 describe('Logger', () => {
   describe('constructor', () => {
@@ -217,7 +217,7 @@ describe('Logger', () => {
   });
 
   describe('getLogger singleton', () => {
-    const { getLogger } = require('../agent/logger');
+    const { getLogger } = require('../agent/core/logger');
 
     beforeEach(() => {
       getLogger.reset();

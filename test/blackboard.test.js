@@ -4,7 +4,7 @@
  */
 const { describe, it, before, after } = require('node:test');
 const assert = require('node:assert/strict');
-const { Blackboard } = require('../agent/blackboard');
+const { Blackboard } = require('../agent/core/blackboard');
 
 describe('Blackboard — Redis Integration', () => {
   let board;

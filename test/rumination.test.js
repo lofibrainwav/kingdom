@@ -5,7 +5,7 @@
  */
 const { describe, it, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
-const { RuminationEngine, RUMINATION_INTERVAL } = require('../agent/rumination-engine');
+const { RuminationEngine, RUMINATION_INTERVAL } = require('../agent/memory/rumination-engine');
 
 // ── Mock Helpers ────────────────────────────────────────────
 

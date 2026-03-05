@@ -12,11 +12,11 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 
-const { SkillZettelkasten } = require('../agent/skill-zettelkasten');
-const { RuminationEngine } = require('../agent/rumination-engine');
-const { GoTReasoner } = require('../agent/got-reasoner');
-const { ZettelkastenHooks } = require('../agent/zettelkasten-hooks');
-const { Blackboard } = require('../agent/blackboard');
+const { SkillZettelkasten } = require('../agent/memory/skill-zettelkasten');
+const { RuminationEngine } = require('../agent/memory/rumination-engine');
+const { GoTReasoner } = require('../agent/memory/got-reasoner');
+const { ZettelkastenHooks } = require('../agent/memory/zettelkasten-hooks');
+const { Blackboard } = require('../agent/core/blackboard');
 
 // Temp vault dir to avoid polluting real vault/
 const TEMP_VAULT = path.join(os.tmpdir(), `octiv-zk-test-${Date.now()}`);

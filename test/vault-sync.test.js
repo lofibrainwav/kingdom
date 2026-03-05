@@ -50,7 +50,7 @@ tags: [session]
 
 describe('vault-sync — gatherStats', () => {
   it('returns stats object with correct fields', () => {
-    const { gatherStats } = require('../agent/vault-sync');
+    const { gatherStats } = require('../agent/memory/vault-sync');
     const stats = gatherStats();
     assert.ok(stats.date);
     assert.equal(typeof stats.lastCommit, 'string');
@@ -59,7 +59,7 @@ describe('vault-sync — gatherStats', () => {
   });
 
   it('returns today date', () => {
-    const { gatherStats } = require('../agent/vault-sync');
+    const { gatherStats } = require('../agent/memory/vault-sync');
     const stats = gatherStats();
     const today = new Date().toISOString().slice(0, 10);
     assert.equal(stats.date, today);
@@ -180,7 +180,7 @@ describe('vault-sync — syncSessionState', () => {
 
 describe('vault-sync — module exports', () => {
   it('exports all expected functions', () => {
-    const mod = require('../agent/vault-sync');
+    const mod = require('../agent/memory/vault-sync');
     assert.equal(typeof mod.gatherStats, 'function');
     assert.equal(typeof mod.syncDashboard, 'function');
     assert.equal(typeof mod.syncSessionState, 'function');

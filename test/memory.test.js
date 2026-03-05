@@ -15,7 +15,7 @@ describe('MemoryLogger — Disk Persistence (AC-7)', () => {
 
     before(() => {
         tmpDir = path.join(os.tmpdir(), `octiv-test-${Date.now()}`);
-        MemoryLogger = require('../agent/memory-logger').MemoryLogger;
+        MemoryLogger = require('../agent/core/memory-logger').MemoryLogger;
         logger = new MemoryLogger(tmpDir);
     });
 
