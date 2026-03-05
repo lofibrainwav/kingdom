@@ -169,9 +169,10 @@ class ZettelkastenHooks {
       try {
         const gotResult = await this.got.fullReasoningCycle();
 
-        // Feed GoT insights back to Leader
-        if (leader.processGoTFeedback) {
-          await leader.processGoTFeedback(gotResult);
+        // Feed GoT insights back to Leader (fire-and-forget: observational, not blocking)
+        if (this._wiredLeader?.processGoTFeedback) {
+          this._wiredLeader.processGoTFeedback(gotResult)
+            .catch(e => log.error('zk-hooks', 'processGoTFeedback error', { error: e.message }));
         }
 
         if (this.logger) {
@@ -179,7 +180,7 @@ class ZettelkastenHooks {
             type: 'got_triggered_by_reflexion',
             synergies: gotResult.summary.totalSynergies,
             gaps: gotResult.summary.totalGaps,
-          });
+          }).catch(e => log.error('zk-hooks', 'log persist error', { error: e.message }));
         }
       } catch (err) {
         log.error('zk-hooks', 'GoT reasoning failed', { error: err.message });
@@ -256,7 +257,7 @@ class ZettelkastenHooks {
       this.logger.logEvent('zettelkasten-hooks', {
         type: 'skill_deployed_to_zk',
         skill: data.newSkill,
-      });
+      }).catch(e => log.error('zk-hooks', 'log persist error', { error: e.message }));
     }
   }
 
@@ -270,9 +271,10 @@ class ZettelkastenHooks {
       try {
         const gotResult = await this.got.fullReasoningCycle();
 
-        // Feed GoT insights back to Leader if wired
+        // Feed GoT insights back to Leader if wired (fire-and-forget)
         if (this._wiredLeader?.processGoTFeedback) {
-          await this._wiredLeader.processGoTFeedback(gotResult);
+          this._wiredLeader.processGoTFeedback(gotResult)
+            .catch(e => log.error('zk-hooks', 'processGoTFeedback error', { error: e.message }));
         }
       } catch (err) {
         log.error('zk-hooks', 'GoT reasoning failed', { error: err.message });
@@ -299,7 +301,7 @@ class ZettelkastenHooks {
         oldTier: data.oldTier,
         newTier: data.newTier,
         xp: data.xp,
-      });
+      }).catch(e => log.error('zk-hooks', 'log persist error', { error: e.message }));
     }
   }
 
@@ -312,7 +314,7 @@ class ZettelkastenHooks {
         compound: data.compound,
         sources: data.sources,
         inheritedXP: data.inheritedXP,
-      });
+      }).catch(e => log.error('zk-hooks', 'log persist error', { error: e.message }));
     }
   }
 

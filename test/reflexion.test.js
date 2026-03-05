@@ -2,7 +2,7 @@
  * Group Reflexion + Prompt Injection Tests — AC-6
  * Usage: node --test test/reflexion.test.js
  */
-const { describe, it, before, after } = require('node:test');
+const { describe, it, before, after, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
 
 describe('LeaderAgent — Group Reflexion (AC-6)', () => {
@@ -82,16 +82,22 @@ describe('LeaderAgent — Group Reflexion (AC-6)', () => {
 });
 
 describe('LeaderAgent.processGoTFeedback', () => {
-    let LeaderAgent;
+    let LeaderAgent, leader;
 
     before(() => {
         LeaderAgent = require('../agent/leader').LeaderAgent;
     });
 
-    it('Critical gaps should trigger skill generation', async () => {
-        const leader = new LeaderAgent(3);
+    beforeEach(async () => {
+        leader = new LeaderAgent(3);
         await leader.init();
+    });
 
+    afterEach(async () => {
+        await leader.shutdown();
+    });
+
+    it('Critical gaps should trigger skill generation', async () => {
         let generatedFor = null;
         leader.skillPipeline = {
             generateFromFailure: async (opts) => {
@@ -112,14 +118,9 @@ describe('LeaderAgent.processGoTFeedback', () => {
         const { actions } = await leader.processGoTFeedback(gotResult);
         assert.equal(generatedFor, 'lava_death');
         assert.ok(actions.some(a => a.type === 'gap_skill_created'));
-
-        await leader.shutdown();
     });
 
     it('Moderate gaps should be skipped', async () => {
-        const leader = new LeaderAgent(3);
-        await leader.init();
-
         let called = false;
         leader.skillPipeline = {
             generateFromFailure: async () => { called = true; return { success: false }; },
@@ -134,14 +135,9 @@ describe('LeaderAgent.processGoTFeedback', () => {
 
         await leader.processGoTFeedback(gotResult);
         assert.equal(called, false, 'Should not generate skill for moderate gaps');
-
-        await leader.shutdown();
     });
 
     it('Synergies >= 0.6 should publish compound suggestion', async () => {
-        const leader = new LeaderAgent(3);
-        await leader.init();
-
         let publishedChannel = null;
         let publishedData = null;
         const originalPublish = leader.board.publish.bind(leader.board);
@@ -164,14 +160,9 @@ describe('LeaderAgent.processGoTFeedback', () => {
         assert.equal(publishedChannel, 'leader:got:compound-suggestion');
         assert.equal(publishedData.synergies.length, 1);
         assert.ok(actions.some(a => a.type === 'compound_suggested'));
-
-        await leader.shutdown();
     });
 
     it('Low synergies should not publish', async () => {
-        const leader = new LeaderAgent(3);
-        await leader.init();
-
         let published = false;
         const originalPublish = leader.board.publish.bind(leader.board);
         leader.board.publish = async (channel, data) => {
@@ -188,14 +179,9 @@ describe('LeaderAgent.processGoTFeedback', () => {
 
         await leader.processGoTFeedback(gotResult);
         assert.equal(published, false, 'Should not publish low-score synergies');
-
-        await leader.shutdown();
     });
 
     it('Evolution insights should be noted in actions', async () => {
-        const leader = new LeaderAgent(3);
-        await leader.init();
-
         const gotResult = {
             gaps: [],
             synergies: [],
@@ -208,26 +194,17 @@ describe('LeaderAgent.processGoTFeedback', () => {
         assert.ok(evo, 'Should have evolution_noted action');
         assert.equal(evo.skill, 'nav_v2');
         assert.equal(evo.usesToMaster, 5);
-
-        await leader.shutdown();
     });
 
     it('Empty/null gotResult should return empty actions', async () => {
-        const leader = new LeaderAgent(3);
-        await leader.init();
-
         const result1 = await leader.processGoTFeedback(null);
         assert.deepEqual(result1, { actions: [] });
 
         const result2 = await leader.processGoTFeedback({});
         assert.deepEqual(result2, { actions: [] });
-
-        await leader.shutdown();
     });
 
     it('Should work without skillPipeline (gaps skipped)', async () => {
-        const leader = new LeaderAgent(3);
-        await leader.init();
         leader.skillPipeline = null;
 
         const gotResult = {
@@ -239,14 +216,9 @@ describe('LeaderAgent.processGoTFeedback', () => {
 
         const { actions } = await leader.processGoTFeedback(gotResult);
         assert.ok(!actions.some(a => a.type === 'gap_skill_created'), 'No skill should be created without pipeline');
-
-        await leader.shutdown();
     });
 
     it('Should publish actions summary to leader:got:actions', async () => {
-        const leader = new LeaderAgent(3);
-        await leader.init();
-
         let actionsPublished = null;
         const originalPublish = leader.board.publish.bind(leader.board);
         leader.board.publish = async (channel, data) => {
@@ -266,8 +238,6 @@ describe('LeaderAgent.processGoTFeedback', () => {
         assert.equal(actionsPublished.author, 'leader');
         assert.ok(Array.isArray(actionsPublished.actions));
         assert.ok(actionsPublished.processedAt > 0);
-
-        await leader.shutdown();
     });
 });
 
