@@ -7,7 +7,7 @@ description: Optimize LLM API costs through intelligent model routing (haiku/son
 
 ## Purpose
 Optimize API costs through intelligent model routing, prompt caching, and retry strategies.
-Directly addresses the ANTHROPIC_API_KEY credit issue causing 3 skipped tests.
+Reference for API cost optimization and model routing decisions.
 
 ## Model Routing Strategy
 
@@ -44,14 +44,20 @@ attempt 3: opus   (final escalation)
 
 ## Octiv Integration
 
-### `agent/api-clients.js` — `createApiClients()`
+### `agent/ReflexionEngine.js` — Model Chain
+```
+Primary:    claude-haiku-4-5-20251001   (normal severity)
+Escalation: claude-sonnet-4-5-20241022  (critical severity)
+Fallback:   local:qwen/qwen3.5-9b       (LM Studio @ localhost:1234, 13.4 tok/s)
+Last resort: _fallbackSkill()            (hardcoded safe response)
+```
+
+### `agent/api-clients.js` — Client Factory
 ```javascript
-// Add model routing to existing API client
-function selectModel(task) {
-  if (task.tokens < 500 && task.type === 'classify') return 'claude-haiku-4-5-20251001';
-  if (task.tokens < 4000) return 'claude-sonnet-4-6';
-  return 'claude-opus-4-6';
-}
+// Clients created by createApiClients():
+// - anthropic: requires ANTHROPIC_API_KEY (cloud, paid)
+// - local: always created (LM Studio, free, 60s timeout)
+// - groq: requires GROQ_API_KEY (cloud, optional)
 ```
 
 ### Cost Tracking
