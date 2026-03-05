@@ -106,9 +106,9 @@ Choose the right pattern for the task at hand:
 | `/learn [topic]` | Extract patterns from session → instincts |
 | `/checkpoint [name]` | Save session state snapshot for recovery |
 
-### Skills (19 Octiv + 5 global + 3 utility — with SKILL.md)
+### Skills (20 Octiv + 5 global + 3 utility — with SKILL.md)
 
-**Octiv project skills (19 — `.claude/skills/`):**
+**Octiv project skills (20 — `.claude/skills/`):**
 | Skill | When |
 |-------|------|
 | `cost-aware-llm-pipeline` | LLM model routing, cost optimization |
@@ -129,6 +129,7 @@ Choose the right pattern for the task at hand:
 | `mcporter` | MCP server porting utilities |
 | `weather` | Minecraft weather control |
 | `first-day-survival` | Minecraft first-day survival guide |
+| `browser-recovery` | Playwright MCP + Patchright failure recovery |
 | `automated-debugging` | Automated debug workflows |
 
 **Octiv global skills (5 — `~/.claude/skills/`):**
