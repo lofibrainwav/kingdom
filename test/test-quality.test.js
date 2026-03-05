@@ -24,10 +24,10 @@ const AGENT_DIR = path.join(__dirname, '..', 'agent');
 
 // ── Config: thresholds that only go UP ───────────────────────────────
 const THRESHOLDS = {
-  MIN_TOTAL_TESTS: 390,       // current: 396 — bump when adding tests
+  MIN_TOTAL_TESTS: 400,       // current: 403 — bump when adding tests
   MAX_SKIPPED: 6,             // current: 4 — alarm if skips creep up
   MIN_ASSERT_RATIO: 1.0,     // assert calls per it() block
-  MIN_TEST_FILES: 20,        // current: 22 — never drop below
+  MIN_TEST_FILES: 22,        // current: 23 — never drop below
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────
