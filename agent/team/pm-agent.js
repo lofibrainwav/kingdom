@@ -38,7 +38,7 @@ class PMAgent {
 
       // 1. Post to Blackboard for the team
       const projectId = `project:${Date.now()}`;
-      await this.board.set(projectId, {
+      await this.board.setConfig(projectId, {
         goal: task,
         status: 'init',
         createdAt: Date.now(),

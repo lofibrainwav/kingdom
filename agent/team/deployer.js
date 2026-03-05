@@ -44,7 +44,7 @@ class DeployerAgent {
       });
 
       // 2. Mark as Deployed in Blackboard
-      await this.board.set(`${projectId}:status`, 'deployed');
+      await this.board.setConfig(`${projectId}:status`, 'deployed');
 
       // 3. Notify Success
       await this.board.publish('deployer:deployed', {

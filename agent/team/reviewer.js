@@ -49,7 +49,7 @@ class ReviewerAgent {
       );
 
       // 2. Save Review to Blackboard
-      await this.board.set(`${projectId}:review:${taskId}`, {
+      await this.board.setConfig(`${projectId}:review:${taskId}`, {
         review: reviewResult,
         reviewedAt: Date.now()
       });

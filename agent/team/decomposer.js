@@ -52,7 +52,7 @@ class DecomposerAgent {
       );
 
       // 3. Save tasks to Blackboard
-      await this.board.set(`${projectId}:tasks`, {
+      await this.board.setConfig(`${projectId}:tasks`, {
         plan: tasks,
         status: 'decomposed',
         decomposedAt: Date.now()

@@ -44,7 +44,7 @@ class ArchitectAgent {
       );
 
       // 2. Save Architecture to Blackboard
-      await this.board.set(`${projectId}:architecture`, {
+      await this.board.setConfig(`${projectId}:architecture`, {
         design: context,
         status: 'designed',
         designedAt: Date.now()

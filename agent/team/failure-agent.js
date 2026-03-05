@@ -49,7 +49,7 @@ class FailureAgent {
       );
 
       // 2. Save Classification and Guardrail to Blackboard
-      await this.board.set(`${projectId}:failure:${taskId}`, {
+      await this.board.setConfig(`${projectId}:failure:${taskId}`, {
         classification,
         classifiedAt: Date.now()
       });

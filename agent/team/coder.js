@@ -62,7 +62,7 @@ class CoderAgent {
         await fsp.writeFile(path.join(projectPath, fileName), codeResponse);
 
         // 3. Mark Task as Done in Blackboard
-        await this.board.set(`${projectId}:task:${task.id}:done`, {
+        await this.board.setConfig(`${projectId}:task:${task.id}:done`, {
           completedAt: Date.now(),
           file: fileName
         });
