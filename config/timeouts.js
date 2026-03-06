@@ -73,7 +73,7 @@ module.exports = {
   LM_STUDIO_PRECHECK_TIMEOUT_MS: 2000,
 
   /** LM Studio inference request timeout */
-  LM_STUDIO_REQUEST_TIMEOUT_MS: 60000,
+  LM_STUDIO_REQUEST_TIMEOUT_MS: 120000,
 
   /** Default max tokens for LLM responses */
   LLM_MAX_TOKENS: 1024,

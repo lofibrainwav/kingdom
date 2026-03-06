@@ -10,7 +10,7 @@ const T = require('../../config/timeouts');
 const log = getLogger();
 
 // Resolve primary model — prefer env override, then LM Studio, then Claude
-const _primaryModel = process.env.LLM_PRIMARY_MODEL || 'local:qwen/qwen3.5-9b';
+const _primaryModel = process.env.LLM_PRIMARY_MODEL || 'local:qwen/qwen3-8b';
 
 const DEFAULT_CONFIG = {
   model: _primaryModel,

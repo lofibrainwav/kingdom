@@ -49,9 +49,14 @@ function createApiClients() {
         if (!check?.ok) throw new Error('LM Studio not reachable');
 
         const url = `${LM_STUDIO_BASE_URL}/v1/chat/completions`;
+        const messages = [{ role: 'user', content: prompt }];
+        // Qwen3 models support /no_think to skip reasoning for faster responses
+        if (model.startsWith('qwen')) {
+          messages.unshift({ role: 'system', content: '/no_think' });
+        }
         const body = JSON.stringify({
           model,
-          messages: [{ role: 'user', content: prompt }],
+          messages,
           max_tokens: T.LLM_MAX_TOKENS,
           temperature: 0.7,
         });

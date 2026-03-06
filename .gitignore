@@ -71,3 +71,4 @@ logs/
 .vercel
 .env*.local
 .mcp.json.future
+workspace/
