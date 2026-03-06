@@ -7,19 +7,9 @@
  */
 const { Blackboard } = require('../core/blackboard');
 const { getLogger } = require('../core/logger');
-const { ReflexionEngine } = require('../core/ReflexionEngine');
+const { ReflexionEngine, parseLLMJson } = require('../core/ReflexionEngine');
 const { GoTReasoner } = require('../memory/got-reasoner');
 const log = getLogger();
-
-/** Extract JSON object from LLM response (raw string or pre-parsed object) */
-function parseLLMJson(response) {
-  if (typeof response === 'object' && response !== null) return response;
-  try {
-    const match = String(response).match(/\{[\s\S]*\}/);
-    if (match) return JSON.parse(match[0]);
-  } catch {}
-  return null;
-}
 
 class DecomposerAgent {
   constructor() {

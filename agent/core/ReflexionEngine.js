@@ -62,14 +62,7 @@ class ReflexionEngine {
     const response = await this.callLLM(prompt, failureContext.severity || 'normal');
 
     if (!response) return null;
-
-    try {
-      // Parse JSON from response
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
-      if (jsonMatch) return JSON.parse(jsonMatch[0]);
-    } catch {}
-
-    return null;
+    return parseLLMJson(response);
   }
 
   // 4.6: Multi-LLM router with escalation and fallback
@@ -150,4 +143,14 @@ class ReflexionEngine {
   }
 }
 
-module.exports = { ReflexionEngine, DEFAULT_CONFIG };
+/** Extract JSON object from LLM response (raw string or pre-parsed object) */
+function parseLLMJson(response) {
+  if (typeof response === 'object' && response !== null) return response;
+  try {
+    const match = String(response).match(/\{[\s\S]*\}/);
+    if (match) return JSON.parse(match[0]);
+  } catch {}
+  return null;
+}
+
+module.exports = { ReflexionEngine, DEFAULT_CONFIG, parseLLMJson };
