@@ -8,7 +8,7 @@
  * Press Ctrl+C to stop everything gracefully.
  */
 const { DashboardServer } = require('./agent/interface/dashboard');
-const { MCPServer } = require('./agent/mcp-server');
+const { MCPOrchestrator } = require('./agent/interface/mcp-orchestrator');
 const { spawn } = require('child_process');
 
 const args = process.argv.slice(2);
@@ -30,12 +30,12 @@ async function main() {
     console.log('  ✅ Dashboard:  http://localhost:3000');
   }
 
-  // Start MCP Server (port 3001)
+  // Start MCP Orchestrator (Redis-based agent registry)
   if (!noMCP) {
-    const mcp = new MCPServer();
-    await mcp.start();
-    services.push({ name: 'MCP', instance: mcp, stop: () => mcp.stop() });
-    console.log('  ✅ MCP Server: http://localhost:3001');
+    const mcp = new MCPOrchestrator();
+    await mcp.init();
+    services.push({ name: 'MCP', instance: mcp, stop: () => mcp.shutdown() });
+    console.log('  ✅ MCP Orchestrator: initialized');
   }
 
   // Start team.js as child process (it manages its own Redis + bots)
