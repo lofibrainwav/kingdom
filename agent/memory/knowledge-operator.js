@@ -100,6 +100,10 @@ class KnowledgeOperator {
       title: bundle.title,
       notePath,
       outcome: bundle.outcome,
+      retryCategory: bundle.retryCategory || null,
+      retryGuardrail: bundle.retryGuardrail || null,
+      continuationTaskId: bundle.continuationTaskId || null,
+      improvementNote: bundle.improvementNote || null,
     });
 
     if (this.logger) {
@@ -139,6 +143,9 @@ class KnowledgeOperator {
       outcome: 'failed',
       verification: [`failure retry requested with guardrail ${data.guardrail}`],
       lesson: `Guardrail ${data.guardrail} needs reinforcement before the next retry.`,
+      retryCategory: data.category,
+      retryGuardrail: data.guardrail,
+      continuationTaskId: data.taskId,
       tags: ['governance', 'failure', 'auto-capture'],
     });
   }
@@ -155,6 +162,11 @@ class KnowledgeOperator {
     const verification = Array.isArray(taskState?.verification) && taskState.verification.length > 0
       ? taskState.verification
       : [`${data.verificationCount} verification checks recorded`];
+    const retryCategory = taskState?.retry?.category || null;
+    const retryGuardrail = taskState?.retry?.guardrail || null;
+    const improvementNote = retryGuardrail
+      ? `Resolved guardrail ${retryGuardrail} after ${retryCategory || 'workflow'} retry${taskState?.retry?.count > 1 ? ` (${taskState.retry.count} attempts total)` : ''}.`
+      : null;
 
     return this.capture({
       author: 'knowledge-operator',
@@ -164,7 +176,11 @@ class KnowledgeOperator {
       outcome: 'passed',
       verification,
       lesson: 'Completed tasks should become durable project memory with verification attached.',
-      tags: ['governance', 'task-complete', 'auto-capture'],
+      retryCategory,
+      retryGuardrail,
+      continuationTaskId: data.taskId,
+      improvementNote,
+      tags: ['governance', 'task-complete', 'auto-capture', improvementNote ? 'retry-resolved' : null].filter(Boolean),
     });
   }
 
@@ -232,6 +248,7 @@ ${verification}
 
 ## Lesson
 ${bundle.lesson}
+${bundle.improvementNote ? `\n## Improvement\n${bundle.improvementNote}\n` : ''}
 `;
   }
 

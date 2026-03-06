@@ -26,6 +26,9 @@ class DashboardServer {
       lastSkillEval: null,
       recentKnowledge: [],
       recentTasks: [],
+      retryByCategory: {},
+      retryByGuardrail: {},
+      resolvedGuardrails: {},
     };
   }
 
@@ -142,6 +145,8 @@ class DashboardServer {
     this.subscriber.subscribe('governance:failure:retry-requested', (message) => {
       try {
         const data = typeof message === 'string' ? JSON.parse(message) : message;
+        this._incrementMetricBucket('retryByCategory', data.category || 'unknown');
+        this._incrementMetricBucket('retryByGuardrail', data.guardrail || 'unknown');
         this._rememberTaskEvent({
           type: 'retry-requested',
           title: data.taskId,
@@ -163,11 +168,15 @@ class DashboardServer {
       try {
         const data = typeof message === 'string' ? JSON.parse(message) : message;
         this.metrics.knowledgeCaptures += 1;
+        if (data.outcome === 'passed' && data.retryGuardrail) {
+          this._incrementMetricBucket('resolvedGuardrails', data.retryGuardrail);
+        }
         this._rememberKnowledgeEvent({
           type: 'capture',
           title: data.title,
           outcome: data.outcome,
           projectId: data.projectId,
+          detail: data.improvementNote || data.retryGuardrail || data.projectId,
         });
         this._broadcast({ type: 'knowledge-capture', channel: 'knowledge:capture:stored', data });
       } catch {}
@@ -203,6 +212,10 @@ class DashboardServer {
       timestamp: Date.now(),
     });
     this.metrics.recentTasks = this.metrics.recentTasks.slice(0, 6);
+  }
+
+  _incrementMetricBucket(bucket, key) {
+    this.metrics[bucket][key] = (this.metrics[bucket][key] || 0) + 1;
   }
 
   _broadcast(event) {
@@ -469,6 +482,19 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
     border: 1px solid var(--line);
     background: rgba(255,255,255,0.6);
   }
+  .pressure-grid {
+    display: grid;
+    gap: 10px;
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+  }
+  .pressure-card {
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,0.6);
+  }
   .feed-title { font-size: 14px; font-weight: 700; }
   .feed-meta { margin-top: 4px; color: var(--muted); font-size: 12px; }
   @media (max-width: 980px) {
@@ -526,6 +552,24 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
         </div>
         <div id="task-feed" class="feed-list"></div>
       </div>
+      <div class="pressure-grid">
+        <div class="section-header">
+          <h2 class="section-title">Retry Pressure</h2>
+          <div class="section-note">Where retries cluster and which guardrails resolve over time</div>
+        </div>
+        <div class="pressure-card">
+          <div class="feed-title">Category Load</div>
+          <div id="retry-category" class="feed-list"></div>
+        </div>
+        <div class="pressure-card">
+          <div class="feed-title">Guardrail Heat</div>
+          <div id="retry-guardrail" class="feed-list"></div>
+        </div>
+        <div class="pressure-card">
+          <div class="feed-title">Resolved Guardrails</div>
+          <div id="resolved-guardrail" class="feed-list"></div>
+        </div>
+      </div>
     </aside>
   </section>
 
@@ -578,9 +622,20 @@ const statCaptures = document.getElementById('stat-captures');
 const statSkillEvals = document.getElementById('stat-skill-evals');
 const knowledgeFeedDiv = document.getElementById('knowledge-feed');
 const taskFeedDiv = document.getElementById('task-feed');
+const retryCategoryDiv = document.getElementById('retry-category');
+const retryGuardrailDiv = document.getElementById('retry-guardrail');
+const resolvedGuardrailDiv = document.getElementById('resolved-guardrail');
 const state = {};
 const tasks = {};
-const metrics = { knowledgeCaptures: 0, skillEvals: 0, recentKnowledge: [], recentTasks: [] };
+const metrics = {
+  knowledgeCaptures: 0,
+  skillEvals: 0,
+  recentKnowledge: [],
+  recentTasks: [],
+  retryByCategory: {},
+  retryByGuardrail: {},
+  resolvedGuardrails: {},
+};
 let totalEvents = 0;
 let totalHealthSignals = 0;
 let totalAlerts = 0;
@@ -611,11 +666,14 @@ es.onmessage = (e) => {
   if (evt.type === 'safety' || evt.type === 'leader') totalAlerts += 1;
   if (evt.type === 'knowledge-capture') {
     metrics.knowledgeCaptures += 1;
+    if (evt.data?.outcome === 'passed' && evt.data?.retryGuardrail) {
+      incrementBucket(metrics.resolvedGuardrails, evt.data.retryGuardrail);
+    }
     pushKnowledgeFeed({
       type: 'capture',
       title: evt.data?.title || 'Knowledge capture',
       outcome: evt.data?.outcome || 'passed',
-      detail: evt.data?.projectId || 'project',
+      detail: evt.data?.improvementNote || evt.data?.retryGuardrail || evt.data?.projectId || 'project',
     });
   }
   if (evt.type === 'skill-eval') {
@@ -628,6 +686,10 @@ es.onmessage = (e) => {
     });
   }
   if (evt.type === 'task-closeout') {
+    if (evt.channel === 'governance:failure:retry-requested') {
+      incrementBucket(metrics.retryByCategory, evt.data?.category || 'unknown');
+      incrementBucket(metrics.retryByGuardrail, evt.data?.guardrail || 'unknown');
+    }
     rememberTaskState(evt);
     pushTaskFeed({
       type: evt.channel?.split(':').slice(1).join('-') || 'task',
@@ -650,6 +712,7 @@ function renderStats() {
   statSkillEvals.textContent = metrics.skillEvals;
   renderKnowledgeFeed();
   renderTaskFeed();
+  renderRetryPressure();
 }
 
 function renderAgents() {
@@ -757,6 +820,10 @@ function pushTaskFeed(entry) {
   metrics.recentTasks = metrics.recentTasks.slice(0, 6);
 }
 
+function incrementBucket(bucket, key) {
+  bucket[key] = (bucket[key] || 0) + 1;
+}
+
 function rememberTaskState(evt) {
   const taskId = evt.data?.taskId;
   const projectId = evt.data?.projectId;
@@ -820,6 +887,27 @@ function renderTaskFeed() {
     return '<div class="feed-item">'
       + '<div class="feed-title">' + escapeHtml(entry.title || entry.type) + '</div>'
       + '<div class="feed-meta">' + escapeHtml((entry.type || 'task') + ' • ' + (entry.outcome || 'n/a') + ' • ' + (entry.detail || '') + ' • ' + timeAgo(entry.timestamp)) + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+function renderRetryPressure() {
+  renderBucket(retryCategoryDiv, metrics.retryByCategory, 'No retry categories yet');
+  renderBucket(retryGuardrailDiv, metrics.retryByGuardrail, 'No guardrail pressure yet');
+  renderBucket(resolvedGuardrailDiv, metrics.resolvedGuardrails, 'No resolved guardrails yet');
+}
+
+function renderBucket(container, bucket, emptyLabel) {
+  const entries = Object.entries(bucket || {}).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  if (entries.length === 0) {
+    container.innerHTML = '<div class="feed-meta">' + escapeHtml(emptyLabel) + '</div>';
+    return;
+  }
+
+  container.innerHTML = entries.map(([label, count]) => {
+    return '<div class="feed-item">'
+      + '<div class="feed-title">' + escapeHtml(label) + '</div>'
+      + '<div class="feed-meta">' + escapeHtml(String(count) + ' events') + '</div>'
       + '</div>';
   }).join('');
 }

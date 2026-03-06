@@ -207,6 +207,55 @@ describe('KnowledgeOperator', () => {
     assert.equal(dashboardLinks[0].section, 'Recent Achievements');
   });
 
+  it('captures retry resolution context when a completed task closes a previous guardrail', async () => {
+    const subscriptions = {};
+    board.getConfig = async () => ({
+      goal: 'Recover verification gap',
+      workspacePath: '/tmp/kingdom/TASK-9',
+      verification: ['npm test', 'npm run lint'],
+      retry: {
+        category: 'review',
+        guardrail: 'missing-evidence',
+        count: 2,
+      },
+    });
+    board.createSubscriber = async () => ({
+      on: () => {},
+      subscribe: async (channel, handler) => {
+        subscriptions[channel] = handler;
+      },
+    });
+
+    const operator = new KnowledgeOperator({
+      board,
+      zettelkasten: zk,
+      vaultDir: tmpDir,
+      writePattern: async (name) => `/vault/patterns/${name}.md`,
+      addDashboardLink: async (section, link) => {
+        dashboardLinks.push({ section, link });
+      },
+    });
+
+    await operator.init();
+    await operator.start();
+    await subscriptions['governance:task:completed']({
+      author: 'codex',
+      projectId: 'kingdom',
+      taskId: 'TASK-9',
+      verificationCount: 2,
+    });
+
+    assert.equal(published.length, 1);
+    assert.equal(published[0].data.retryCategory, 'review');
+    assert.equal(published[0].data.retryGuardrail, 'missing-evidence');
+    assert.match(published[0].data.improvementNote, /Resolved guardrail missing-evidence/);
+
+    const notePath = path.join(tmpDir, 'completed-task-9.md');
+    const note = await fsp.readFile(notePath, 'utf-8');
+    assert.match(note, /## Improvement/);
+    assert.match(note, /Resolved guardrail missing-evidence/);
+  });
+
   it('captures skill evaluation events into durable knowledge notes', async () => {
     const subscriptions = {};
     board.createSubscriber = async () => ({

@@ -20,6 +20,9 @@ describe('Interface Copy', () => {
     assert.match(DASHBOARD_HTML, /Current lifecycle state from stored task configs/);
     assert.match(DASHBOARD_HTML, /Retry Ready/);
     assert.match(DASHBOARD_HTML, /Blocked/);
+    assert.match(DASHBOARD_HTML, /Retry Pressure/);
+    assert.match(DASHBOARD_HTML, /Category Load/);
+    assert.match(DASHBOARD_HTML, /Guardrail Heat/);
   });
 
   it('discord help copy should reference the Kingdom operating system', () => {
