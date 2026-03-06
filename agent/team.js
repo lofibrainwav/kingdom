@@ -79,6 +79,14 @@ async function shutdown(signal) {
 
 process.on('SIGINT', () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('uncaughtException', (err) => {
+  log.error('team', `Uncaught exception: ${err.message}`, { stack: err.stack });
+  shutdown('uncaughtException').catch(() => process.exit(1));
+});
+process.on('unhandledRejection', (reason) => {
+  log.error('team', `Unhandled rejection: ${reason}`);
+  shutdown('unhandledRejection').catch(() => process.exit(1));
+});
 
 main().catch((err) => {
   log.error('team', `Fatal: ${err.message}`);

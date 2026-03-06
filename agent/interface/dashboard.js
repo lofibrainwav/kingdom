@@ -444,7 +444,14 @@ class DashboardServer {
   }
 
   _incrementMetricBucket(bucket, key) {
-    this.metrics[bucket][key] = (this.metrics[bucket][key] || 0) + 1;
+    const map = this.metrics[bucket];
+    map[key] = (map[key] || 0) + 1;
+    // Prune to top 100 entries to prevent unbounded growth
+    const keys = Object.keys(map);
+    if (keys.length > 100) {
+      keys.sort((a, b) => map[a] - map[b]);
+      for (let i = 0; i < keys.length - 100; i++) delete map[keys[i]];
+    }
   }
 
   _broadcast(event) {
