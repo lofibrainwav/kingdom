@@ -115,6 +115,14 @@ class KnowledgeOperator {
       );
     }
 
+    const promotionCandidate = this._buildPromotionCandidate(enrichedBundle, notePath);
+    if (promotionCandidate && this.board.setConfig) {
+      await this.board.setConfig(
+        `knowledge:promotion:${promotionCandidate.projectId}:${promotionCandidate.taskId}:candidate`,
+        promotionCandidate
+      );
+    }
+
     await this.board.publish('knowledge:capture:stored', {
       author: enrichedBundle.author,
       projectId: enrichedBundle.projectId,
@@ -129,6 +137,10 @@ class KnowledgeOperator {
       capturedAt,
     });
 
+    if (promotionCandidate) {
+      await this.board.publish('knowledge:promotion:candidate', promotionCandidate);
+    }
+
     if (this.logger) {
       await this.logger.logEvent('knowledge-operator', {
         type: 'capture_stored',
@@ -140,6 +152,32 @@ class KnowledgeOperator {
     }
 
     return { notePath, patternPath, skillNoteId };
+  }
+
+  _buildPromotionCandidate(bundle, notePath) {
+    if (
+      bundle.outcome !== 'passed'
+      || !bundle.taskId
+      || !bundle.retryGuardrail
+      || !bundle.retryCategory
+      || !bundle.dryRunSummary
+    ) {
+      return null;
+    }
+
+    return {
+      author: bundle.author,
+      projectId: bundle.projectId,
+      taskId: bundle.taskId,
+      title: bundle.title,
+      notePath,
+      promotionType: 'dry-run-recovery-play',
+      retryCategory: bundle.retryCategory,
+      retryGuardrail: bundle.retryGuardrail,
+      dryRunSummary: bundle.dryRunSummary,
+      improvementNote: bundle.improvementNote || null,
+      capturedAt: bundle.capturedAt || new Date().toISOString(),
+    };
   }
 
   async handleReviewApproved(message) {
@@ -207,6 +245,7 @@ class KnowledgeOperator {
       lesson: dryRunSummary
         ? `Completed tasks should become durable project memory with verification attached. Latest dry-run: ${dryRunSummary}`
         : 'Completed tasks should become durable project memory with verification attached.',
+      dryRunSummary,
       retryCategory,
       retryGuardrail,
       continuationTaskId: data.taskId,

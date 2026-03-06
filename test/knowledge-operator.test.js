@@ -317,6 +317,65 @@ describe('KnowledgeOperator', () => {
     assert.match(latest.improvementNote, /Resolved guardrail missing-lesson/);
   });
 
+  it('promotes retry-resolved dry-run wins into promotion candidates', async () => {
+    const subscriptions = {};
+    board.getConfig = async () => ({
+      goal: 'Promote rehearsal pattern',
+      workspacePath: '/tmp/kingdom/TASK-22',
+      verification: ['npm test'],
+      dryRuns: [
+        {
+          summary: 'Rehearse review evidence checklist',
+          verification: ['dry-run proof pack'],
+          outcome: 'passed',
+        },
+      ],
+      retry: {
+        category: 'review',
+        guardrail: 'missing-evidence',
+        count: 1,
+      },
+    });
+    board.createSubscriber = async () => ({
+      on: () => {},
+      subscribe: async (channel, handler) => {
+        subscriptions[channel] = handler;
+      },
+    });
+
+    const operator = new KnowledgeOperator({
+      board,
+      zettelkasten: zk,
+      vaultDir: tmpDir,
+      writePattern: async (name) => `/vault/patterns/${name}.md`,
+      addDashboardLink: async () => {},
+    });
+
+    await operator.init();
+    await operator.start();
+    await subscriptions['governance:task:completed']({
+      author: 'codex',
+      projectId: 'kingdom',
+      taskId: 'TASK-22',
+      verificationCount: 1,
+    });
+
+    assert.equal(published.length, 2);
+    assert.equal(published[0].channel, 'knowledge:capture:stored');
+    assert.equal(published[1].channel, 'knowledge:promotion:candidate');
+    assert.equal(published[1].data.promotionType, 'dry-run-recovery-play');
+    assert.equal(published[1].data.retryCategory, 'review');
+    assert.equal(published[1].data.dryRunSummary, 'Rehearse review evidence checklist');
+
+    const candidate = configs.get('knowledge:promotion:kingdom:TASK-22:candidate');
+    assert.ok(candidate);
+    assert.equal(candidate.projectId, 'kingdom');
+    assert.equal(candidate.taskId, 'TASK-22');
+    assert.equal(candidate.promotionType, 'dry-run-recovery-play');
+    assert.equal(candidate.retryCategory, 'review');
+    assert.equal(candidate.dryRunSummary, 'Rehearse review evidence checklist');
+  });
+
   it('captures skill evaluation events into durable knowledge notes', async () => {
     const subscriptions = {};
     board.createSubscriber = async () => ({

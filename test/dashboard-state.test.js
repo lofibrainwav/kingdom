@@ -177,6 +177,38 @@ describe('DashboardServer state API', () => {
     assert.equal(reset, '/');
   });
 
+  it('parses and builds play drilldown state for reusable dry-run plays', () => {
+    const parsed = parseDashboardQuery(new URLSearchParams(
+      'filter=ready-to-promote&retryCategory=review&dryRunSummary=Rehearse%20review%20evidence%20checklist'
+    ));
+
+    assert.deepEqual(parsed, {
+      filter: 'ready-to-promote',
+      drilldown: {
+        type: 'play',
+        category: 'review',
+        value: 'Rehearse review evidence checklist',
+      },
+      apiQuery: {
+        retryCategory: 'review',
+      },
+    });
+
+    const rebuilt = buildDashboardStateUrl('/', {
+      filter: 'ready-to-promote',
+      drilldown: {
+        type: 'play',
+        category: 'review',
+        value: 'Rehearse review evidence checklist',
+      },
+    });
+
+    assert.equal(
+      rebuilt,
+      '/?filter=ready-to-promote&retryCategory=review&dryRunSummary=Rehearse+review+evidence+checklist'
+    );
+  });
+
   it('derives dry-run coverage and success rates from task state', async () => {
     const dashboard = new DashboardServer(0);
     dashboard.taskRunner = {

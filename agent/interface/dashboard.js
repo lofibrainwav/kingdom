@@ -26,6 +26,21 @@ function parseDashboardQuery(searchParams) {
     };
   }
 
+  if (searchParams.get('retryCategory') && searchParams.get('dryRunSummary')) {
+    return {
+      filter,
+      drilldown: {
+        type: 'play',
+        category: searchParams.get('retryCategory'),
+        value: searchParams.get('dryRunSummary'),
+      },
+      apiQuery: {
+        ...(searchParams.get('projectId') ? { projectId: searchParams.get('projectId') } : {}),
+        retryCategory: searchParams.get('retryCategory'),
+      },
+    };
+  }
+
   if (searchParams.get('retryGuardrail')) {
     return {
       filter,
@@ -81,6 +96,10 @@ function buildDashboardStateUrl(basePath, { filter = 'all', drilldown = null } =
   }
   if (drilldown?.type === 'category') {
     params.set('retryCategory', drilldown.value);
+  }
+  if (drilldown?.type === 'play') {
+    params.set('retryCategory', drilldown.category);
+    params.set('dryRunSummary', drilldown.value);
   }
 
   const query = params.toString();
@@ -982,6 +1001,7 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
           <button type="button" class="task-filter" data-filter="retry">Retry Ready</button>
           <button type="button" class="task-filter" data-filter="blocked">Blocked</button>
           <button type="button" class="task-filter" data-filter="dry-run-wins">Dry-Run Wins</button>
+          <button type="button" class="task-filter" data-filter="ready-to-promote">Ready to Promote</button>
           <button type="button" class="task-filter" data-filter="clear-focus">Reset Focus</button>
         </div>
         <div id="task-focus" class="focus-strip"></div>
@@ -1211,6 +1231,12 @@ function matchesTaskFilter(task) {
     if (activeDrilldown.type === 'category' && task.retry?.category !== activeDrilldown.value) {
       return false;
     }
+    if (activeDrilldown.type === 'play' && (
+      task.retry?.category !== activeDrilldown.category
+      || task.dryRuns?.at(-1)?.summary !== activeDrilldown.value
+    )) {
+      return false;
+    }
   }
 
   if (activeTaskFilter === 'retry') {
@@ -1228,6 +1254,10 @@ function matchesTaskFilter(task) {
     return task.dryRunImpact === 'dry-run helped recovery';
   }
 
+  if (activeTaskFilter === 'ready-to-promote') {
+    return task.promotionSignal === 'ready to promote';
+  }
+
   return true;
 }
 
@@ -1240,7 +1270,11 @@ function renderTaskFocus() {
   taskFocusDiv.innerHTML = '<div class="focus-pill">Focused by '
     + escapeHtml(activeDrilldown.type)
     + ': '
-    + escapeHtml(activeDrilldown.value)
+    + escapeHtml(
+      activeDrilldown.type === 'play'
+        ? activeDrilldown.category + ' • ' + activeDrilldown.value
+        : activeDrilldown.value
+    )
     + '</div>';
 }
 
@@ -1414,6 +1448,16 @@ function parseDashboardQueryClient(searchParams) {
   if (searchParams.get('taskId')) {
     return { filter, drilldown: { type: 'task', value: searchParams.get('taskId') } };
   }
+  if (searchParams.get('retryCategory') && searchParams.get('dryRunSummary')) {
+    return {
+      filter,
+      drilldown: {
+        type: 'play',
+        category: searchParams.get('retryCategory'),
+        value: searchParams.get('dryRunSummary'),
+      },
+    };
+  }
   if (searchParams.get('retryGuardrail')) {
     return { filter, drilldown: { type: 'guardrail', value: searchParams.get('retryGuardrail') } };
   }
@@ -1444,9 +1488,19 @@ function buildDashboardStateUrlClient(basePath, filter, drilldown) {
   if (drilldown?.type === 'category') {
     params.set('retryCategory', drilldown.value);
   }
+  if (drilldown?.type === 'play') {
+    params.set('retryCategory', drilldown.category);
+    params.set('dryRunSummary', drilldown.value);
+  }
 
   const query = params.toString();
   return query ? basePath + '?' + query : basePath;
+}
+
+function syncTaskFilterButtons() {
+  taskFilters.forEach((item) => {
+    item.classList.toggle('active', item.dataset.filter === activeTaskFilter);
+  });
 }
 
 function syncBrowserState() {
@@ -1521,11 +1575,25 @@ function renderDryRunSummaryWins(container, entries, emptyLabel) {
   }
 
   container.innerHTML = entries.map((entry) => {
-    return '<div class="feed-item">'
+    return '<button type="button" class="feed-item pressure-button" data-drilldown-type="play" data-drilldown-category="' + escapeHtml(entry.category) + '" data-drilldown-value="' + escapeHtml(entry.summary) + '">'
       + '<div class="feed-title">' + escapeHtml(entry.category + ' • ' + entry.summary) + '</div>'
       + '<div class="feed-meta">' + escapeHtml(entry.wins + '/' + entry.attempts + ' wins • ' + Math.round(entry.winRate * 100) + '%') + '</div>'
-      + '</div>';
+      + '</button>';
   }).join('');
+
+  container.querySelectorAll('.pressure-button').forEach((button) => {
+    button.addEventListener('click', () => {
+      activeTaskFilter = 'ready-to-promote';
+      syncTaskFilterButtons();
+      activeDrilldown = {
+        type: 'play',
+        category: button.dataset.drilldownCategory,
+        value: button.dataset.drilldownValue,
+      };
+      syncBrowserState();
+      renderTasks();
+    });
+  });
 }
 
 function timeAgo(ts) {
