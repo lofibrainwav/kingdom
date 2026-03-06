@@ -394,6 +394,7 @@ class DashboardServer {
     const hydratedTasks = tasks.map((task) => ({
       ...task,
       latestKnowledge: taskKnowledge.get(`${task.projectId}:${task.taskId}`) || null,
+      dryRunImpact: this._deriveDryRunImpact(task),
     }));
     const derivedMetrics = this._buildRecoveryMetrics();
     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -526,6 +527,26 @@ class DashboardServer {
         }
         return a.key.localeCompare(b.key);
       });
+  }
+
+  _deriveDryRunImpact(task = {}) {
+    const hasRetry = Boolean(task.retry);
+    const hasDryRun = (task.dryRuns || []).length > 0;
+    const resolved = task.status === 'completed' || task.status === 'approved';
+
+    if (hasRetry && hasDryRun && resolved) {
+      return 'dry-run helped recovery';
+    }
+    if (hasRetry && hasDryRun) {
+      return 'dry-run rehearsed, recovery pending';
+    }
+    if (hasRetry && resolved) {
+      return 'recovered without dry-run';
+    }
+    if (hasDryRun) {
+      return 'dry-run recorded';
+    }
+    return 'no dry-run signal';
   }
 
   _serveDashboard(req, res) {
@@ -1105,6 +1126,7 @@ function renderTasks() {
         + field('Retry', escapeHtml(task.retry?.handoff?.status || task.retry?.guardrail || '-'))
         + field('Dry Run Count', escapeHtml(String(task.dryRuns?.length || 0)))
         + field('Latest Dry Run', escapeHtml(task.dryRuns?.at(-1)?.summary || '-'))
+        + field('Dry-Run Impact', escapeHtml(task.dryRunImpact || 'no dry-run signal'))
         + field('Latest Lesson', escapeHtml(task.latestKnowledge?.lesson || '-'))
         + field('Latest Improvement', escapeHtml(task.latestKnowledge?.improvementNote || '-'))
         + field('Knowledge Updated', timeAgo(Date.parse(task.latestKnowledge?.capturedAt || 0)))

@@ -18,6 +18,8 @@ describe('DashboardServer state API', () => {
           taskId: 'TASK-14',
           status: 'approved',
           goal: 'Link task knowledge',
+          dryRuns: [{ summary: 'Rehearsed knowledge handoff before closeout' }],
+          retry: { guardrail: 'missing-lesson' },
           updatedAt: 1700000000000,
         },
       ]),
@@ -60,6 +62,7 @@ describe('DashboardServer state API', () => {
     assert.equal(data.tasks.length, 1);
     assert.equal(data.tasks[0].latestKnowledge.title, 'Completed TASK-14');
     assert.match(data.tasks[0].latestKnowledge.improvementNote, /missing-lesson/);
+    assert.equal(data.tasks[0].dryRunImpact, 'dry-run helped recovery');
   });
 
   it('passes API query filters into task listing', async () => {
