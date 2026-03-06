@@ -265,4 +265,23 @@ describe('TaskRunner', () => {
     assert.equal(published.at(-1).channel, 'work:dry-run:recorded');
     assert.equal(published.at(-1).data.taskId, 'TASK-41');
   });
+
+  it('shutdown disconnects board when client is open', async () => {
+    let disconnected = false;
+    board.disconnect = async () => { disconnected = true; };
+    const runner = new TaskRunner({ board, workspaceRoot: tmpDir });
+    await runner.init();
+
+    await runner.shutdown();
+    assert.equal(disconnected, true);
+  });
+
+  it('shutdown is safe when board is already closed', async () => {
+    board.disconnect = async () => {};
+    board.client = { isOpen: false };
+    const runner = new TaskRunner({ board, workspaceRoot: tmpDir });
+
+    // Should not throw
+    await runner.shutdown();
+  });
 });

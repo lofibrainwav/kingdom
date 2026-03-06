@@ -124,6 +124,10 @@ description: Use when testing the closeout orchestrator skill evaluation flow.
     assert.ok(channels.includes('governance:review:approved'));
     assert.ok(channels.includes('knowledge:skill:eval-completed'));
 
+    // Verify review:requested payload includes author field (production crash fix)
+    const reviewReq = published.find((e) => e.channel === 'governance:review:requested');
+    assert.ok(reviewReq.data.author, 'review:requested must include author field');
+
     const captures = published.filter((entry) => entry.channel === 'knowledge:capture:stored');
     const captureTitles = captures.map((entry) => entry.data.title).sort();
     assert.deepEqual(captureTitles, [
