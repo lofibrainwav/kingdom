@@ -389,16 +389,20 @@ See `~/.claude/skills/{skill-name}/SKILL.md` for details.
 ---
 
 ## Current Operating Focus
-- Phase-2 complete: Octiv→Kingdom full rename, 267 tests green, all skills/hooks aligned
-- Codebase structure: `agent/core/`, `agent/team/` (9 agents), `agent/interface/`, `agent/memory/`
+- Phase-3 stabilization: 312 tests green, pipeline bridge wired, all agents have author fields
+- Codebase structure: `agent/core/` (9), `agent/team/` (9), `agent/interface/` (3), `agent/memory/` (7) = 28 files
+- Team launcher: 11 services (9 agents + TaskCloseoutOrchestrator + KnowledgeOperator)
 - Completed:
   1. ~~skill/control-layer cleanup~~ (Phase-2)
-  2. ~~green test baseline restoration~~ (267/267 green)
+  2. ~~green test baseline restoration~~ (312/312 green)
   3. ~~Blackboard channel refactor~~ (`work:*`, `knowledge:*`, `execution:*`, `governance:*`)
+  4. ~~E2E pipeline bridge~~ (review:approved → project:approved → deployer)
+  5. ~~Author field enforcement~~ (all team agent publishes)
+  6. ~~Dashboard security~~ (_sanitizeParam unit tests)
 - Next priorities:
-  1. E2E pipeline validation (`npm run e2e`)
-  2. Dashboard + Discord bot integration testing
-  3. Production deployment readiness (Sentry, Vercel, Supabase MCP activation)
+  1. E2E runtime validation (`npm run e2e` with live agents)
+  2. Production deployment readiness (Sentry, Vercel, Supabase — blocked on infra)
+  3. Dashboard HTTP/SSE test coverage expansion
 
 ---
 
