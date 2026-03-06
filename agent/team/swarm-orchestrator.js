@@ -42,8 +42,9 @@ class SwarmOrchestrator {
         const scriptPath = path.join(__dirname, `${agentType}.js`);
         
         // Spawn child process
-        const child = cp.exec(`node ${scriptPath}`, {
-          env: { ...process.env, AGENT_ID: childId, SWARM_ID: swarmId }
+        const child = cp.spawn('node', [scriptPath], {
+          env: { ...process.env, AGENT_ID: childId, SWARM_ID: swarmId },
+          stdio: 'inherit'
         });
 
         child.on('exit', (code) => {

@@ -4,5 +4,6 @@
   "commandsChannel": "1479003893588557894",
   "chatChannel": "1479008798344745096",
   "forumChannel": "1479014209126924368",
-  "_note": "Fill in Discord channel IDs. Token and Guild ID go in .env as DISCORD_TOKEN and DISCORD_GUILD_ID."
+  "_note": "Fill in Discord channel IDs. Token and Guild ID go in .env as DISCORD_TOKEN and DISCORD_GUILD_ID.",
+  "_setup": "These are hardcoded channel IDs. If you create a new Discord server, update all IDs here or set DISCORD_*_CHANNEL env vars as fallback."
 }

@@ -140,14 +140,14 @@ class Blackboard {
       if (this.client.isOpen) {
         await this.client.quit();
       }
-    } catch {
-      // quit() failed — fall through to force disconnect
+    } catch (err) {
+      log.debug('blackboard', `quit() failed, forcing disconnect: ${err.message}`);
     }
     // Always force-destroy to stop pending reconnection attempts
     try {
       await this.client.disconnect();
-    } catch {
-      // Already disconnected or destroyed
+    } catch (err) {
+      log.debug('blackboard', `disconnect() already done: ${err.message}`);
     }
   }
 

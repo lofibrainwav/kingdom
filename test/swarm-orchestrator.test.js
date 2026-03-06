@@ -32,9 +32,9 @@ describe('SwarmOrchestrator — Vibe Coding Parallel Execution', () => {
     swarm = new SwarmOrchestrator();
     swarm.board = mockBoard;
 
-    // Mock child_process.exec to return a dummy EventEmitter (mocking ChildProcess)
-    mock.method(child_process, 'exec', (cmd, options) => {
-      execCalls.push({ cmd, options });
+    // Mock child_process.spawn to return a dummy EventEmitter (mocking ChildProcess)
+    mock.method(child_process, 'spawn', (cmd, args, options) => {
+      execCalls.push({ cmd: `${cmd} ${args.join(' ')}`, options });
       const cp = new EventEmitter();
       cp.kill = () => { cp.killed = true; };
       return cp;
