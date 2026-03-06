@@ -1,14 +1,6 @@
 ---
 name: first-day-survival
-version: 1.3.1
-author: OpenClaw Legion Reflexion Engine v2
-description: |
-  Legacy origin mission for the first Kingdom sandbox. Preserved as proof of the initial agent collaboration pattern, not as the default Kingdom mission.
-user-invocable: true
-requires:
-  bins: [node, jq, redis-cli]
-  env: [BLACKBOARD_REDIS_URL]
-  apis: [mineflayer, node:vm-sandbox]
+description: Use when maintaining the legacy Minecraft origin mission, validating the first Kingdom sandbox patterns, or extracting survival-loop lessons for modern Kingdom workflows.
 ---
 
 ## Legacy Origin Mission
@@ -19,6 +11,13 @@ Use it only when:
 - maintaining the Minecraft adapter
 - comparing current orchestration against the original MVP
 - extracting patterns from the first Kingdom mission
+
+## When to Use
+
+- The task explicitly targets the legacy Minecraft adapter
+- You need the original Day 1 mission acceptance criteria for comparison
+- You are extracting lessons from the first Kingdom MVP
+- You are validating that origin-story automation still remains reproducible
 
 ## User Story (BMAD Format)
 As a member of the Autonomous Survival Legion,  
@@ -54,6 +53,12 @@ All items must be 100% satisfied for mission success:
 4. **Creative Mode** — if AC progress ≥ 70% or 2/3 agents vote: Open Debate then auto-trigger Self-Improvement  
 5. Detect failure → run reflexionOnFailure() → execute self-improvement skill  
 6. On success → save to Skill Library as "first-night-survival-v1.3.js" and update changelog
+
+## Implementation
+
+- Treat this skill as a legacy reference, not the default Kingdom mission.
+- Keep modern Blackboard, verification, and memory patterns when porting any part of this flow.
+- If extracting reusable ideas, document them in current-world workflows instead of extending the Minecraft-only path.
 
 ## Self-Improvement Integration (v1.3)
 On failure the agent MUST return this exact JSON structure (OpenClaw handles the rest):

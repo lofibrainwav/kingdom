@@ -42,6 +42,10 @@ class KnowledgeOperator {
     await this.subscriber.subscribe('governance:failure:retry-requested', async (message) => {
       await this.handleRetryRequested(message);
     });
+
+    await this.subscriber.subscribe('knowledge:skill:eval-completed', async (message) => {
+      await this.handleSkillEvalCompleted(message);
+    });
   }
 
   async shutdown() {
@@ -161,6 +165,27 @@ class KnowledgeOperator {
       verification,
       lesson: 'Completed tasks should become durable project memory with verification attached.',
       tags: ['governance', 'task-complete', 'auto-capture'],
+    });
+  }
+
+  async handleSkillEvalCompleted(message) {
+    const data = this._parseMessage(message);
+    const outcome = data.passed ? 'passed' : 'failed';
+    const findings = Number.isInteger(data.findingCount)
+      ? data.findingCount
+      : Array.isArray(data.findings) ? data.findings.length : 0;
+
+    return this.capture({
+      author: 'knowledge-operator',
+      projectId: 'skills',
+      title: `Skill eval ${data.skillName}`,
+      summary: `Skill ${data.skillName} evaluated at score ${data.score}.`,
+      outcome,
+      verification: [`skill eval score ${data.score}`, `${findings} structural findings`],
+      lesson: data.passed
+        ? 'Strong skills should still be tracked so their structure can become the reusable baseline.'
+        : 'Failing skill evaluations should turn into visible debt and a remediation target.',
+      tags: ['knowledge', 'skill-eval', outcome],
     });
   }
 

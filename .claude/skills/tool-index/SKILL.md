@@ -1,9 +1,16 @@
 ---
 name: tool-index
-description: Master index of Kingdom tools — agents, skills, MCP servers, CLI tools, workflows, and legacy adapters. Use when unsure which tool or workflow should be used next.
+description: Use when you need to decide which Kingdom agent, skill, MCP server, CLI command, workflow, or legacy adapter should be used next.
 ---
 
 # Kingdom Tool Index — Complete Reference
+
+## When to Use
+
+- You are unsure which tool should own the next step
+- You need the quickest path from task type to agent or skill
+- You are onboarding a new workflow and need the current inventory
+- You need to distinguish between core Kingdom tooling and legacy adapters
 
 ---
 
@@ -218,6 +225,11 @@ What do I need?
 ├── Find agent↔MCP mapping → /capability-registry
 ├── Verify code → /verify-implementation
 ├── Session start → /session-memory
+
+## Reference
+
+- Treat this file as the top-level inventory of Kingdom execution tools.
+- Update it when an agent, skill, MCP server, or high-value command changes ownership or default usage.
 ├── Session end → /save-memory
 ├── Don't know → octiv-orchestrator (+sequentialthinking MCP)
 └── Look up docs → context7 MCP or notebooklm-agent (+notebooklm MCP)

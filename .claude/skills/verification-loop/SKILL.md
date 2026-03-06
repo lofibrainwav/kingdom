@@ -1,6 +1,6 @@
 ---
 name: verification-loop
-description: Systematic 6-phase verification (build, type, lint, test, security, diff) before any PR or claiming work complete. Produces a definitive READY / NOT READY verdict.
+description: Use when preparing to commit, push, open a PR, or claim completion and you need a consistent build-lint-test-security-diff verification pass.
 ---
 
 # Verification Loop
@@ -8,6 +8,13 @@ description: Systematic 6-phase verification (build, type, lint, test, security,
 ## Purpose
 Systematic 6-phase verification before any PR or claiming work is complete.
 Produces a definitive READY / NOT READY verdict.
+
+## When to Use
+
+- Before creating a commit
+- Before opening a PR
+- Before claiming a task is complete
+- After substantial refactors or dependency changes
 
 ## The 6 Phases
 
@@ -72,12 +79,12 @@ Verdict: [READY / NOT READY]
 Blockers: [list if NOT READY]
 ```
 
-## Activation
-Use this skill:
-- Before creating a commit
-- Before opening a PR
-- Before claiming a task is complete
-- After `/simplify ship` but before push
+## Implementation
+
+1. Run each verification phase in order.
+2. Stop and fix blockers before advancing.
+3. Record exact evidence for pass, fail, or skip states.
+4. Only report `READY` after all required phases pass.
 
 ## Integration with Existing Skills
 - Combines with `verify-tests` (Phase 4 detail)

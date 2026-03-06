@@ -147,6 +147,7 @@ describe('KnowledgeOperator', () => {
     assert.equal(typeof subscriptions['governance:review:approved'], 'function');
     assert.equal(typeof subscriptions['governance:failure:retry-requested'], 'function');
     assert.equal(typeof subscriptions['governance:task:completed'], 'function');
+    assert.equal(typeof subscriptions['knowledge:skill:eval-completed'], 'function');
 
     await subscriptions['governance:review:approved']({
       projectId: 'kingdom',
@@ -203,6 +204,42 @@ describe('KnowledgeOperator', () => {
     assert.equal(published.length, 1);
     assert.equal(published[0].channel, 'knowledge:capture:stored');
     assert.equal(published[0].data.title, 'Completed TASK-3');
+    assert.equal(dashboardLinks[0].section, 'Recent Achievements');
+  });
+
+  it('captures skill evaluation events into durable knowledge notes', async () => {
+    const subscriptions = {};
+    board.createSubscriber = async () => ({
+      on: () => {},
+      subscribe: async (channel, handler) => {
+        subscriptions[channel] = handler;
+      },
+    });
+
+    const operator = new KnowledgeOperator({
+      board,
+      zettelkasten: zk,
+      vaultDir: tmpDir,
+      writePattern: async (name) => `/vault/patterns/${name}.md`,
+      addDashboardLink: async (section, link) => {
+        dashboardLinks.push({ section, link });
+      },
+    });
+
+    await operator.init();
+    await operator.start();
+    await subscriptions['knowledge:skill:eval-completed']({
+      author: 'skill-evaluator',
+      skillName: 'verify-tests',
+      score: 100,
+      findingCount: 0,
+      passed: true,
+    });
+
+    assert.equal(published.length, 1);
+    assert.equal(published[0].channel, 'knowledge:capture:stored');
+    assert.equal(published[0].data.projectId, 'skills');
+    assert.equal(published[0].data.title, 'Skill eval verify-tests');
     assert.equal(dashboardLinks[0].section, 'Recent Achievements');
   });
 });

@@ -1,11 +1,18 @@
 ---
 name: verify-tests
-description: Verifies the Octiv test suite is healthy — checks pass/fail counts, threshold minimums, and agent-to-test coverage mapping. Run after modifying any agent or test file.
+description: Use when changing runtime or test code and you need to confirm the suite passes, thresholds remain healthy, and agent coverage mappings still make sense.
 ---
 
 # verify-tests
 
 Verify that the Octiv test suite is healthy and all agent files have coverage.
+
+## When to Use
+
+- After modifying any runtime file under `agent/`
+- After adding, deleting, or restructuring tests
+- Before claiming stability after a refactor
+- When test count, suite count, or coverage expectations may have drifted
 
 ## Steps
 
@@ -52,3 +59,10 @@ Verify that the Octiv test suite is healthy and all agent files have coverage.
 ✅ Coverage: 22/22 agent files have tests
 ⚠️  Missing: [list any uncovered files]
 ```
+
+## Implementation
+
+1. Run the full suite and capture exact totals.
+2. Compare current thresholds to the expected floor.
+3. Review coverage mapping for files whose ownership changed.
+4. Report mismatches directly instead of masking them with stale expectations.

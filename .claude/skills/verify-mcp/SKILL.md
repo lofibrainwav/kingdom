@@ -1,11 +1,18 @@
 ---
 name: verify-mcp
-description: Verify MCP server configurations and token availability across global (~/.claude/settings.json) and project (.mcp.json) scopes. Checks expected servers and env var presence.
+description: Use when MCP setup changes, a tool appears unavailable, or you need to confirm server configuration and token readiness across global and project scopes.
 ---
 
 # verify-mcp
 
 Verify MCP server configurations and token availability.
+
+## When to Use
+
+- An MCP tool is missing or failing unexpectedly
+- `.mcp.json` or global Claude settings changed
+- New tokens were added or rotated
+- You need a readiness check before using project MCP workflows
 
 ## Steps
 
@@ -54,3 +61,10 @@ Verify MCP server configurations and token availability.
 - Token Required: N
 - Setup Needed: N
 ```
+
+## Implementation
+
+1. Check global MCP registrations first.
+2. Check project-specific MCP configuration second.
+3. Verify only token presence, not token values.
+4. Report which servers are ready, blocked, or optional.

@@ -1,11 +1,18 @@
 ---
 name: verify-dependencies
-description: Audit npm dependencies for security vulnerabilities and outdated packages. Checks package.json integrity, known upstream vulns (axios/undici), and major version drift.
+description: Use when dependencies change, security advisories appear, or release hygiene requires an audit of npm vulnerabilities, outdated packages, and package manifest integrity.
 ---
 
 # verify-dependencies
 
 Audit npm dependencies for vulnerabilities and outdated packages.
+
+## When to Use
+
+- After changing `package.json` or `package-lock.json`
+- When GitHub or npm reports a dependency vulnerability
+- Before a release or production deployment
+- When major version drift may be increasing maintenance risk
 
 ## Steps
 
@@ -44,3 +51,10 @@ Audit npm dependencies for vulnerabilities and outdated packages.
 ## Notes
 - Known transitive vulns: axios (via mineflayer), undici (via discord.js)
 - These are upstream issues — document but don't force-fix
+
+## Implementation
+
+1. Run `npm audit` and capture severity plus fixability.
+2. Run `npm outdated` and separate patch/minor drift from major-version drift.
+3. Review `package.json` for risky dependency sources and missing engine constraints.
+4. Report actionable changes first and upstream-only issues second.

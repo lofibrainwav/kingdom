@@ -1,6 +1,6 @@
 ---
 name: search-first
-description: Before writing new code, systematically search the codebase, dependencies, and docs for existing solutions. Prevents duplication and enforces reuse discipline.
+description: Use when planning new code, dependencies, or architecture changes and you need to verify whether the codebase, docs, or existing tools already solve the problem.
 ---
 
 # Search First
@@ -8,6 +8,13 @@ description: Before writing new code, systematically search the codebase, depend
 ## Purpose
 Before writing new code, systematically search for existing solutions in the codebase,
 dependencies, and documentation. Prevents reinventing the wheel.
+
+## When to Use
+
+- Before writing a new helper, utility, or service
+- Before adding a new npm dependency
+- When a requested feature feels like it may already exist in the repo
+- When refactoring and you need to find the current canonical implementation
 
 ## The Search-First Protocol
 
@@ -66,12 +73,12 @@ Read: existing utility files (agent/*.js, config/*.js)
 | Safety checks | `agent/safety.js`, `agent/vm-sandbox.js` |
 | Test helpers | `test/*.test.js` (shared setup patterns) |
 
-## Activation
-Use this skill:
-- Before writing any new function >10 lines
-- Before adding a new dependency
-- When you think "I need a utility for X"
-- When implementing a pattern that feels common
+## Implementation
+
+1. Search the codebase for existing names, modules, and patterns.
+2. Search dependencies and docs for built-in support.
+3. Reuse or extend existing code when possible.
+4. Only create new code after the search evidence says it is necessary.
 
 ## Anti-Patterns
 - Writing a helper that duplicates `lodash`/`underscore` functionality
