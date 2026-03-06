@@ -18,6 +18,11 @@ class DashboardServer {
     this.sseClients = [];
     this.subscriber = null;
     this.agentState = {};
+    this.metrics = {
+      knowledgeCaptures: 0,
+      skillEvals: 0,
+      lastSkillEval: null,
+    };
   }
 
   async start() {
@@ -82,6 +87,23 @@ class DashboardServer {
         this._broadcast({ type: 'leader', channel, data });
       } catch {}
     });
+
+    this.subscriber.subscribe('knowledge:capture:stored', (message) => {
+      try {
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
+        this.metrics.knowledgeCaptures += 1;
+        this._broadcast({ type: 'knowledge-capture', channel: 'knowledge:capture:stored', data });
+      } catch {}
+    });
+
+    this.subscriber.subscribe('knowledge:skill:eval-completed', (message) => {
+      try {
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
+        this.metrics.skillEvals += 1;
+        this.metrics.lastSkillEval = data;
+        this._broadcast({ type: 'skill-eval', channel: 'knowledge:skill:eval-completed', data });
+      } catch {}
+    });
   }
 
   _broadcast(event) {
@@ -126,7 +148,7 @@ class DashboardServer {
 
   _handleAPIState(req, res) {
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ agents: this.agentState, timestamp: Date.now() }));
+    res.end(JSON.stringify({ agents: this.agentState, metrics: this.metrics, timestamp: Date.now() }));
   }
 
   _serveDashboard(req, res) {
@@ -324,6 +346,14 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
           <div class="stat-label">Governance Alerts</div>
           <div id="stat-alerts" class="stat-value">0</div>
         </div>
+        <div class="stat-card">
+          <div class="stat-label">Knowledge Captures</div>
+          <div id="stat-captures" class="stat-value">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Skill Evals</div>
+          <div id="stat-skill-evals" class="stat-value">0</div>
+        </div>
       </div>
     </aside>
   </section>
@@ -331,7 +361,7 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
   <section class="plane-strip">
     <div class="plane work"><h3>Work Plane</h3><p>Intake, planning, decomposition, and project flow.</p></div>
     <div class="plane execution"><h3>Execution Plane</h3><p>Dispatch, swarm orchestration, deployment, and runtime action.</p></div>
-    <div class="plane knowledge"><h3>Knowledge Plane</h3><p>Skills, rumination, zettelkasten evolution, and GoT reasoning.</p></div>
+    <div class="plane knowledge"><h3>Knowledge Plane</h3><p>Skills, captures, rumination, zettelkasten evolution, GoT reasoning, and eval signals.</p></div>
     <div class="plane governance"><h3>Governance Plane</h3><p>Review requests, approvals, rejections, failures, and recovery.</p></div>
   </section>
 
@@ -359,7 +389,10 @@ const statAgents = document.getElementById('stat-agents');
 const statEvents = document.getElementById('stat-events');
 const statHealth = document.getElementById('stat-health');
 const statAlerts = document.getElementById('stat-alerts');
+const statCaptures = document.getElementById('stat-captures');
+const statSkillEvals = document.getElementById('stat-skill-evals');
 const state = {};
+const metrics = { knowledgeCaptures: 0, skillEvals: 0 };
 let totalEvents = 0;
 let totalHealthSignals = 0;
 let totalAlerts = 0;
@@ -377,6 +410,8 @@ es.onmessage = (e) => {
   }
 
   if (evt.type === 'safety' || evt.type === 'leader') totalAlerts += 1;
+  if (evt.type === 'knowledge-capture') metrics.knowledgeCaptures += 1;
+  if (evt.type === 'skill-eval') metrics.skillEvals += 1;
   addEvent(evt);
   renderStats();
 };
@@ -386,6 +421,8 @@ function renderStats() {
   statEvents.textContent = totalEvents;
   statHealth.textContent = totalHealthSignals;
   statAlerts.textContent = totalAlerts;
+  statCaptures.textContent = metrics.knowledgeCaptures;
+  statSkillEvals.textContent = metrics.skillEvals;
 }
 
 function renderAgents() {
@@ -447,7 +484,12 @@ function escapeHtml(value) {
     .replaceAll('>', '&gt;');
 }
 
-fetch('/api/state').then(r => r.json()).then(d => { Object.assign(state, d.agents); renderAgents(); renderStats(); });
+fetch('/api/state').then(r => r.json()).then(d => {
+  Object.assign(state, d.agents);
+  Object.assign(metrics, d.metrics || {});
+  renderAgents();
+  renderStats();
+});
 </script>
 </body>
 </html>`;

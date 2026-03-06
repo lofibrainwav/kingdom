@@ -1,6 +1,6 @@
 ---
 name: docker-patterns
-description: Docker and container best practices for Kingdom. Covers Redis Blackboard, supporting services, optional legacy adapters, and secure local-to-prod environment separation.
+description: Use when editing Docker or docker-compose files, planning container boundaries, debugging service connectivity, or separating core Kingdom services from legacy adapters.
 ---
 
 # Docker Patterns
@@ -8,6 +8,14 @@ description: Docker and container best practices for Kingdom. Covers Redis Black
 ## Purpose
 Best practices for Docker configuration in Kingdom.
 Covers Redis Blackboard, supporting services, and optional legacy adapters.
+
+## When to Use
+
+- Editing `docker-compose.yml`
+- Adding or removing a containerized service
+- Debugging container networking or health checks
+- Planning environment separation between dev and production
+- Isolating legacy adapter infrastructure from the core system
 
 ## Current Infrastructure
 - **Redis**: Docker container, port 6379 -> 6380 (host)
@@ -125,13 +133,12 @@ services:
       - mc-data:/data
 ```
 
-## Activation
-Use this skill when:
-- Modifying `docker-compose.yml`
-- Adding new containers to the stack
-- Debugging container connectivity issues
-- Planning production deployment
-- Isolating legacy adapter containers from the main system
+## Implementation
+
+- Prefer `docker compose` over ad hoc `docker run` flows for multi-service work.
+- Add health checks and persistent volumes for stateful services.
+- Pin image versions and avoid running as root in production contexts.
+- Keep legacy adapter containers optional and isolated from core runtime paths.
 
 ## Anti-Patterns
 - Using `latest` tag in production

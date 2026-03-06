@@ -1,6 +1,6 @@
 ---
 name: autonomous-loops
-description: Theoretical foundation and patterns for automated feedback loops. Powers the /loop command family with Red-Green-Refactor, Fix Loop, De-Sloppify, and DAG strategies.
+description: Use when designing, extending, or debugging automated feedback loops such as TDD cycles, fix loops, refactor loops, or DAG-style task orchestration.
 ---
 
 # Autonomous Loops
@@ -8,6 +8,14 @@ description: Theoretical foundation and patterns for automated feedback loops. P
 ## Purpose
 Theoretical foundation and patterns for automated feedback loops.
 Powers the `/loop` command family with structured iteration strategies.
+
+## When to Use
+
+- Designing a new automation loop
+- Extending the `/loop` command family
+- Debugging infinite or low-progress automation
+- Choosing between sequential, TDD, fix, refactor, or DAG loop shapes
+- Adding guardrails to iterative agent workflows
 
 ## Loop Patterns
 
@@ -84,12 +92,13 @@ start┤          ├─ taskD → end
 | `/loop refactor <file>` | De-Sloppify | 5 |
 | `/loop deploy` | Sequential Pipeline | 3 |
 
-## Activation
-Use this skill when:
-- Designing new automated workflows
-- Extending the `/loop` command family
-- Debugging infinite loop issues in automation
-- Planning complex multi-step operations
+## Workflow
+
+1. Pick the loop shape that matches the job.
+2. Set explicit iteration and progress guards.
+3. Log each iteration so failure causes are visible.
+4. Verify output after each cycle.
+5. Stop on success, no progress, or hard iteration limit.
 
 ## Anti-Patterns
 - No max iteration limit (infinite loop risk)

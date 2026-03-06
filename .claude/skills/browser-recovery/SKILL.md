@@ -1,10 +1,23 @@
-# Browser Failure Recovery — SKILL.md
+---
+name: browser-recovery
+description: Use when browser automation fails, the page state is unclear, or a safe recovery flow is needed before retrying clicks, typing, navigation, uploads, or tab actions.
+---
+
+# Browser Failure Recovery
 
 ## Iron Law
 
 **NO BROWSER CLICK WITHOUT PRIOR SNAPSHOT VERIFICATION.**
 
 Every browser interaction follows the Pre-Action Protocol. No exceptions.
+
+## When to Use
+
+- A browser action failed and the next retry needs a safer recovery path
+- The current page state is unclear and you need snapshot-first recovery
+- The wrong element was clicked and the workflow must be restored safely
+- Dynamic content, redirects, overlays, or auth state made the flow unreliable
+- You need a repeatable recovery procedure before escalating to the user
 
 ---
 
@@ -167,6 +180,13 @@ browser_snapshot → verify field ref → browser_type(ref, text) → browser_sn
 ```
 browser_snapshot → find upload trigger → browser_click(ref) → browser_file_upload(paths)
 ```
+
+## Implementation
+
+- Use `browser_snapshot` first and again after each state-changing action.
+- Classify the failure before retrying.
+- Change strategy on each retry. Never repeat the same failed approach three times.
+- Escalate after three distinct failures or after two failures with unclear state.
 
 ### Tab Management
 - Before acting: `browser_tabs(action="list")` to verify active tab

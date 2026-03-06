@@ -1,9 +1,17 @@
 ---
 name: capability-registry
-description: Central registry mapping Kingdom agents to MCP tools, skills, workflows, and legacy adapters. Use when unsure which capability should own a task.
+description: Use when deciding which Kingdom agent, MCP tool, skill, or workflow should own a task, verification step, or legacy adapter responsibility.
 ---
 
 # Capability Registry — Agent/MCP/Skill Mapping
+
+## When to Use
+
+- You are unsure which agent should own a task
+- You need to map a workflow to the right MCP/tool pair
+- You are deciding whether a task belongs to a legacy adapter or the core system
+- You need a fast registry for verification ownership
+- You are onboarding a new workflow into Kingdom
 
 ## Agent → MCP Tool Matrix
 
@@ -83,3 +91,8 @@ Which agent is responsible for executing each skill category:
 | Document decisions | obsidian-agent | filesystem, memory | — |
 | Design architecture | architect | serena, context7 | docker-patterns |
 | Write tests first | tdd-guide | serena | verify-tests |
+
+## Reference
+
+- Treat this file as the routing table for `agent -> tool -> skill -> workflow`.
+- Update it whenever new capabilities become reusable enough to affect orchestration decisions.

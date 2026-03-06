@@ -1,6 +1,6 @@
 ---
 name: cost-aware-llm-pipeline
-description: Optimize LLM API costs through intelligent model routing (haiku/sonnet/opus), prompt caching, and retry strategies. Reference when making API calls or debugging credit issues.
+description: Use when implementing or reviewing LLM API calls, model routing, caching, retries, or budget controls so Kingdom keeps quality high without wasting credits.
 ---
 
 # Cost-Aware LLM Pipeline
@@ -8,6 +8,14 @@ description: Optimize LLM API costs through intelligent model routing (haiku/son
 ## Purpose
 Optimize API costs through intelligent model routing, prompt caching, and retry strategies.
 Reference for API cost optimization and model routing decisions.
+
+## When to Use
+
+- Adding new LLM API calls
+- Reviewing prompt cost or routing decisions
+- Debugging credit spikes or rate-limit behavior
+- Planning batch inference work
+- Choosing the cheapest viable model for a task
 
 ## Model Routing Strategy
 
@@ -65,12 +73,12 @@ Last resort: _fallbackSkill()            (hardcoded safe response)
 - Daily budget alert at 80% threshold
 - Session summary: total calls, total cost, cache hit rate
 
-## Activation
-Use this skill when:
-- Making LLM API calls in agent code
-- Optimizing existing prompts for cost
-- Debugging API credit issues
-- Planning batch operations that need many LLM calls
+## Implementation
+
+- Start with the cheapest viable model.
+- Escalate only when quality or task complexity requires it.
+- Cache repeated long prompts whenever possible.
+- Track cost, retries, and failure reasons in logs or telemetry.
 
 ## Anti-Patterns
 - Never use opus for simple yes/no classification
