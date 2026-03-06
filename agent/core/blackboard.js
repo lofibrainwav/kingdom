@@ -1,5 +1,5 @@
 /**
- * Octiv Blackboard — Redis-based Agent Shared Memory
+ * Kingdom Blackboard — Redis-based Agent Shared Memory
  * All agents share state through this module.
  */
 const { createClient } = require('redis');

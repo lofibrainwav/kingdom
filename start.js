@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Octiv Full Stack Starter
+ * Kingdom Full Stack Starter
  * Launches all services: team (agents) + dashboard + MCP server
  * Usage: node start.js [--no-dashboard] [--no-mcp]
  *
@@ -17,7 +17,7 @@ const noMCP = args.includes('--no-mcp');
 
 async function main() {
   console.log('');
-  console.log('🚀 Octiv Full Stack Starting');
+  console.log('🚀 Kingdom Full Stack Starting');
   console.log('═══════════════════════════════════════');
 
   const services = [];

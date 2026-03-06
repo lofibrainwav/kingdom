@@ -1,5 +1,5 @@
 /**
- * Octiv Rumination Engine — 되새김질 (Multi-Stomach Digestion)
+ * Kingdom Rumination Engine — 되새김질 (Multi-Stomach Digestion)
  *
  * Philosophy:
  *   A cow has 4 stomachs. It chews the same food multiple times,

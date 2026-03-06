@@ -1,5 +1,5 @@
 /**
- * Octiv Memory Logger — AC-7: Persistent disk logging for agent events
+ * Kingdom Memory Logger — AC-7: Persistent disk logging for agent events
  * Writes JSONL files per agent for post-mortem analysis and cross-session learning.
  */
 const fs = require('fs');

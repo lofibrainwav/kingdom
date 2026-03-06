@@ -1,5 +1,5 @@
 /**
- * Octiv ReflexionEngine — Phase 4.3 + 4.5 + 4.6
+ * Kingdom ReflexionEngine — Phase 4.3 + 4.5 + 4.6
  * LLM bridge with multi-model routing, cost guardrails, config auto-reload.
  * Primary: LM Studio (local) → fallback Anthropic/Groq if available.
  * Override model via: LLM_PRIMARY_MODEL env var

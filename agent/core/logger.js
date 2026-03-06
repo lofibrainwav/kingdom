@@ -1,5 +1,5 @@
 /**
- * Octiv Structured Logger — unified logging across all agents
+ * Kingdom Structured Logger — unified logging across all agents
  *
  * Wraps MemoryLogger for JSONL persistence while providing
  * leveled console output with consistent formatting.

@@ -1,5 +1,5 @@
 /**
- * Octiv Vault Sync — Programmatic Dashboard & Session State Updates
+ * Kingdom Vault Sync — Programmatic Dashboard & Session State Updates
  *
  * Keeps vault/Dashboard.md and vault/Session-Sync.md in sync with reality.
  * Called by save-memory/session-memory skills and hooks.
