@@ -417,6 +417,7 @@ class DashboardServer {
       projectDryRunCoverage: this._deriveDryRunCoverageList(this.taskRunnerCachedTasks || []),
       projectDryRunSuccessRates: this._deriveDryRunSuccessList(this.taskRunnerCachedTasks || []),
       projectDryRunRecoveryComparison: this._deriveDryRunRecoveryComparison(this.taskRunnerCachedTasks || []),
+      dryRunSummaryWinRates: this._deriveDryRunSummaryWinRates(this.taskRunnerCachedTasks || []),
     };
   }
 
@@ -558,6 +559,47 @@ class DashboardServer {
       return 'knowledge captured';
     }
     return 'awaiting capture';
+  }
+
+  _deriveDryRunSummaryWinRates(tasks = []) {
+    const byPlay = new Map();
+    for (const task of tasks) {
+      const summary = task.dryRuns?.at(-1)?.summary;
+      const category = task.retry?.category;
+      if (!summary || !category) {
+        continue;
+      }
+
+      const key = `${category} :: ${summary}`;
+      const current = byPlay.get(key) || {
+        key,
+        category,
+        summary,
+        attempts: 0,
+        wins: 0,
+      };
+      current.attempts += 1;
+      if (task.status === 'completed' || task.status === 'approved') {
+        current.wins += 1;
+      }
+      byPlay.set(key, current);
+    }
+
+    return [...byPlay.values()]
+      .map((entry) => ({
+        ...entry,
+        winRate: entry.attempts > 0 ? Number((entry.wins / entry.attempts).toFixed(2)) : 0,
+      }))
+      .sort((a, b) => {
+        if (b.winRate !== a.winRate) {
+          return b.winRate - a.winRate;
+        }
+        if (b.attempts !== a.attempts) {
+          return b.attempts - a.attempts;
+        }
+        return a.key.localeCompare(b.key);
+      })
+      .slice(0, 6);
   }
 
   _serveDashboard(req, res) {
@@ -913,6 +955,10 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
           <div class="feed-title">Dry-Run Recovery Gap</div>
           <div id="project-dry-run-recovery-gap" class="feed-list"></div>
         </div>
+        <div class="pressure-card">
+          <div class="feed-title">Winning Dry-Run Plays</div>
+          <div id="dry-run-summary-wins" class="feed-list"></div>
+        </div>
       </div>
     </aside>
   </section>
@@ -980,6 +1026,7 @@ const taskRecoveryRateDiv = document.getElementById('task-recovery-rate');
 const projectDryRunCoverageDiv = document.getElementById('project-dry-run-coverage');
 const projectDryRunSuccessDiv = document.getElementById('project-dry-run-success');
 const projectDryRunRecoveryGapDiv = document.getElementById('project-dry-run-recovery-gap');
+const dryRunSummaryWinsDiv = document.getElementById('dry-run-summary-wins');
 const state = {};
 const tasks = {};
 const metrics = {
@@ -999,6 +1046,7 @@ const metrics = {
   projectDryRunCoverage: [],
   projectDryRunSuccessRates: [],
   projectDryRunRecoveryComparison: [],
+  dryRunSummaryWinRates: [],
 };
 let totalEvents = 0;
 let totalHealthSignals = 0;
@@ -1327,6 +1375,7 @@ function renderRetryPressure() {
   renderSummaryRateBucket(projectDryRunCoverageDiv, metrics.projectDryRunCoverage, 'No dry-run coverage yet', 'coverage', (entry) => entry.dryRunTasks + '/' + entry.totalTasks + ' tasks rehearsed');
   renderSummaryRateBucket(projectDryRunSuccessDiv, metrics.projectDryRunSuccessRates, 'No dry-run success rates yet', 'successRate', (entry) => entry.successfulTasks + '/' + entry.dryRunTasks + ' dry-run tasks landed');
   renderRecoveryComparisonBucket(projectDryRunRecoveryGapDiv, metrics.projectDryRunRecoveryComparison, 'No dry-run recovery comparison yet');
+  renderDryRunSummaryWins(dryRunSummaryWinsDiv, metrics.dryRunSummaryWinRates, 'No dry-run plays ranked yet');
 }
 
 function renderBucket(container, bucket, emptyLabel, drilldownType) {
@@ -1461,6 +1510,20 @@ function renderRecoveryComparisonBucket(container, entries, emptyLabel) {
         'dry-run ' + Math.round(entry.dryRunRate * 100) + '% (' + entry.dryRunResolved + '/' + entry.dryRunRetries + ')'
         + ' • non-dry-run ' + Math.round(entry.nonDryRunRate * 100) + '% (' + entry.nonDryRunResolved + '/' + entry.nonDryRunRetries + ')'
       ) + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+function renderDryRunSummaryWins(container, entries, emptyLabel) {
+  if (!entries || entries.length === 0) {
+    container.innerHTML = '<div class="feed-meta">' + escapeHtml(emptyLabel) + '</div>';
+    return;
+  }
+
+  container.innerHTML = entries.map((entry) => {
+    return '<div class="feed-item">'
+      + '<div class="feed-title">' + escapeHtml(entry.category + ' • ' + entry.summary) + '</div>'
+      + '<div class="feed-meta">' + escapeHtml(entry.wins + '/' + entry.attempts + ' wins • ' + Math.round(entry.winRate * 100) + '%') + '</div>'
       + '</div>';
   }).join('');
 }

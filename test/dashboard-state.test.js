@@ -295,4 +295,66 @@ describe('DashboardServer state API', () => {
       },
     ]);
   });
+
+  it('derives retry-category dry-run summary win rates', async () => {
+    const dashboard = new DashboardServer(0);
+    dashboard.taskRunner = {
+      listTasks: async () => ([
+        {
+          projectId: 'kingdom',
+          taskId: 'TASK-1',
+          status: 'approved',
+          dryRuns: [{ summary: 'Rehearse review evidence checklist' }],
+          retry: { category: 'review', guardrail: 'missing-evidence' },
+        },
+        {
+          projectId: 'kingdom',
+          taskId: 'TASK-2',
+          status: 'retry_requested',
+          dryRuns: [{ summary: 'Rehearse review evidence checklist' }],
+          retry: { category: 'review', guardrail: 'missing-tests' },
+        },
+        {
+          projectId: 'kingdom',
+          taskId: 'TASK-3',
+          status: 'approved',
+          dryRuns: [{ summary: 'Replay implementation proof before handoff' }],
+          retry: { category: 'implementation', guardrail: 'missing-proof' },
+        },
+      ]),
+    };
+    dashboard.board = {
+      listConfigs: async () => [],
+    };
+
+    let payload = '';
+    const res = {
+      writeHead: () => {},
+      end: (body) => {
+        payload = body;
+      },
+    };
+
+    await dashboard._handleAPIState({}, res, new URL('http://localhost/api/state'));
+
+    const data = JSON.parse(payload);
+    assert.deepEqual(data.metrics.dryRunSummaryWinRates, [
+      {
+        key: 'implementation :: Replay implementation proof before handoff',
+        category: 'implementation',
+        summary: 'Replay implementation proof before handoff',
+        attempts: 1,
+        wins: 1,
+        winRate: 1,
+      },
+      {
+        key: 'review :: Rehearse review evidence checklist',
+        category: 'review',
+        summary: 'Rehearse review evidence checklist',
+        attempts: 2,
+        wins: 1,
+        winRate: 0.5,
+      },
+    ]);
+  });
 });
