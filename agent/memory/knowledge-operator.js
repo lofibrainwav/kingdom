@@ -290,10 +290,10 @@ ${candidate.improvementNote || 'Promotion candidate created from a successful re
       projectId: data.projectId,
       title: `Retry ${data.taskId}`,
       taskId: data.taskId,
-      summary: `Failure category ${data.category} triggered a retry request.`,
+      summary: `Failure category ${data.category || 'unknown'} triggered a retry request.`,
       outcome: 'failed',
-      verification: [`failure retry requested with guardrail ${data.guardrail}`],
-      lesson: `Guardrail ${data.guardrail} needs reinforcement before the next retry.`,
+      verification: [`failure retry requested with guardrail ${data.guardrail || 'unspecified'}`],
+      lesson: `Guardrail ${data.guardrail || 'unspecified'} needs reinforcement before the next retry.`,
       retryCategory: data.category,
       retryGuardrail: data.guardrail,
       continuationTaskId: data.taskId,
@@ -431,8 +431,10 @@ Apply this pattern when work should become a durable note, evidence, and a reusa
   }
 
   _parseMessage(message) {
+    if (!message) return {};
     if (typeof message === 'string') {
-      return JSON.parse(message);
+      try { return JSON.parse(message); }
+      catch { return {}; }
     }
     return message;
   }

@@ -33,6 +33,14 @@ class DeployerAgent {
   async handleProjectApproved(message) {
     try {
       const { projectId, goal } = typeof message === 'string' ? JSON.parse(message) : message;
+
+      // Idempotency guard — skip if already deployed
+      const existingStatus = await this.board.getConfig(`${projectId}:status`);
+      if (existingStatus === 'deployed') {
+        log.info(this.agentId, `Skipping ${projectId} — already deployed`);
+        return;
+      }
+
       log.info(this.agentId, `Deploying project ${projectId}: ${goal}`);
       await this.updateStatus('deploying', `Committing ${projectId}`);
 

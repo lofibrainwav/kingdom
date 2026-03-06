@@ -81,11 +81,18 @@ class TaskCloseoutOrchestrator {
     const data = typeof message === 'string' ? JSON.parse(message) : message;
     const result = await this.taskRunner.markReviewApproved(data);
 
-    // Check if all tasks in the project are now approved
+    // Check if all tasks in the project are now approved (with idempotency guard)
     if (data.projectId && this.taskRunner.listTasks) {
+      const approvedKey = `project:approved:${data.projectId}`;
+      const alreadyApproved = this.board.getConfig
+        ? await this.board.getConfig(approvedKey)
+        : null;
+      if (alreadyApproved) return result;
+
       const tasks = await this.taskRunner.listTasks({ projectId: data.projectId });
       const allApproved = tasks.length > 0 && tasks.every((t) => t.status === 'approved');
       if (allApproved) {
+        await this.board.setConfig(approvedKey, { approvedAt: Date.now() });
         const goal = tasks[0]?.goal || `Project ${data.projectId} completed`;
         await this.board.publish('governance:project:approved', {
           projectId: data.projectId,

@@ -80,6 +80,19 @@ describe('DeployerAgent', () => {
     assert.equal(statuses[0].status.state, 'deploying');
   });
 
+  it('skips deployment if project is already deployed (idempotency)', async () => {
+    configs.set('proj-dup:status', 'deployed');
+
+    await agent.handleProjectApproved({
+      projectId: 'proj-dup',
+      goal: 'Should be skipped',
+    });
+
+    // No deploying status should be set
+    assert.equal(statuses.length, 0, 'should not set any status for already-deployed project');
+    assert.equal(published.length, 0, 'should not publish any events');
+  });
+
   it('shutdown disconnects subscriber and board', async () => {
     let subDisconnected = false;
     let boardDisconnected = false;

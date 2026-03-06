@@ -306,5 +306,37 @@ description: Use when testing the closeout orchestrator skill evaluation flow.
     assert.equal(afterSecond[0].data.projectId, 'proj-deploy');
     assert.ok(afterSecond[0].data.goal);
     assert.equal(afterSecond[0].data.author, 'reviewer');
+
+    // Approve TASK-B again — idempotency guard should prevent duplicate project:approved
+    await board.publish('governance:review:approved', {
+      projectId: 'proj-deploy',
+      taskId: 'TASK-B',
+      file: 'b.js',
+      author: 'reviewer',
+    });
+
+    const afterDuplicate = published.filter((e) => e.channel === 'governance:project:approved');
+    assert.equal(afterDuplicate.length, 1, 'idempotency guard prevents duplicate project:approved');
+  });
+
+  it('error in handleTaskCompleted is caught by subscriber try/catch', async () => {
+    const evaluator = new SkillEvaluator({ board, skillsRoot });
+    const closeout = new TaskCloseoutOrchestrator({ board, skillEvaluator: evaluator });
+    await closeout.init();
+    await closeout.start();
+
+    // Publish event for non-existent task — handler should catch the error
+    // without crashing the subscriber
+    await board.publish('governance:task:completed', {
+      author: 'codex',
+      projectId: 'kingdom',
+      taskId: 'TASK-GHOST',
+      verificationCount: 1,
+    });
+
+    // The handler errored (task not found) but subscriber didn't crash
+    // No review:requested should be published for a ghost task
+    const reviewReqs = published.filter((e) => e.channel === 'governance:review:requested');
+    assert.equal(reviewReqs.length, 0, 'no review should be requested for non-existent task');
   });
 });

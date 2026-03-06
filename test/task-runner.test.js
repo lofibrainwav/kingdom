@@ -19,6 +19,7 @@ describe('TaskRunner', () => {
 
     board = {
       client: { isOpen: true },
+      disconnect: async () => {},
       setConfig: async (key, value) => {
         configs.set(key, value);
       },
