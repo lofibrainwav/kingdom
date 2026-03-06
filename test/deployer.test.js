@@ -37,6 +37,8 @@ describe('DeployerAgent', () => {
 
     agent = new DeployerAgent();
     agent.board = board;
+    // Point to non-existent dir so execSync always fails (no real git ops)
+    agent.projectRoot = '/tmp/deployer-test-nonexistent';
   });
 
   it('init subscribes to governance:project:approved and sets idle status', async () => {
