@@ -15,7 +15,7 @@ const { ReviewerAgent } = require('../agent/team/reviewer');
 const log = getLogger();
 
 const TASK = process.argv[2] || 'Create a hello-world utility that exports a greet(name) function';
-const OBSERVE_MS = 45_000;
+const OBSERVE_MS = 90_000;
 
 const PIPELINE_CHANNELS = [
   { ch: 'work:planning:init',          label: 'PM -> Architect' },
