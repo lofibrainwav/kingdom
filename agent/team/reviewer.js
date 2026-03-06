@@ -101,6 +101,7 @@ class ReviewerAgent {
     if (this.subscriber) await this.subscriber.disconnect();
     await this.board.disconnect();
     await this.llm.shutdown();
+    if (this.rumination) await this.rumination.shutdown();
   }
 }
 

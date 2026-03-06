@@ -219,13 +219,21 @@ class VaultAgent {
   }
 
   async handleApproval(message) {
-    const { projectId, taskId, file } = typeof message === 'string' ? JSON.parse(message) : message;
-    await addDashboardLink('Recent Achievements', `[[${projectId}]] - Task ${taskId} approved in ${file}`);
+    try {
+      const { projectId, taskId, file } = typeof message === 'string' ? JSON.parse(message) : message;
+      await addDashboardLink('Recent Achievements', `[[${projectId}]] - Task ${taskId} approved in ${file}`);
+    } catch (err) {
+      log.error('VaultAgent', 'handleApproval failed', { error: err.message });
+    }
   }
 
   async handleFailure(message) {
-    const { projectId, taskId, category, guardrail } = typeof message === 'string' ? JSON.parse(message) : message;
-    await addDashboardLink('Learning Wall', `[[${projectId}]] - ${category} failure on ${taskId}. Guardrail: \`${guardrail}\``);
+    try {
+      const { projectId, taskId, category, guardrail } = typeof message === 'string' ? JSON.parse(message) : message;
+      await addDashboardLink('Learning Wall', `[[${projectId}]] - ${category} failure on ${taskId}. Guardrail: \`${guardrail}\``);
+    } catch (err) {
+      log.error('VaultAgent', 'handleFailure failed', { error: err.message });
+    }
   }
 
   async shutdown() {

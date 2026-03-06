@@ -3,12 +3,15 @@
  * Tests graph construction, synergy discovery, optimal builds,
  * gap analysis, and evolution path prediction.
  */
-const { describe, it } = require('node:test');
+const { describe, it, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
 const fsp = require('fs').promises;
 const path = require('path');
 const os = require('os');
 const { GoTReasoner } = require('../agent/memory/got-reasoner');
+
+// ── Shared Cleanup ──────────────────────────────────────────
+const tmpDirs = [];
 
 // ── Mock Helpers ────────────────────────────────────────────
 
@@ -70,8 +73,15 @@ describe('GoTReasoner — Constructor', () => {
 });
 
 describe('GoTReasoner — init', () => {
+  afterEach(async () => {
+    while (tmpDirs.length) {
+      await fsp.rm(tmpDirs.pop(), { recursive: true, force: true });
+    }
+  });
+
   it('should connect board and create vault directory', async () => {
     const tmpDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'got-init-'));
+    tmpDirs.push(tmpDir);
     const zk = createMockZettelkasten();
     const got = new GoTReasoner(zk, { vaultDir: tmpDir });
     let connected = false;
@@ -381,8 +391,15 @@ describe('GoTReasoner — shutdown', () => {
 });
 
 describe('GoTReasoner — vault persistence', () => {
+  afterEach(async () => {
+    while (tmpDirs.length) {
+      await fsp.rm(tmpDirs.pop(), { recursive: true, force: true });
+    }
+  });
+
   it('uses fixed filenames without timestamps', async () => {
     const tmpDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'got-vault-'));
+    tmpDirs.push(tmpDir);
     const zk = createMockZettelkasten();
     const got = new GoTReasoner(zk);
     got.vaultDir = tmpDir;
@@ -395,6 +412,7 @@ describe('GoTReasoner — vault persistence', () => {
 
   it('writes valid YAML frontmatter', async () => {
     const tmpDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'got-yaml-'));
+    tmpDirs.push(tmpDir);
     const zk = createMockZettelkasten();
     const got = new GoTReasoner(zk);
     got.vaultDir = tmpDir;
@@ -409,6 +427,7 @@ describe('GoTReasoner — vault persistence', () => {
 
   it('overwrites same file on repeated calls', async () => {
     const tmpDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'got-overwrite-'));
+    tmpDirs.push(tmpDir);
     const zk = createMockZettelkasten();
     const got = new GoTReasoner(zk);
     got.vaultDir = tmpDir;
@@ -423,6 +442,7 @@ describe('GoTReasoner — vault persistence', () => {
 
   it('generates Mermaid skill graph', async () => {
     const tmpDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'got-mermaid-'));
+    tmpDirs.push(tmpDir);
     // Create reasoning subdir to mimic vault structure
     const reasoningDir = path.join(tmpDir, '04-Skills', 'reasoning');
     await fsp.mkdir(reasoningDir, { recursive: true });
@@ -456,6 +476,7 @@ describe('GoTReasoner — vault persistence', () => {
 
   it('generates Mermaid skill graph with Grandmaster tier', async () => {
     const tmpDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'got-mermaid-gm-'));
+    tmpDirs.push(tmpDir);
     const reasoningDir = path.join(tmpDir, '04-Skills', 'reasoning');
     await fsp.mkdir(reasoningDir, { recursive: true });
 

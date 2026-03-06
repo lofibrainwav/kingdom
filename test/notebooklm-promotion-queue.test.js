@@ -1,4 +1,4 @@
-const { describe, it } = require('node:test');
+const { describe, it, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
 const os = require('node:os');
 const path = require('node:path');
@@ -10,8 +10,16 @@ const {
 } = require('../scripts/run-notebooklm-promotion-queue');
 
 describe('NotebookLM Promotion Queue', () => {
+  let tmpDir;
+
+  afterEach(async () => {
+    if (tmpDir) {
+      await fsp.rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+
   it('claims queued notebooklm promotions and writes a manifest', async () => {
-    const tmpDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'notebooklm-promotion-'));
+    tmpDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'notebooklm-promotion-'));
     const published = [];
     const configs = new Map([
       ['knowledge:notebooklm:kingdom:TASK-31:queued', {

@@ -45,6 +45,7 @@ describe('ReviewerAgent', () => {
 
     rumination = {
       init: async () => {},
+      shutdown: async () => {},
     };
 
     agent = new ReviewerAgent();

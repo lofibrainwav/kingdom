@@ -1,4 +1,4 @@
-const { describe, it, beforeEach } = require('node:test');
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
 const os = require('node:os');
 const path = require('node:path');
@@ -12,6 +12,13 @@ describe('Planning Continuation Metadata', () => {
   let configs;
   let published;
   let board;
+  let workspaceRoot;
+
+  afterEach(async () => {
+    if (workspaceRoot) {
+      await fsp.rm(workspaceRoot, { recursive: true, force: true });
+    }
+  });
 
   beforeEach(() => {
     configs = new Map();
@@ -94,7 +101,7 @@ describe('Planning Continuation Metadata', () => {
   });
 
   it('CoderAgent carries continuation metadata into task completion artifacts and review requests', async () => {
-    const workspaceRoot = await fsp.mkdtemp(path.join(os.tmpdir(), 'coder-continuation-'));
+    workspaceRoot = await fsp.mkdtemp(path.join(os.tmpdir(), 'coder-continuation-'));
     const coder = new CoderAgent();
     coder.board = board;
     coder.baseWorkspace = workspaceRoot;

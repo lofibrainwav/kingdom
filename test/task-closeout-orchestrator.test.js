@@ -1,4 +1,4 @@
-const { describe, it, beforeEach } = require('node:test');
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
 const os = require('node:os');
 const path = require('node:path');
@@ -17,6 +17,12 @@ describe('TaskCloseoutOrchestrator', () => {
   let published;
   let subscriptions;
   let board;
+
+  afterEach(async () => {
+    await fsp.rm(workspaceRoot, { recursive: true, force: true });
+    await fsp.rm(vaultDir, { recursive: true, force: true });
+    await fsp.rm(skillsRoot, { recursive: true, force: true });
+  });
 
   beforeEach(async () => {
     workspaceRoot = await fsp.mkdtemp(path.join(os.tmpdir(), 'closeout-workspace-'));

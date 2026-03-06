@@ -1,4 +1,4 @@
-const { describe, it } = require('node:test');
+const { describe, it, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
 const os = require('node:os');
 const path = require('node:path');
@@ -10,8 +10,16 @@ const {
 } = require('../scripts/run-notebooklm-ingestion-queue');
 
 describe('NotebookLM Ingestion Queue', () => {
+  let tmpDir;
+
+  afterEach(async () => {
+    if (tmpDir) {
+      await fsp.rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+
   it('ingests prepared notebooklm packets into a registry and publishes ingested events', async () => {
-    const tmpDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'notebooklm-ingested-'));
+    tmpDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'notebooklm-ingested-'));
     const packetPath = path.join(tmpDir, 'kingdom--TASK-50.md');
     await fsp.writeFile(packetPath, '# NotebookLM Source Packet\n', 'utf-8');
 

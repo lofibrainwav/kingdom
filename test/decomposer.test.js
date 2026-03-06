@@ -45,6 +45,7 @@ describe('DecomposerAgent', () => {
 
     got = {
       init: async () => {},
+      shutdown: async () => {},
       discoverSynergies: async () => ({ nodes: ['setup', 'build'], edges: [] }),
     };
 

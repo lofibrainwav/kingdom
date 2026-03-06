@@ -112,6 +112,7 @@ class DecomposerAgent {
     if (this.subscriber) await this.subscriber.disconnect();
     await this.board.disconnect();
     await this.llm.shutdown();
+    if (this.got) await this.got.shutdown();
   }
 }
 

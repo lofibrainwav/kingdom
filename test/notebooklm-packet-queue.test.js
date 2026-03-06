@@ -1,4 +1,4 @@
-const { describe, it } = require('node:test');
+const { describe, it, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
 const os = require('node:os');
 const path = require('node:path');
@@ -10,8 +10,16 @@ const {
 } = require('../scripts/run-notebooklm-packet-queue');
 
 describe('NotebookLM Packet Queue', () => {
+  let tmpDir;
+
+  afterEach(async () => {
+    if (tmpDir) {
+      await fsp.rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+
   it('prepares claimed notebooklm entries into packet files and publishes prepared events', async () => {
-    const tmpDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'notebooklm-packets-'));
+    tmpDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'notebooklm-packets-'));
     const published = [];
     const configs = new Map([
       ['knowledge:notebooklm:kingdom:TASK-40:queued', {
