@@ -1895,6 +1895,7 @@ module.exports = {
   DASHBOARD_HTML,
   parseDashboardQuery,
   buildDashboardStateUrl,
+  _sanitizeParam,
 };
 
 // Run standalone

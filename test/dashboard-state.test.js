@@ -6,6 +6,7 @@ const {
   DashboardServer,
   parseDashboardQuery,
   buildDashboardStateUrl,
+  _sanitizeParam,
 } = require('../agent/interface/dashboard');
 
 describe('DashboardServer state API', () => {
@@ -504,5 +505,42 @@ describe('DashboardServer state API', () => {
     assert.equal(data.metrics.notebooklmQueueCounts.ingested, 1);
     assert.equal(data.metrics.promotionCandidates[0].taskId, 'TASK-22');
     assert.equal(data.metrics.promotionCandidates[1].status, 'promoted');
+  });
+});
+
+describe('_sanitizeParam — input validation', () => {
+  it('returns null for falsy values', () => {
+    assert.equal(_sanitizeParam(null), null);
+    assert.equal(_sanitizeParam(undefined), null);
+    assert.equal(_sanitizeParam(''), null);
+    assert.equal(_sanitizeParam(0), null);
+  });
+
+  it('returns null for non-string values', () => {
+    assert.equal(_sanitizeParam(42), null);
+    assert.equal(_sanitizeParam({}), null);
+    assert.equal(_sanitizeParam([]), null);
+    assert.equal(_sanitizeParam(true), null);
+  });
+
+  it('returns null for strings exceeding 256 chars', () => {
+    const long = 'a'.repeat(257);
+    assert.equal(_sanitizeParam(long), null);
+    // Exactly 256 should pass
+    const exact = 'b'.repeat(256);
+    assert.equal(_sanitizeParam(exact), exact);
+  });
+
+  it('strips dangerous characters', () => {
+    assert.equal(_sanitizeParam('hello<script>alert(1)</script>'), 'helloscriptalert1/script');
+    assert.equal(_sanitizeParam('key=value&other'), 'keyvalueother');
+    assert.equal(_sanitizeParam('normal_text-123'), 'normal_text-123');
+  });
+
+  it('allows safe characters: word chars, colons, dots, slashes, @, spaces', () => {
+    assert.equal(_sanitizeParam('project:task_01'), 'project:task_01');
+    assert.equal(_sanitizeParam('user@domain.com'), 'user@domain.com');
+    assert.equal(_sanitizeParam('path/to/file'), 'path/to/file');
+    assert.equal(_sanitizeParam('with spaces'), 'with spaces');
   });
 });
