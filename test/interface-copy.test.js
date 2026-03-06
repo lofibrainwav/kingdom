@@ -48,6 +48,10 @@ describe('Interface Copy', () => {
     assert.match(DASHBOARD_HTML, /Applied Promotions/);
     assert.match(DASHBOARD_HTML, /Promotion Targets/);
     assert.match(DASHBOARD_HTML, /NotebookLM Queue/);
+    assert.match(DASHBOARD_HTML, /NotebookLM Lifecycle/);
+    assert.match(DASHBOARD_HTML, /queued/);
+    assert.match(DASHBOARD_HTML, /claimed/);
+    assert.match(DASHBOARD_HTML, /prepared/);
     assert.match(DASHBOARD_HTML, /dryRunSummary/);
     assert.match(DASHBOARD_HTML, /history\.replaceState/);
     assert.match(DASHBOARD_HTML, /URLSearchParams/);

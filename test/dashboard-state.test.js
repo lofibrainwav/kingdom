@@ -442,6 +442,27 @@ describe('DashboardServer state API', () => {
                 taskId: 'TASK-30',
                 queueType: 'promotion-source',
                 sourcePath: '/tmp/completed-task-30.md',
+                status: 'queued',
+              },
+            },
+            {
+              key: 'knowledge:notebooklm:kingdom:TASK-31:queued',
+              value: {
+                projectId: 'kingdom',
+                taskId: 'TASK-31',
+                queueType: 'promotion-source',
+                sourcePath: '/tmp/completed-task-31.md',
+                status: 'claimed',
+              },
+            },
+            {
+              key: 'knowledge:notebooklm:kingdom:TASK-32:queued',
+              value: {
+                projectId: 'kingdom',
+                taskId: 'TASK-32',
+                queueType: 'promotion-source',
+                sourcePath: '/tmp/completed-task-32.md',
+                status: 'prepared',
               },
             },
           ];
@@ -465,7 +486,10 @@ describe('DashboardServer state API', () => {
     assert.equal(data.metrics.promotionQueueCounts.promoted, 1);
     assert.equal(data.metrics.promotionAppliedCount, 1);
     assert.equal(data.metrics.promotionConversionCounts['obsidian-pattern'], 1);
-    assert.equal(data.metrics.notebooklmQueueCount, 1);
+    assert.equal(data.metrics.notebooklmQueueCount, 3);
+    assert.equal(data.metrics.notebooklmQueueCounts.queued, 1);
+    assert.equal(data.metrics.notebooklmQueueCounts.claimed, 1);
+    assert.equal(data.metrics.notebooklmQueueCounts.prepared, 1);
     assert.equal(data.metrics.promotionCandidates[0].taskId, 'TASK-22');
     assert.equal(data.metrics.promotionCandidates[1].status, 'promoted');
   });

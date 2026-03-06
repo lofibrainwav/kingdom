@@ -332,6 +332,32 @@ class DashboardServer {
         this._broadcast({ type: 'promotion-applied', channel: 'knowledge:promotion:applied', data });
       } catch {}
     });
+
+    this.subscriber.subscribe('knowledge:notebooklm:claimed', (message) => {
+      try {
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
+        this._rememberPromotionEvent({
+          type: 'notebooklm-claimed',
+          title: data.taskId,
+          outcome: data.queueType,
+          detail: 'claimed',
+        });
+        this._broadcast({ type: 'notebooklm-claimed', channel: 'knowledge:notebooklm:claimed', data });
+      } catch {}
+    });
+
+    this.subscriber.subscribe('knowledge:notebooklm:prepared', (message) => {
+      try {
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
+        this._rememberPromotionEvent({
+          type: 'notebooklm-prepared',
+          title: data.taskId,
+          outcome: data.queueType,
+          detail: 'prepared',
+        });
+        this._broadcast({ type: 'notebooklm-prepared', channel: 'knowledge:notebooklm:prepared', data });
+      } catch {}
+    });
   }
 
   _rememberKnowledgeEvent(event) {
@@ -508,6 +534,7 @@ class DashboardServer {
         promotionAppliedCount: promotionCandidates.filter((entry) => entry.status === 'promoted').length,
         promotionConversionCounts: this._derivePromotionConversionCounts(promotionCandidates),
         notebooklmQueueCount: notebooklmQueue.length,
+        notebooklmQueueCounts: this._derivePromotionQueueCounts(notebooklmQueue),
       },
       timestamp: Date.now(),
     }));
@@ -1102,6 +1129,11 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
           <div class="feed-title">NotebookLM Queue</div>
           <div id="notebooklm-queue" class="feed-list"></div>
         </div>
+        <div class="pressure-card">
+          <div class="feed-title">NotebookLM Lifecycle</div>
+          <div class="feed-meta">queued, claimed, prepared</div>
+          <div id="notebooklm-lifecycle" class="feed-list"></div>
+        </div>
       </div>
     </aside>
   </section>
@@ -1176,6 +1208,7 @@ const promotionQueueDiv = document.getElementById('promotion-queue');
 const promotionAppliedDiv = document.getElementById('promotion-applied');
 const promotionTargetsDiv = document.getElementById('promotion-targets');
 const notebooklmQueueDiv = document.getElementById('notebooklm-queue');
+const notebooklmLifecycleDiv = document.getElementById('notebooklm-lifecycle');
 const state = {};
 const tasks = {};
 const metrics = {
@@ -1202,6 +1235,7 @@ const metrics = {
   promotionAppliedCount: 0,
   promotionConversionCounts: {},
   notebooklmQueueCount: 0,
+  notebooklmQueueCounts: {},
 };
 let totalEvents = 0;
 let totalHealthSignals = 0;
@@ -1564,6 +1598,7 @@ function renderRetryPressure() {
   renderPromotionAppliedBucket(promotionAppliedDiv, metrics.promotionAppliedCount);
   renderPromotionQueueBucket(promotionTargetsDiv, metrics.promotionConversionCounts, 'No promotion targets yet');
   renderPromotionAppliedBucket(notebooklmQueueDiv, metrics.notebooklmQueueCount, 'NotebookLM queued');
+  renderPromotionQueueBucket(notebooklmLifecycleDiv, metrics.notebooklmQueueCounts, 'No NotebookLM lifecycle yet');
 }
 
 function renderPromotionQueueBucket(container, counts, emptyLabel) {
