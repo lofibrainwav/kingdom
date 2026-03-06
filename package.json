@@ -1,7 +1,7 @@
 {
   "name": "octiv",
   "version": "1.0.0",
-  "description": "Octiv \u2014 AI Agent Sandbox powered by OpenClaw + PaperMC",
+  "description": "Kingdom - real-world agent operating system for planning, execution, knowledge, and governance",
   "main": "index.js",
   "scripts": {
     "test": "node --test --test-force-exit --test-concurrency=1 test/*.test.js",
@@ -11,6 +11,7 @@
     "seed:skills": "node --env-file=.env scripts/seed-skills.js",
     "e2e": "node --env-file=.env scripts/e2e-pipeline.js",
     "memory": "node scripts/auto-memory.js",
+    "memory:operator": "node --env-file=.env scripts/run-knowledge-operator.js",
     "compound": "node --env-file=.env scripts/compound-demo.js",
     "party": "node --env-file=.env scripts/party-mode.js",
     "redis:check": "redis-cli -p 6380 ping",

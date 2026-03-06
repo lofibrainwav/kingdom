@@ -14,6 +14,7 @@ This document explains how Kingdom should operate in practice so the system can 
 - Store working memory in Obsidian
 - Store grounded sources in NotebookLM
 - Connect patterns, skills, failures, and decisions through GoT
+- Use `KnowledgeOperator` to turn validated milestones into durable notes and reusable patterns
 
 ### Execution Plane
 - Use Claude Code, Codex, Antigravity, and local agents to perform work

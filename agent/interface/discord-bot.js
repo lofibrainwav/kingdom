@@ -765,15 +765,10 @@ class OctivDiscordBot {
       let sub;
       try {
         sub = await this.board.createSubscriber();
-        await sub.subscribe(PREFIX + requestId, (message) => {
+        await sub.subscribe(requestId, (message) => {
           clearTimeout(timeout);
           sub.disconnect().catch(() => {});
-          try {
-            resolve(JSON.parse(message));
-          } catch (parseErr) {
-            log.warn('discord-bot', 'Failed to parse pub/sub message', { error: parseErr.message });
-            resolve({ data: message });
-          }
+          resolve(typeof message === 'string' ? { data: message } : message);
         });
       } catch (subErr) {
         clearTimeout(timeout);

@@ -50,6 +50,9 @@ Every meaningful milestone should try to produce:
 - one verification artifact
 - one relationship or pattern that can be reused later
 
+Runtime support:
+- `KnowledgeOperator.capture()` stores the durable note, optional pattern, and emits `knowledge:capture:stored`
+
 ## Quality Bar
 
 Stored knowledge should be:

@@ -1,0 +1,168 @@
+const { describe, it, beforeEach } = require('node:test');
+const assert = require('node:assert/strict');
+const os = require('node:os');
+const path = require('node:path');
+const fsp = require('node:fs/promises');
+
+const { KnowledgeOperator } = require('../agent/memory/knowledge-operator');
+
+describe('KnowledgeOperator', () => {
+  let tmpDir;
+  let published;
+  let dashboardLinks;
+  let patterns;
+  let createdSkills;
+  let board;
+  let zk;
+
+  beforeEach(async () => {
+    tmpDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'knowledge-operator-'));
+    published = [];
+    dashboardLinks = [];
+    patterns = [];
+    createdSkills = [];
+
+    board = {
+      client: { isOpen: true },
+      publish: async (channel, data) => {
+        published.push({ channel, data });
+      },
+      createSubscriber: async () => ({
+        on: () => {},
+        subscribe: async () => {},
+      }),
+    };
+
+    zk = {
+      _slugify: (name) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+      getNote: async () => null,
+      createNote: async (data) => {
+        createdSkills.push(data);
+        return { id: data.name };
+      },
+    };
+  });
+
+  it('captures a milestone into the vault, pattern registry, zettelkasten, and blackboard', async () => {
+    const operator = new KnowledgeOperator({
+      board,
+      zettelkasten: zk,
+      vaultDir: tmpDir,
+      writePattern: async (name, content) => {
+        patterns.push({ name, content });
+        return `/vault/patterns/${name}.md`;
+      },
+      addDashboardLink: async (section, link) => {
+        dashboardLinks.push({ section, link });
+      },
+    });
+
+    await operator.init();
+    const result = await operator.capture({
+      author: 'codex',
+      projectId: 'kingdom',
+      title: 'Canonical knowledge loop',
+      summary: 'Validated the first runtime knowledge ingestion path.',
+      outcome: 'passed',
+      verification: ['npm test (191 pass)', 'npm audit (0 vulnerabilities)'],
+      lesson: 'Knowledge capture should produce a durable note and a reusable pattern.',
+      pattern: {
+        name: 'Knowledge Capture Bundle',
+        summary: 'Store note, verification, and pattern together.',
+      },
+      skill: {
+        name: 'Knowledge Capture Bundle',
+        description: 'Bundle milestone evidence into reusable memory artifacts.',
+        errorType: 'workflow:knowledge-capture',
+        code: 'capture({ verification, lesson, pattern })',
+      },
+      tags: ['knowledge', 'operator-loop'],
+    });
+
+    const stored = await fsp.readFile(result.notePath, 'utf-8');
+
+    assert.match(result.notePath, /canonical-knowledge-loop\.md$/);
+    assert.match(stored, /# Canonical knowledge loop/);
+    assert.match(stored, /Validated the first runtime knowledge ingestion path\./);
+    assert.match(stored, /npm test \(191 pass\)/);
+    assert.equal(result.patternPath, '/vault/patterns/Knowledge Capture Bundle.md');
+    assert.equal(result.skillNoteId, 'knowledge-capture-bundle');
+    assert.equal(createdSkills.length, 1);
+    assert.equal(patterns.length, 1);
+    assert.equal(dashboardLinks[0].section, 'Recent Achievements');
+    assert.equal(published.length, 1);
+    assert.equal(published[0].channel, 'knowledge:capture:stored');
+    assert.equal(published[0].data.projectId, 'kingdom');
+    assert.equal(published[0].data.outcome, 'passed');
+  });
+
+  it('rejects incomplete bundles before writing artifacts', async () => {
+    const operator = new KnowledgeOperator({
+      board,
+      zettelkasten: zk,
+      vaultDir: tmpDir,
+      writePattern: async () => '/tmp/pattern.md',
+      addDashboardLink: async () => {},
+    });
+
+    await operator.init();
+
+    await assert.rejects(() => operator.capture({
+      author: 'codex',
+      projectId: 'kingdom',
+      title: 'Incomplete capture',
+      summary: 'Missing verification should fail.',
+      outcome: 'passed',
+      verification: [],
+      lesson: 'No lesson without evidence.',
+    }), /verification evidence is required/);
+
+    const files = await fsp.readdir(tmpDir);
+    assert.equal(files.length, 0);
+    assert.equal(published.length, 0);
+  });
+
+  it('subscribes to review approval and failure retry events with auto-capture handlers', async () => {
+    const subscriptions = {};
+    board.createSubscriber = async () => ({
+      on: () => {},
+      subscribe: async (channel, handler) => {
+        subscriptions[channel] = handler;
+      },
+    });
+
+    const operator = new KnowledgeOperator({
+      board,
+      zettelkasten: zk,
+      vaultDir: tmpDir,
+      writePattern: async (name) => `/vault/patterns/${name}.md`,
+      addDashboardLink: async (section, link) => {
+        dashboardLinks.push({ section, link });
+      },
+    });
+
+    await operator.init();
+    await operator.start();
+
+    assert.equal(typeof subscriptions['governance:review:approved'], 'function');
+    assert.equal(typeof subscriptions['governance:failure:retry-requested'], 'function');
+
+    await subscriptions['governance:review:approved']({
+      projectId: 'kingdom',
+      taskId: 'TASK-1',
+      file: 'agent/core/blackboard.js',
+    });
+    await subscriptions['governance:failure:retry-requested']({
+      projectId: 'kingdom',
+      taskId: 'TASK-2',
+      category: 'test',
+      guardrail: 'keep-green',
+    });
+
+    assert.equal(published.length, 2);
+    assert.equal(published[0].data.outcome, 'passed');
+    assert.equal(published[1].data.outcome, 'failed');
+    assert.equal(dashboardLinks[0].section, 'Recent Achievements');
+    assert.equal(dashboardLinks[1].section, 'Learning Wall');
+  });
+});

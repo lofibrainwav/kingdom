@@ -9,6 +9,7 @@ const SCHEMAS = {
   'execution:swarm:terminate': ['swarmId'],
   'execution:deployment:completed': ['projectId', 'status', 'timestamp'],
   'knowledge:skills:deployed': ['author', 'newSkill'],
+  'knowledge:capture:stored': ['author', 'projectId', 'title', 'notePath', 'outcome'],
   'knowledge:rumination:digested': ['author', 'digestionNumber', 'experienceCount', 'insightCount', 'actionCount'],
   'knowledge:zettelkasten:tier-up': ['author', 'skill', 'oldTier', 'newTier', 'xp'],
   'knowledge:zettelkasten:compound-created': ['author', 'compound', 'sources'],

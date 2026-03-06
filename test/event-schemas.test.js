@@ -6,6 +6,7 @@ describe('Event Schemas', () => {
   it('resolves exact and wildcard canonical schemas', () => {
     assert.deepEqual(getSchemaForChannel('work:intake'), ['author', 'task']);
     assert.deepEqual(getSchemaForChannel('execution:dispatch:coder-1'), ['author', 'action']);
+    assert.deepEqual(getSchemaForChannel('knowledge:capture:stored'), ['author', 'projectId', 'title', 'notePath', 'outcome']);
     assert.equal(getSchemaForChannel('unknown:event'), null);
   });
 
