@@ -28,7 +28,6 @@ description: Use when agent runtime files change and you need to verify base-cla
 | `agent/interface/` | dashboard.js, discord-bot.js, mcp-orchestrator.js, skill-pipeline.js, zettelkasten-hooks.js | External interfaces |
 | `agent/memory/` | got-reasoner.js, rumination-engine.js, skill-zettelkasten.js, vault-sync.js | Knowledge layer |
 | `agent/team.js` | (root) | Multi-agent launcher |
-| `agent/OctivBot.js` | (root) | Legacy Minecraft adapter (exempt from checks) |
 
 ## Workflow
 
@@ -122,7 +121,6 @@ grep -n "PREFIX\|kingdom:" agent/core/blackboard.js
 
 ## Exceptions
 
-1. **agent/OctivBot.js** — legacy Minecraft adapter, does not follow team agent pattern
-2. **agent/team/swarm-orchestrator.js** — orchestrates other agents, may not subscribe to a channel
-3. **agent/team/watchdog-agent.js** — timer-based, may not use standard subscriber pattern
-4. **agent/interface/** — interface modules have different patterns (HTTP servers, Discord bot)
+1. **agent/team/swarm-orchestrator.js** — orchestrates other agents, may not subscribe to a channel
+2. **agent/team/watchdog-agent.js** — timer-based, may not use standard subscriber pattern
+3. **agent/interface/** — interface modules have different patterns (HTTP servers, Discord bot)

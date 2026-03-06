@@ -1,3 +1,8 @@
+> **⚠️ DEPRECATED** — This audit was written against the pre-Phase-2 flat structure
+> (`agent/OctivBot.js`, `agent/builder.js`, `agent/leader.js`, `agent/safety.js`).
+> The codebase was restructured into `agent/core/`, `agent/team/`, `agent/interface/`,
+> `agent/memory/` and renamed from Octiv to Kingdom. Kept for historical reference only.
+
 # Kingdom MVP Codebase Audit — Brutally Honest Assessment
 
 **Date**: March 3, 2026

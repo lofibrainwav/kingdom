@@ -1,3 +1,8 @@
+> **⚠️ DEPRECATED** — This rating was written against the pre-Phase-2 flat structure.
+> Files like `OctivBot.js`, `builder.js`, `leader.js`, `safety.js` no longer exist.
+> Current structure: `agent/core/`, `agent/team/`, `agent/interface/`, `agent/memory/`.
+> Kept for historical reference only.
+
 # Kingdom MVP — File-by-File Rating
 
 **Format**: `[Rating] FILE | Status | Can Run | Key Assessment`

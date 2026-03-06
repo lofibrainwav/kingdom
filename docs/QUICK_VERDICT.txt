@@ -1,4 +1,11 @@
 ================================================================================
+⚠️ DEPRECATED — Written against pre-Phase-2 flat structure.
+Files like OctivBot.js, builder.js, leader.js, safety.js no longer exist.
+Current structure: agent/core/, agent/team/, agent/interface/, agent/memory/.
+Kept for historical reference only.
+================================================================================
+
+================================================================================
 KINGDOM MVP CODEBASE AUDIT — QUICK VERDICT
 ================================================================================
 

@@ -29,12 +29,9 @@ It is preserved as:
 
 ## Instructions
 
-1. **Create bot** using legacy OctivBot class (Minecraft adapter only):
-   ```javascript
-   const { OctivBot } = require('./agent/OctivBot');
-   const bot = new OctivBot({ username: 'MyBot' });
-   await bot.start();
-   ```
+1. **Create bot** using legacy adapter (Minecraft only):
+   > Note: `OctivBot.js` was removed in Phase-2. Minecraft adapter needs
+   > reimplementation if this legacy feature is required again.
 
 2. **Navigation** via pathfinder:
    ```javascript
@@ -48,7 +45,7 @@ It is preserved as:
    await bot.bot.dig(block);
    ```
 
-4. **Chat commands**: `!status`, `!pos` are handled by OctivBot
+4. **Chat commands**: `!status`, `!pos` (legacy — requires adapter reimplementation)
 
 ## Server Admin
 ```bash

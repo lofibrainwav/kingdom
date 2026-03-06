@@ -73,7 +73,7 @@ Read: existing utility files (agent/*.js, config/*.js)
 | Knowledge layer | `agent/memory/*.js` (GoT, rumination, zettelkasten, vault-sync) |
 | Interfaces | `agent/interface/*.js` (dashboard, discord, MCP, skill-pipeline) |
 | Test helpers | `test/*.test.js` (shared mock board pattern) |
-| Legacy adapter | `agent/OctivBot.js` (Minecraft only) |
+| Legacy adapter | *(removed — OctivBot.js no longer exists)* |
 
 ## Implementation
 

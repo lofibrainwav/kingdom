@@ -63,7 +63,7 @@ Every browser action — click, type, navigate, select — must follow these 5 s
 
 ## Error Classification
 
-5 error types, mirroring `agent/builder-adaptation.js` classifyError pattern:
+5 error types for browser automation recovery:
 
 | Type | Symptoms | Example |
 |------|----------|---------|
