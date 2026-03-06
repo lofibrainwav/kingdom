@@ -133,6 +133,7 @@ class TaskCloseoutOrchestrator {
       taskId: eventData.taskId,
       file,
       content,
+      author: eventData.author || 'task-closeout-orchestrator',
     };
   }
 

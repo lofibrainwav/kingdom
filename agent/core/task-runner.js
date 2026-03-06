@@ -306,6 +306,12 @@ class TaskRunner {
     }
   }
 
+  async shutdown() {
+    if (this.board && this.board.disconnect && this.board.client && this.board.client.isOpen) {
+      await this.board.disconnect();
+    }
+  }
+
   async _patchTaskState(projectId, taskId, updater) {
     const key = this._taskConfigKey(projectId, taskId);
     const current = await this.board.getConfig(key);
