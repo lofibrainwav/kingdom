@@ -85,6 +85,17 @@ class DecomposerAgent {
         author: this.agentId,
       });
 
+      // 5. Spawn swarm for parallel task execution when 3+ tasks
+      const taskList = tasks.tasks || tasks;
+      if (Array.isArray(taskList) && taskList.length >= 3) {
+        await this.board.publish('execution:swarm:spawn', {
+          swarmId: projectId,
+          agentType: 'coder',
+          count: Math.min(taskList.length, 5),
+          author: this.agentId,
+        });
+      }
+
       log.info(this.agentId, `Decomposition for ${projectId} completed`);
       await this.updateStatus('idle', `Finished decomposition for ${projectId}`);
     } catch (err) {

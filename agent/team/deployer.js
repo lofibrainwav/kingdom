@@ -55,7 +55,13 @@ class DeployerAgent {
       // 2. Mark as Deployed in Blackboard
       await this.board.setConfig(`${projectId}:status`, 'deployed');
 
-      // 3. Notify Success
+      // 3. Terminate swarm if one was spawned for this project
+      await this.board.publish('execution:swarm:terminate', {
+        swarmId: projectId,
+        author: this.agentId,
+      });
+
+      // 4. Notify Success
       await this.board.publish('execution:deployment:completed', {
         projectId,
         status: 'success',

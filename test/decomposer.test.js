@@ -155,6 +155,57 @@ describe('DecomposerAgent', () => {
     assert.deepEqual(published[0].data.tasks.tasks, []);
   });
 
+  it('handleDesignComplete spawns swarm when 3+ tasks are decomposed', async () => {
+    llm.callLLM = async () => ({
+      tasks: [
+        { id: 'T1', description: 'Setup', dependencyId: null },
+        { id: 'T2', description: 'Build', dependencyId: 'T1' },
+        { id: 'T3', description: 'Test', dependencyId: 'T2' },
+      ],
+    });
+
+    await agent.handleDesignComplete({
+      projectId: 'project:swarm-01',
+      goal: 'Multi-task project',
+      architecture: 'Node.js',
+    });
+
+    assert.equal(published.length, 2);
+    assert.equal(published[0].channel, 'work:planning:decomposed');
+    assert.equal(published[1].channel, 'execution:swarm:spawn');
+    assert.equal(published[1].data.swarmId, 'project:swarm-01');
+    assert.equal(published[1].data.agentType, 'coder');
+    assert.equal(published[1].data.count, 3);
+  });
+
+  it('handleDesignComplete caps swarm count at 5', async () => {
+    llm.callLLM = async () => ({
+      tasks: Array.from({ length: 8 }, (_, i) => ({ id: `T${i}`, description: `Task ${i}`, dependencyId: null })),
+    });
+
+    await agent.handleDesignComplete({
+      projectId: 'project:big-01',
+      goal: 'Large project',
+      architecture: 'Node.js',
+    });
+
+    const swarmEvent = published.find(p => p.channel === 'execution:swarm:spawn');
+    assert.ok(swarmEvent);
+    assert.equal(swarmEvent.data.count, 5);
+  });
+
+  it('handleDesignComplete does NOT spawn swarm for fewer than 3 tasks', async () => {
+    // Default LLM returns 1 task
+    await agent.handleDesignComplete({
+      projectId: 'project:small-01',
+      goal: 'Small project',
+      architecture: 'Node.js',
+    });
+
+    assert.equal(published.length, 1);
+    assert.equal(published[0].channel, 'work:planning:decomposed');
+  });
+
   it('shutdown disconnects subscriber, board, and LLM', async () => {
     let subDisconnected = false;
     let boardDisconnected = false;
