@@ -4,6 +4,7 @@
  * Usage: node agent/dashboard.js (port 3000)
  */
 const http = require('http');
+const { URL } = require('url');
 const { Blackboard } = require('../core/blackboard');
 const { getLogger } = require('../core/logger');
 const { TaskRunner } = require('../core/task-runner');
@@ -28,7 +29,10 @@ class DashboardServer {
       recentTasks: [],
       retryByCategory: {},
       retryByGuardrail: {},
+      retryByProject: {},
+      retryByTask: {},
       resolvedGuardrails: {},
+      resolvedByProject: {},
     };
   }
 
@@ -147,6 +151,8 @@ class DashboardServer {
         const data = typeof message === 'string' ? JSON.parse(message) : message;
         this._incrementMetricBucket('retryByCategory', data.category || 'unknown');
         this._incrementMetricBucket('retryByGuardrail', data.guardrail || 'unknown');
+        this._incrementMetricBucket('retryByProject', data.projectId || 'unknown');
+        this._incrementMetricBucket('retryByTask', this._taskMetricKey(data));
         this._rememberTaskEvent({
           type: 'retry-requested',
           title: data.taskId,
@@ -170,6 +176,7 @@ class DashboardServer {
         this.metrics.knowledgeCaptures += 1;
         if (data.outcome === 'passed' && data.retryGuardrail) {
           this._incrementMetricBucket('resolvedGuardrails', data.retryGuardrail);
+          this._incrementMetricBucket('resolvedByProject', data.projectId || 'unknown');
         }
         this._rememberKnowledgeEvent({
           type: 'capture',
@@ -231,13 +238,15 @@ class DashboardServer {
   }
 
   async _handleRequest(req, res) {
-    if (req.url === '/events') {
+    const requestUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+
+    if (requestUrl.pathname === '/events') {
       return this._handleSSE(req, res);
     }
-    if (req.url === '/api/state') {
-      return this._handleAPIState(req, res);
+    if (requestUrl.pathname === '/api/state') {
+      return this._handleAPIState(req, res, requestUrl);
     }
-    if (req.url === '/' || req.url === '/index.html') {
+    if (requestUrl.pathname === '/' || requestUrl.pathname === '/index.html') {
       return this._serveDashboard(req, res);
     }
     res.writeHead(404);
@@ -258,8 +267,20 @@ class DashboardServer {
     });
   }
 
-  async _handleAPIState(req, res) {
-    const tasks = await this.taskRunner.listTasks();
+  _taskMetricKey(data) {
+    const projectId = data?.projectId || 'unknown-project';
+    const taskId = data?.taskId || 'unknown-task';
+    return `${projectId}/${taskId}`;
+  }
+
+  async _handleAPIState(req, res, requestUrl) {
+    const tasks = await this.taskRunner.listTasks({
+      projectId: requestUrl.searchParams.get('projectId') || undefined,
+      taskId: requestUrl.searchParams.get('taskId') || undefined,
+      status: requestUrl.searchParams.get('status') || undefined,
+      retryGuardrail: requestUrl.searchParams.get('retryGuardrail') || undefined,
+      retryCategory: requestUrl.searchParams.get('retryCategory') || undefined,
+    });
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ agents: this.agentState, tasks, metrics: this.metrics, timestamp: Date.now() }));
   }
@@ -412,6 +433,21 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
     background: var(--ink);
     color: #fff;
   }
+  .focus-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 14px;
+  }
+  .focus-pill {
+    border-radius: 999px;
+    border: 1px solid rgba(29, 78, 216, 0.24);
+    background: rgba(29, 78, 216, 0.10);
+    color: var(--knowledge);
+    padding: 7px 12px;
+    font-size: 13px;
+  }
   .section { padding: 22px; }
   .section-header {
     display: flex;
@@ -495,6 +531,11 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
     border: 1px solid var(--line);
     background: rgba(255,255,255,0.6);
   }
+  .pressure-button {
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+  }
   .feed-title { font-size: 14px; font-weight: 700; }
   .feed-meta { margin-top: 4px; color: var(--muted); font-size: 12px; }
   @media (max-width: 980px) {
@@ -569,6 +610,14 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
           <div class="feed-title">Resolved Guardrails</div>
           <div id="resolved-guardrail" class="feed-list"></div>
         </div>
+        <div class="pressure-card">
+          <div class="feed-title">Project Hotspots</div>
+          <div id="retry-project" class="feed-list"></div>
+        </div>
+        <div class="pressure-card">
+          <div class="feed-title">Task Hotspots</div>
+          <div id="retry-task" class="feed-list"></div>
+        </div>
       </div>
     </aside>
   </section>
@@ -591,7 +640,9 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
           <button type="button" class="task-filter active" data-filter="all">All Tasks</button>
           <button type="button" class="task-filter" data-filter="retry">Retry Ready</button>
           <button type="button" class="task-filter" data-filter="blocked">Blocked</button>
+          <button type="button" class="task-filter" data-filter="clear-focus">Reset Focus</button>
         </div>
+        <div id="task-focus" class="focus-strip"></div>
         <div id="tasks"></div>
       </div>
       <div class="section-header">
@@ -614,6 +665,7 @@ const agentsDiv = document.getElementById('agents');
 const tasksDiv = document.getElementById('tasks');
 const taskFilters = Array.from(document.querySelectorAll('.task-filter'));
 const eventsDiv = document.getElementById('events');
+const taskFocusDiv = document.getElementById('task-focus');
 const statAgents = document.getElementById('stat-agents');
 const statEvents = document.getElementById('stat-events');
 const statHealth = document.getElementById('stat-health');
@@ -625,6 +677,8 @@ const taskFeedDiv = document.getElementById('task-feed');
 const retryCategoryDiv = document.getElementById('retry-category');
 const retryGuardrailDiv = document.getElementById('retry-guardrail');
 const resolvedGuardrailDiv = document.getElementById('resolved-guardrail');
+const retryProjectDiv = document.getElementById('retry-project');
+const retryTaskDiv = document.getElementById('retry-task');
 const state = {};
 const tasks = {};
 const metrics = {
@@ -634,18 +688,31 @@ const metrics = {
   recentTasks: [],
   retryByCategory: {},
   retryByGuardrail: {},
+  retryByProject: {},
+  retryByTask: {},
   resolvedGuardrails: {},
+  resolvedByProject: {},
 };
 let totalEvents = 0;
 let totalHealthSignals = 0;
 let totalAlerts = 0;
 let activeTaskFilter = 'all';
+let activeDrilldown = null;
 
 for (const button of taskFilters) {
   button.addEventListener('click', () => {
-    activeTaskFilter = button.dataset.filter || 'all';
+    const nextFilter = button.dataset.filter || 'all';
+    if (nextFilter === 'clear-focus') {
+      activeDrilldown = null;
+      activeTaskFilter = 'all';
+    } else {
+      activeTaskFilter = nextFilter;
+    }
     for (const item of taskFilters) {
-      item.classList.toggle('active', item === button);
+      item.classList.toggle('active', item === button && nextFilter !== 'clear-focus');
+    }
+    if (nextFilter === 'clear-focus') {
+      taskFilters.forEach((item) => item.classList.toggle('active', item.dataset.filter === 'all'));
     }
     renderTasks();
   });
@@ -668,6 +735,7 @@ es.onmessage = (e) => {
     metrics.knowledgeCaptures += 1;
     if (evt.data?.outcome === 'passed' && evt.data?.retryGuardrail) {
       incrementBucket(metrics.resolvedGuardrails, evt.data.retryGuardrail);
+      incrementBucket(metrics.resolvedByProject, evt.data?.projectId || 'unknown');
     }
     pushKnowledgeFeed({
       type: 'capture',
@@ -689,6 +757,8 @@ es.onmessage = (e) => {
     if (evt.channel === 'governance:failure:retry-requested') {
       incrementBucket(metrics.retryByCategory, evt.data?.category || 'unknown');
       incrementBucket(metrics.retryByGuardrail, evt.data?.guardrail || 'unknown');
+      incrementBucket(metrics.retryByProject, evt.data?.projectId || 'unknown');
+      incrementBucket(metrics.retryByTask, buildTaskMetricKey(evt.data?.projectId, evt.data?.taskId));
     }
     rememberTaskState(evt);
     pushTaskFeed({
@@ -737,6 +807,7 @@ function renderAgents() {
 function renderTasks() {
   const entries = Object.entries(tasks);
   const filtered = entries.filter(([, task]) => matchesTaskFilter(task));
+  renderTaskFocus();
   if (filtered.length === 0) {
     tasksDiv.innerHTML = '<article class="task-card"><h3>No tasks yet</h3><div class="field"><span class="label">Status</span><span class="value">Waiting for task state</span></div></article>';
     return;
@@ -757,6 +828,21 @@ function renderTasks() {
 }
 
 function matchesTaskFilter(task) {
+  if (activeDrilldown) {
+    if (activeDrilldown.type === 'project' && task.projectId !== activeDrilldown.value) {
+      return false;
+    }
+    if (activeDrilldown.type === 'task' && buildTaskMetricKey(task.projectId, task.taskId) !== activeDrilldown.value) {
+      return false;
+    }
+    if (activeDrilldown.type === 'guardrail' && task.retry?.guardrail !== activeDrilldown.value) {
+      return false;
+    }
+    if (activeDrilldown.type === 'category' && task.retry?.category !== activeDrilldown.value) {
+      return false;
+    }
+  }
+
   if (activeTaskFilter === 'retry') {
     return task.status === 'retry_requested'
       || task.status === 'replanning'
@@ -769,6 +855,19 @@ function matchesTaskFilter(task) {
   }
 
   return true;
+}
+
+function renderTaskFocus() {
+  if (!activeDrilldown) {
+    taskFocusDiv.innerHTML = '<div class="section-note">Click a retry pressure bucket to focus the board by project, task, category, or guardrail.</div>';
+    return;
+  }
+
+  taskFocusDiv.innerHTML = '<div class="focus-pill">Focused by '
+    + escapeHtml(activeDrilldown.type)
+    + ': '
+    + escapeHtml(activeDrilldown.value)
+    + '</div>';
 }
 
 function inferPlane(task, state) {
@@ -892,12 +991,14 @@ function renderTaskFeed() {
 }
 
 function renderRetryPressure() {
-  renderBucket(retryCategoryDiv, metrics.retryByCategory, 'No retry categories yet');
-  renderBucket(retryGuardrailDiv, metrics.retryByGuardrail, 'No guardrail pressure yet');
-  renderBucket(resolvedGuardrailDiv, metrics.resolvedGuardrails, 'No resolved guardrails yet');
+  renderBucket(retryCategoryDiv, metrics.retryByCategory, 'No retry categories yet', 'category');
+  renderBucket(retryGuardrailDiv, metrics.retryByGuardrail, 'No guardrail pressure yet', 'guardrail');
+  renderBucket(resolvedGuardrailDiv, metrics.resolvedGuardrails, 'No resolved guardrails yet', 'guardrail');
+  renderBucket(retryProjectDiv, metrics.retryByProject, 'No project hotspots yet', 'project');
+  renderBucket(retryTaskDiv, metrics.retryByTask, 'No task hotspots yet', 'task');
 }
 
-function renderBucket(container, bucket, emptyLabel) {
+function renderBucket(container, bucket, emptyLabel, drilldownType) {
   const entries = Object.entries(bucket || {}).sort((a, b) => b[1] - a[1]).slice(0, 6);
   if (entries.length === 0) {
     container.innerHTML = '<div class="feed-meta">' + escapeHtml(emptyLabel) + '</div>';
@@ -905,11 +1006,25 @@ function renderBucket(container, bucket, emptyLabel) {
   }
 
   container.innerHTML = entries.map(([label, count]) => {
-    return '<div class="feed-item">'
+    return '<button type="button" class="feed-item pressure-button" data-drilldown-type="' + escapeHtml(drilldownType || '') + '" data-drilldown-value="' + escapeHtml(label) + '">'
       + '<div class="feed-title">' + escapeHtml(label) + '</div>'
       + '<div class="feed-meta">' + escapeHtml(String(count) + ' events') + '</div>'
-      + '</div>';
+      + '</button>';
   }).join('');
+
+  container.querySelectorAll('.pressure-button').forEach((button) => {
+    button.addEventListener('click', () => {
+      activeDrilldown = {
+        type: button.dataset.drilldownType,
+        value: button.dataset.drilldownValue,
+      };
+      renderTasks();
+    });
+  });
+}
+
+function buildTaskMetricKey(projectId, taskId) {
+  return (projectId || 'unknown-project') + '/' + (taskId || 'unknown-task');
 }
 
 function timeAgo(ts) {

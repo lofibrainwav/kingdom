@@ -115,7 +115,7 @@ class TaskRunner {
     return updated;
   }
 
-  async listTasks({ projectId } = {}) {
+  async listTasks({ projectId, taskId, status, retryGuardrail, retryCategory } = {}) {
     if (!this.board.listConfigs) {
       return [];
     }
@@ -127,6 +127,21 @@ class TaskRunner {
         key,
         ...value,
       }))
+      .filter((task) => {
+        if (taskId && task.taskId !== taskId) {
+          return false;
+        }
+        if (status && task.status !== status) {
+          return false;
+        }
+        if (retryGuardrail && task.retry?.guardrail !== retryGuardrail) {
+          return false;
+        }
+        if (retryCategory && task.retry?.category !== retryCategory) {
+          return false;
+        }
+        return true;
+      })
       .sort((a, b) => {
         const updatedDelta = (b.updatedAt || 0) - (a.updatedAt || 0);
         if (updatedDelta !== 0) {

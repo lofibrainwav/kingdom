@@ -187,4 +187,56 @@ describe('TaskRunner', () => {
     assert.equal(tasks[0].taskId, 'TASK-22');
     assert.equal(tasks[1].taskId, 'TASK-21');
   });
+
+  it('filters stored tasks by retry metadata and explicit identifiers', async () => {
+    const runner = new TaskRunner({ board, workspaceRoot: tmpDir });
+    await runner.init();
+    await runner.startTask({
+      author: 'codex',
+      projectId: 'kingdom',
+      taskId: 'TASK-31',
+      goal: 'Retry task',
+    });
+    await runner.startTask({
+      author: 'codex',
+      projectId: 'kingdom',
+      taskId: 'TASK-32',
+      goal: 'Stable task',
+    });
+
+    await runner.markRetryRequested({
+      projectId: 'kingdom',
+      taskId: 'TASK-31',
+      category: 'review',
+      guardrail: 'verification-gap',
+    });
+    await runner.markReviewApproved({
+      projectId: 'kingdom',
+      taskId: 'TASK-32',
+      file: 'docs/stable.md',
+    });
+
+    const byGuardrail = await runner.listTasks({
+      projectId: 'kingdom',
+      retryGuardrail: 'verification-gap',
+    });
+    assert.deepEqual(byGuardrail.map((task) => task.taskId), ['TASK-31']);
+
+    const byCategory = await runner.listTasks({
+      retryCategory: 'review',
+    });
+    assert.deepEqual(byCategory.map((task) => task.taskId), ['TASK-31']);
+
+    const byStatus = await runner.listTasks({
+      projectId: 'kingdom',
+      status: 'approved',
+    });
+    assert.deepEqual(byStatus.map((task) => task.taskId), ['TASK-32']);
+
+    const byTaskId = await runner.listTasks({
+      projectId: 'kingdom',
+      taskId: 'TASK-31',
+    });
+    assert.deepEqual(byTaskId.map((task) => task.taskId), ['TASK-31']);
+  });
 });

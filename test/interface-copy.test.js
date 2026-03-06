@@ -23,6 +23,10 @@ describe('Interface Copy', () => {
     assert.match(DASHBOARD_HTML, /Retry Pressure/);
     assert.match(DASHBOARD_HTML, /Category Load/);
     assert.match(DASHBOARD_HTML, /Guardrail Heat/);
+    assert.match(DASHBOARD_HTML, /Project Hotspots/);
+    assert.match(DASHBOARD_HTML, /Task Hotspots/);
+    assert.match(DASHBOARD_HTML, /Reset Focus/);
+    assert.match(DASHBOARD_HTML, /Click a retry pressure bucket to focus the board/);
   });
 
   it('discord help copy should reference the Kingdom operating system', () => {
