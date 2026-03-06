@@ -1,6 +1,6 @@
 ---
 name: workflow-recording
-description: Record a manual workflow once, save it as a reusable skill. Best for repetitive tasks. Create once, reuse forever. Integrates with skill-zettelkasten for compounding.
+description: Use when a repetitive manual workflow should be captured once, turned into a reusable skill, and compounded into Kingdom memory.
 ---
 
 # Workflow Recording
@@ -147,3 +147,9 @@ ls /Users/brnestrm/bb/kingdom/.claude/skills/ | grep -v verify
 # 성공률이 낮은 워크플로우 재녹화
 # → 90% 미만이면 자동으로 재녹화 추천 알림
 ```
+
+## Implementation
+
+- Record only workflows that are stable enough to replay.
+- Capture starting state, success condition, and failure recovery, not just clicks.
+- Promote reusable workflows into skill memory only after replay validation succeeds.

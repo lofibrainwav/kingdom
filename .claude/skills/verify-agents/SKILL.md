@@ -1,6 +1,6 @@
 ---
 name: verify-agents
-description: Verifies OctivBot base class patterns, heartbeat, reconnection logic, and AC task implementation across all agent files. Run after modifying any agent/*.js file.
+description: Use when agent runtime files change and you need to verify base-class patterns, reconnect logic, safety boundaries, and expected task ownership.
 ---
 
 # Agent Code Verification
@@ -13,7 +13,7 @@ description: Verifies OctivBot base class patterns, heartbeat, reconnection logi
 4. **AC task coverage** — verify each implemented AC has the expected function
 5. **Safety** — no direct unsafe operations without node:vm sandbox
 
-## When to Run
+## When to Use
 - After modifying any file in `agent/`
 - After adding a new AC task implementation
 - When bots are silently disconnecting

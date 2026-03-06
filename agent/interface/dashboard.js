@@ -22,6 +22,7 @@ class DashboardServer {
       knowledgeCaptures: 0,
       skillEvals: 0,
       lastSkillEval: null,
+      recentKnowledge: [],
     };
   }
 
@@ -92,6 +93,12 @@ class DashboardServer {
       try {
         const data = typeof message === 'string' ? JSON.parse(message) : message;
         this.metrics.knowledgeCaptures += 1;
+        this._rememberKnowledgeEvent({
+          type: 'capture',
+          title: data.title,
+          outcome: data.outcome,
+          projectId: data.projectId,
+        });
         this._broadcast({ type: 'knowledge-capture', channel: 'knowledge:capture:stored', data });
       } catch {}
     });
@@ -101,9 +108,23 @@ class DashboardServer {
         const data = typeof message === 'string' ? JSON.parse(message) : message;
         this.metrics.skillEvals += 1;
         this.metrics.lastSkillEval = data;
+        this._rememberKnowledgeEvent({
+          type: 'skill-eval',
+          title: data.skillName,
+          outcome: data.passed ? 'passed' : 'failed',
+          score: data.score,
+        });
         this._broadcast({ type: 'skill-eval', channel: 'knowledge:skill:eval-completed', data });
       } catch {}
     });
+  }
+
+  _rememberKnowledgeEvent(event) {
+    this.metrics.recentKnowledge.unshift({
+      ...event,
+      timestamp: Date.now(),
+    });
+    this.metrics.recentKnowledge = this.metrics.recentKnowledge.slice(0, 6);
   }
 
   _broadcast(event) {
@@ -314,6 +335,24 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
   }
   .event-meta { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
   .event-body { margin-top: 8px; font-size: 14px; line-height: 1.5; }
+  .knowledge-feed {
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+  }
+  .feed-list {
+    display: grid;
+    gap: 10px;
+    margin-top: 12px;
+  }
+  .feed-item {
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,0.6);
+  }
+  .feed-title { font-size: 14px; font-weight: 700; }
+  .feed-meta { margin-top: 4px; color: var(--muted); font-size: 12px; }
   @media (max-width: 980px) {
     .hero, .content, .plane-strip { grid-template-columns: 1fr; }
     .shell { padding: 20px 16px 36px; }
@@ -355,6 +394,13 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
           <div id="stat-skill-evals" class="stat-value">0</div>
         </div>
       </div>
+      <div class="knowledge-feed">
+        <div class="section-header">
+          <h2 class="section-title">Knowledge Feed</h2>
+          <div class="section-note">Recent captures and skill evaluation outcomes</div>
+        </div>
+        <div id="knowledge-feed" class="feed-list"></div>
+      </div>
     </aside>
   </section>
 
@@ -391,8 +437,9 @@ const statHealth = document.getElementById('stat-health');
 const statAlerts = document.getElementById('stat-alerts');
 const statCaptures = document.getElementById('stat-captures');
 const statSkillEvals = document.getElementById('stat-skill-evals');
+const knowledgeFeedDiv = document.getElementById('knowledge-feed');
 const state = {};
-const metrics = { knowledgeCaptures: 0, skillEvals: 0 };
+const metrics = { knowledgeCaptures: 0, skillEvals: 0, recentKnowledge: [] };
 let totalEvents = 0;
 let totalHealthSignals = 0;
 let totalAlerts = 0;
@@ -410,8 +457,24 @@ es.onmessage = (e) => {
   }
 
   if (evt.type === 'safety' || evt.type === 'leader') totalAlerts += 1;
-  if (evt.type === 'knowledge-capture') metrics.knowledgeCaptures += 1;
-  if (evt.type === 'skill-eval') metrics.skillEvals += 1;
+  if (evt.type === 'knowledge-capture') {
+    metrics.knowledgeCaptures += 1;
+    pushKnowledgeFeed({
+      type: 'capture',
+      title: evt.data?.title || 'Knowledge capture',
+      outcome: evt.data?.outcome || 'passed',
+      detail: evt.data?.projectId || 'project',
+    });
+  }
+  if (evt.type === 'skill-eval') {
+    metrics.skillEvals += 1;
+    pushKnowledgeFeed({
+      type: 'skill-eval',
+      title: evt.data?.skillName || 'Skill eval',
+      outcome: evt.data?.passed ? 'passed' : 'failed',
+      detail: 'score ' + (evt.data?.score ?? '?'),
+    });
+  }
   addEvent(evt);
   renderStats();
 };
@@ -423,6 +486,7 @@ function renderStats() {
   statAlerts.textContent = totalAlerts;
   statCaptures.textContent = metrics.knowledgeCaptures;
   statSkillEvals.textContent = metrics.skillEvals;
+  renderKnowledgeFeed();
 }
 
 function renderAgents() {
@@ -467,6 +531,25 @@ function addEvent(evt) {
   div.appendChild(body);
   eventsDiv.prepend(div);
   while (eventsDiv.children.length > 120) eventsDiv.lastChild.remove();
+}
+
+function pushKnowledgeFeed(entry) {
+  metrics.recentKnowledge.unshift({ ...entry, timestamp: Date.now() });
+  metrics.recentKnowledge = metrics.recentKnowledge.slice(0, 6);
+}
+
+function renderKnowledgeFeed() {
+  if (metrics.recentKnowledge.length === 0) {
+    knowledgeFeedDiv.innerHTML = '<div class="feed-item"><div class="feed-title">No knowledge signals yet</div><div class="feed-meta">New captures and skill evaluations will appear here.</div></div>';
+    return;
+  }
+
+  knowledgeFeedDiv.innerHTML = metrics.recentKnowledge.map((entry) => {
+    return '<div class="feed-item">'
+      + '<div class="feed-title">' + escapeHtml(entry.title || entry.type) + '</div>'
+      + '<div class="feed-meta">' + escapeHtml((entry.type || 'knowledge') + ' • ' + (entry.outcome || 'n/a') + ' • ' + (entry.detail || entry.projectId || '') + ' • ' + timeAgo(entry.timestamp)) + '</div>'
+      + '</div>';
+  }).join('');
 }
 
 function timeAgo(ts) {

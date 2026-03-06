@@ -1,6 +1,6 @@
 ---
 name: automated-debugging
-description: Automated error diagnosis and fixing for Octiv agent code. Use when bots crash, Redis fails, pathfinder errors occur, or ReAct loops get stuck.
+description: Use when agent runtime failures, Redis issues, pathfinding problems, or loop stalls need a structured diagnosis and fix workflow.
 ---
 
 # Automated Debugging Skill
@@ -33,3 +33,9 @@ Diagnoses and fixes errors in the Octiv agent system.
    ```javascript
    await board.logReflexion(agentId, { error, fix, iteration });
    ```
+
+## Implementation
+
+- Triage the failure source before changing code.
+- Verify each fix with the smallest command that proves the issue moved.
+- Store repeatable failure and fix patterns in memory when they are likely to recur.

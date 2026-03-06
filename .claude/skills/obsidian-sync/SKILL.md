@@ -1,6 +1,6 @@
 ---
 name: obsidian-sync
-description: Obsidian vault sync and management for the Octiv command center. Keeps Dashboard.md and Session-Sync.md current, manages reasoning traces, and stores NotebookLM knowledge.
+description: Use when syncing the Obsidian vault, updating operational notes, cleaning reasoning traces, or storing grounded NotebookLM knowledge in Kingdom memory.
 ---
 
 # Obsidian Sync Skill
@@ -92,3 +92,9 @@ tags: [research, agents, coordination]
 - [[02-Agents/Architecture]]
 - [[04-Skills/atomic/buildShelter]]
 ```
+
+## Implementation
+
+- Keep vault state aligned with runtime truth, not stale session assumptions.
+- Save grounded research notes with enough metadata to be reusable later.
+- Use this skill to maintain memory quality, not just to write files mechanically.

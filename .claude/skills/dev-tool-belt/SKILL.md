@@ -1,6 +1,6 @@
 ---
 name: dev-tool-belt
-description: Development tools and GitHub operations for Kingdom — tests, Docker, git, GitHub CLI, and runtime support commands.
+description: Use when running routine Kingdom development commands for tests, Docker, git, GitHub CLI, or local runtime support.
 ---
 
 # Dev Tool Belt Skill
@@ -57,3 +57,9 @@ node --env-file=.env agent/interface/dashboard.js
 node --env-file=.env agent/team/pm-agent.js
 npm install                  # install dependencies
 ```
+
+## Implementation
+
+- Prefer project scripts over ad hoc commands when both exist.
+- Use this skill as a command index, not as a substitute for targeted verification skills.
+- After changing system state, follow with the narrowest verification command that proves the result.

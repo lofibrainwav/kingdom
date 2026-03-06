@@ -1,6 +1,6 @@
 ---
 name: weather
-description: Legacy Minecraft adapter weather and time skill. Use only when explicitly working on the original Kingdom sandbox adapter.
+description: Use when working on the legacy Minecraft adapter and in-game time or weather controls affect testing, safety, or mission timing.
 ---
 
 # Weather Skill
@@ -38,3 +38,9 @@ It is not part of the default real-world Kingdom operating model.
    - 1 real minute ≈ 17 game minutes (default)
 
 4. **Agent decision**: If time > 11000, prioritize shelter (AC-2/AC-4) over wood.
+
+## Implementation
+
+- Use these controls only inside the legacy adapter workflow.
+- Prefer deterministic test conditions when validating the Minecraft origin mission.
+- Keep weather/time mutations out of core Kingdom runtime assumptions.

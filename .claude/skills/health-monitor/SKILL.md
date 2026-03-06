@@ -1,6 +1,6 @@
 ---
 name: health-monitor
-description: Monitor health of Kingdom infrastructure — Blackboard, agent workflows, knowledge sync paths, and optional legacy adapters. Use to diagnose system-state issues before deeper debugging.
+description: Use when checking Kingdom infrastructure health, workflow readiness, knowledge sync status, or legacy adapter availability before deeper debugging.
 ---
 
 # Health Monitor Skill
@@ -49,3 +49,9 @@ Monitors the Kingdom operating system infrastructure.
 - Test baseline red: fix suite before trusting new runtime refactors
 - Knowledge sync stale: verify Obsidian path, NotebookLM auth, and latest docs
 - Legacy adapter unavailable: only relevant for Minecraft-specific tasks
+
+## Implementation
+
+- Start with infrastructure reachability before reading application logs.
+- Confirm Blackboard and process health before blaming runtime code.
+- Treat legacy adapter checks as optional unless the task explicitly depends on them.

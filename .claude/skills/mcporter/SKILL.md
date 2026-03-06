@@ -1,6 +1,6 @@
 ---
 name: mcporter
-description: Legacy Minecraft adapter skill. Use only when explicitly working on the original Kingdom sandbox, bot control, or adapter maintenance.
+description: Use when explicitly working on the legacy Minecraft adapter, bot control flows, or maintenance of the original Kingdom sandbox integration.
 ---
 
 # MCPorter Skill
@@ -58,3 +58,9 @@ docker compose up -d minecraft
 # RCON commands
 docker exec octiv-mc rcon-cli gamemode creative OctivBot_builder-01
 ```
+
+## Implementation
+
+- Treat this skill as a legacy adapter guide, not a default runtime path.
+- Keep adapter changes isolated from core Kingdom orchestration and knowledge-plane work.
+- Port reusable ideas out of this adapter instead of expanding Minecraft-specific dependencies in core flows.

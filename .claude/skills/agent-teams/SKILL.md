@@ -1,6 +1,6 @@
 ---
 name: agent-teams
-description: Multi-agent orchestration for parallel browser profiles and complex sequential tasks. Main agent distributes sub-tasks to sub-agents via MCP. Guarantees sequential execution with 87-94% success rate on complex workflows.
+description: Use when orchestrating multiple agents across parallel browser profiles, coordinated sub-tasks, or long workflows that should be decomposed into isolated execution units.
 ---
 
 # Agent Teams
@@ -114,3 +114,9 @@ board.subscribe('octiv:agent-teams:result', (data) => {
 → 여러 BMAD 페르소나가 동시에 분석
 → 합의된 결정 → Blackboard에 브로드캐스트
 ```
+
+## Implementation
+
+- Use this skill when one agent should orchestrate multiple isolated execution contexts.
+- Prefer explicit task ownership, progress events, and result synthesis over implicit coordination.
+- Route durable decisions back through Blackboard and the knowledge plane after execution completes.

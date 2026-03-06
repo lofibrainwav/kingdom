@@ -1,6 +1,6 @@
 ---
 name: chrome-browser-control
-description: DOM-based Chrome browser automation via Playwright MCP. 3-5x more accurate than vision-only. Handles clicks, form input, JS execution, multi-tab management.
+description: Use when browser work needs DOM-aware Chrome automation, reliable form interaction, scripted page control, or multi-tab execution through Playwright MCP.
 ---
 
 # Chrome Browser Control
@@ -102,3 +102,9 @@ browser_evaluate script="JSON.stringify(Array.from(document.querySelectorAll('td
 4. 최종 보고서 작성 후 완료
 → agent-teams 스킬과 조합하면 병렬 처리 가능
 ```
+
+## Implementation
+
+- Start from a browser snapshot before each state-changing action.
+- Use DOM references plus page context, not guesswork.
+- Confirm every navigation, click, and input before moving to the next step.

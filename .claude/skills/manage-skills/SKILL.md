@@ -1,6 +1,6 @@
 ---
 name: manage-skills
-description: Analyzes session changes, detects missing verify-* skill coverage, creates or updates verification skills, and keeps CLAUDE.md in sync. Run after implementing a new feature or pattern.
+description: Use when feature work, new patterns, or file movement may have created drift between the codebase, verify skills, and CLAUDE.md references.
 argument-hint: "[optional: specific skill name or area to focus on]"
 ---
 
@@ -15,7 +15,7 @@ Analyze changes made in the current session to detect and fix verification skill
 3. **Missing checks** — new patterns not covered by existing checks
 4. **Stale values** — config values or detection commands that no longer match
 
-## When to Run
+## When to Use
 - After implementing a feature that introduces new patterns or rules
 - Before a PR to ensure verify skills cover changed areas
 - When a verify run misses issues you expected to catch

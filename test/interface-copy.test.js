@@ -12,6 +12,8 @@ describe('Interface Copy', () => {
     assert.match(DASHBOARD_HTML, /Governance Plane/);
     assert.match(DASHBOARD_HTML, /Knowledge Captures/);
     assert.match(DASHBOARD_HTML, /Skill Evals/);
+    assert.match(DASHBOARD_HTML, /Knowledge Feed/);
+    assert.match(DASHBOARD_HTML, /Recent captures and skill evaluation outcomes/);
   });
 
   it('discord help copy should reference the Kingdom operating system', () => {

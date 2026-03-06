@@ -1,6 +1,6 @@
 ---
 name: verify-implementation
-description: Runs all registered verify-* skills sequentially and generates an integrated validation report. Use before PRs, after major feature work, or for periodic codebase audits.
+description: Use when preparing a release, PR, or major checkpoint and you need one integrated pass across all registered verify skills.
 ---
 
 # Integrated Verification
@@ -14,7 +14,7 @@ Orchestrates all registered verify skills to produce a comprehensive validation 
 3. **Fix suggestions** — recommends corrections for failures
 4. **Re-validation** — confirms fixes resolved issues
 
-## When to Run
+## When to Use
 - Before creating a pull request
 - After implementing a new AC task
 - When CI fails and root cause is unclear

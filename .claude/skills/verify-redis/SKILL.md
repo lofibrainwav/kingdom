@@ -1,6 +1,6 @@
 ---
 name: verify-redis
-description: Verifies Redis connection patterns, port configuration, and channel naming conventions in the Octiv codebase. Run after any changes to agent files or Redis-related code.
+description: Use when Redis-related code changes and you need to verify port configuration, connection safety, channel conventions, and Blackboard ownership boundaries.
 ---
 
 # Redis Verification
@@ -12,7 +12,7 @@ description: Verifies Redis connection patterns, port configuration, and channel
 3. **Error handling** — Redis connections must have error listeners
 4. **Connection lifecycle** — clients must be properly connected and closed
 
-## When to Run
+## When to Use
 - After modifying `agent/blackboard.js`
 - After adding new Redis client usage in any agent file
 - When CI fails with ECONNREFUSED or WRONGTYPE errors
