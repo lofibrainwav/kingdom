@@ -117,6 +117,8 @@ class KingdomDiscordBot {
   }
 
   async stop() {
+    this._stopping = true;
+    if (this._reconnectTimer) clearTimeout(this._reconnectTimer);
     if (this.subscriber) await this.subscriber.disconnect();
     if (this.board) await this.board.disconnect();
     if (this.client) this.client.destroy();
@@ -126,6 +128,7 @@ class KingdomDiscordBot {
   // --- Reconnection ---
 
   async _reconnect() {
+    if (this._stopping) return;
     if (this._reconnectAttempts >= T.MAX_RECONNECT_ATTEMPTS) {
       log.error('discord', 'max reconnect attempts reached, giving up');
       return;
@@ -136,7 +139,8 @@ class KingdomDiscordBot {
       T.DISCORD_RECONNECT_CAP_MS
     );
     log.info('discord', `reconnect attempt ${this._reconnectAttempts}/${T.MAX_RECONNECT_ATTEMPTS} in ${delay}ms`);
-    await new Promise(r => setTimeout(r, delay));
+    await new Promise(r => { this._reconnectTimer = setTimeout(r, delay); });
+    if (this._stopping) return;
     try {
       await this.client.login(this.token);
       this._reconnectAttempts = 0;

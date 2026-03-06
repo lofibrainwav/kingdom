@@ -155,7 +155,7 @@ class SkillZettelkasten {
 
     if (tieredUp) {
       log.info('zettelkasten', `TIER UP: ${note.id} → ${note.tier} (XP: ${note.xp})`);
-      await this.board.publish(`${ZK_PREFIX}:tier-up`, {
+      await this.board.publish('knowledge:zettelkasten:tier-up', {
         author: 'zettelkasten',
         skill: note.id,
         oldTier,
@@ -295,7 +295,7 @@ class SkillZettelkasten {
     await this._writeVaultNote(compound, 'compound');
 
     // Publish compound creation event
-    await this.board.publish(`${ZK_PREFIX}:compound-created`, {
+    await this.board.publish('knowledge:zettelkasten:compound-created', {
       author: 'zettelkasten',
       compound: compound.id,
       sources: [skillIdA, skillIdB],

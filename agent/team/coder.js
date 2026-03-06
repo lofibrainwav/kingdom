@@ -69,8 +69,12 @@ class CoderAgent {
         const fileName = `task_${task.id.replace(/\s+/g, '_')}.js`;
         await fsp.writeFile(path.join(projectPath, fileName), codeResponse);
 
-        // 3. Mark Task as Done in Blackboard
-        await this.board.setConfig(`${projectId}:task:${task.id}:done`, {
+        // 3. Mark Task as Done in Blackboard (uses tasks: prefix for TaskRunner compatibility)
+        await this.board.setConfig(`tasks:${projectId}:${task.id}`, {
+          projectId,
+          taskId: task.id,
+          goal: task.description,
+          status: 'review-requested',
           completedAt: Date.now(),
           file: fileName,
           continuationTaskId,

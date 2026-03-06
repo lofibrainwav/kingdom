@@ -116,7 +116,7 @@ describe('Planning Continuation Metadata', () => {
       retryGuardrail: 'missing-evidence',
     });
 
-    const stored = configs.get('kingdom:task:T1:done');
+    const stored = configs.get('tasks:kingdom:T1');
     assert.equal(stored.continuationTaskId, 'TASK-501');
     assert.equal(stored.retry, true);
     assert.equal(stored.retryGuardrail, 'missing-evidence');

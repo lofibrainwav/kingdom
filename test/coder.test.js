@@ -111,9 +111,9 @@ describe('CoderAgent', () => {
     // Files written
     assert.equal(writtenFiles.length, 2);
 
-    // Config saved for each task
-    assert.ok(configs.has('project:app-01:task:T1:done'));
-    assert.ok(configs.has('project:app-01:task:T2:done'));
+    // Config saved for each task (uses tasks: prefix for TaskRunner compatibility)
+    assert.ok(configs.has('tasks:project:app-01:T1'));
+    assert.ok(configs.has('tasks:project:app-01:T2'));
 
     // Review requested for each task
     assert.equal(published.length, 2);

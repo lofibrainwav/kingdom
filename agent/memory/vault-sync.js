@@ -227,6 +227,10 @@ class VaultAgent {
     const { projectId, taskId, category, guardrail } = typeof message === 'string' ? JSON.parse(message) : message;
     await addDashboardLink('Learning Wall', `[[${projectId}]] - ${category} failure on ${taskId}. Guardrail: \`${guardrail}\``);
   }
+
+  async shutdown() {
+    if (this.subscriber) await this.subscriber.disconnect();
+  }
 }
 
 module.exports = { 
