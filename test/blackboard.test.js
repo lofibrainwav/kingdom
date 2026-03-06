@@ -166,8 +166,7 @@ describe('Blackboard — Redis Integration', () => {
       quit: async () => { throw new Error('quit error'); }, // lines 40-41
       disconnect: async () => { throw new Error('disconnect error'); } // 44-45
     };
-    await errorBoard.disconnect();
-    assert.ok(1);
+    await assert.doesNotReject(() => errorBoard.disconnect());
   });
 
   it('reconnectStrategy should cap at MAX attempts', () => {

@@ -112,7 +112,7 @@ class KingdomDiscordBot {
     });
     this.client.on('disconnect', () => {
       log.warn('discord', 'disconnected, attempting reconnect');
-      this._reconnect();
+      this._reconnect().catch(err => log.error('discord', 'reconnect error', { error: err.message }));
     });
   }
 
@@ -143,7 +143,7 @@ class KingdomDiscordBot {
       log.info('discord', 'reconnected successfully');
     } catch (err) {
       log.error('discord', 'reconnect failed', { error: err.message });
-      this._reconnect();
+      this._reconnect().catch(e => log.error('discord', 'recursive reconnect error', { error: e.message }));
     }
   }
 

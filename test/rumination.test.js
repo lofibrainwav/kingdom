@@ -392,8 +392,7 @@ describe('RuminationEngine — init and start cycle', () => {
     engine.logger = { info: () => {} };
     engine.digest = async () => { throw new Error('periodic testing error'); };
 
-    await digestCb();
-    await new Promise(setImmediate); // Wait for the background promise to settle
-    assert.ok(1); // the global log.error catches the error
+    await assert.doesNotReject(() => digestCb());
+    await new Promise(setImmediate);
   });
 });

@@ -30,7 +30,9 @@ class MemoryLogger {
     const filePath = path.join(this.logDir, `${agentId}.jsonl`);
     try {
       const data = await fsp.readFile(filePath, 'utf-8');
-      return data.trim().split('\n').filter(Boolean).map(line => JSON.parse(line));
+      return data.trim().split('\n').filter(Boolean).map(line => {
+        try { return JSON.parse(line); } catch { return null; }
+      }).filter(Boolean);
     } catch (err) {
       if (err.code === 'ENOENT') return [];
       throw err;

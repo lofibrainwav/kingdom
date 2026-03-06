@@ -7,7 +7,7 @@
  */
 const { Blackboard } = require('../core/blackboard');
 const { getLogger } = require('../core/logger');
-const { execSync } = require('child_process');
+const cp = require('child_process');
 const path = require('path');
 const log = getLogger();
 
@@ -44,12 +44,11 @@ class DeployerAgent {
       log.info(this.agentId, `Deploying project ${projectId}: ${goal}`);
       await this.updateStatus('deploying', `Committing ${projectId}`);
 
-      // 1. Git Commit & Push
+      // 1. Git Commit & Push (using execFileSync to prevent shell injection)
       const msg = `🚀 Deploy: ${projectId} - ${goal}`;
-      execSync(`git add . && git commit -m "${msg}" && git push origin main`, {
-        cwd: this.projectRoot,
-        stdio: 'inherit'
-      });
+      cp.execFileSync('git', ['add', '.'], { cwd: this.projectRoot, stdio: 'inherit' });
+      cp.execFileSync('git', ['commit', '-m', msg], { cwd: this.projectRoot, stdio: 'inherit' });
+      cp.execFileSync('git', ['push', 'origin', 'main'], { cwd: this.projectRoot, stdio: 'inherit' });
 
       // 2. Mark as Deployed in Blackboard
       await this.board.setConfig(`${projectId}:status`, 'deployed');

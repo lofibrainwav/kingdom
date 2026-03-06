@@ -230,7 +230,9 @@ class Blackboard {
   async get(channel) {
     for (const entry of this._getChannelFamily(channel)) {
       const val = await this.client.get(PREFIX + entry + ':latest');
-      if (val) return JSON.parse(val);
+      if (val) {
+        try { return JSON.parse(val); } catch { return null; }
+      }
     }
     return null;
   }
@@ -342,7 +344,11 @@ class Blackboard {
         return null;
       }
 
-      const skill = JSON.parse(raw);
+      let skill;
+      try { skill = JSON.parse(raw); } catch {
+        await this.client.unwatch();
+        return null;
+      }
       const updated = updateFn(skill);
       if (!updated) {
         await this.client.unwatch();
@@ -414,7 +420,8 @@ class Blackboard {
    */
   async getConfig(key) {
     const raw = await this.client.get(PREFIX + key);
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) return null;
+    try { return JSON.parse(raw); } catch { return null; }
   }
 
   /**
@@ -434,10 +441,12 @@ class Blackboard {
     for (const fullKey of keys.sort()) {
       const raw = await this.client.get(fullKey);
       if (!raw) continue;
-      results.push({
-        key: this._stripPrefix(fullKey),
-        value: JSON.parse(raw),
-      });
+      try {
+        results.push({
+          key: this._stripPrefix(fullKey),
+          value: JSON.parse(raw),
+        });
+      } catch { /* skip corrupt entries */ }
     }
 
     return results;
@@ -485,7 +494,8 @@ class Blackboard {
    */
   async getHashField(key, field) {
     const raw = await this.client.hGet(PREFIX + key, field);
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) return null;
+    try { return JSON.parse(raw); } catch { return null; }
   }
 
   /**

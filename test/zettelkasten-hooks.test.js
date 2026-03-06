@@ -210,10 +210,8 @@ describe('ZettelkastenHooks - Unit Tests & Coverage', () => {
 
       // Trigger error in GoT Feedback
       leader.processGoTFeedback = async () => { throw new Error('GoT Feedback Error'); };
-      await leader.triggerGroupReflexion();
-      // Wait for processGoTFeedback unhandled rejection to fire on the macro-queue
+      await assert.doesNotReject(() => leader.triggerGroupReflexion());
       await new Promise(r => setTimeout(r, 20));
-      assert.ok(1);
     });
 
     it('wireToSkillPipeline should create atomic note on deploy', async () => {

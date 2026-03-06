@@ -82,13 +82,13 @@ describe('Test Quality — Banned Patterns', () => {
         // Match assert.ok(true) but not inside comments or strings describing the rule
         const trimmed = line.trim();
         if (trimmed.startsWith('//') || trimmed.startsWith('*')) return;
-        if (/assert\.ok\(\s*true\s*[,)]/.test(line)) {
+        if (/assert\.ok\(\s*(true|1)\s*[,)]/.test(line)) {
           violations.push(`${file.name}:${i + 1}: ${trimmed}`);
         }
       });
     }
     assert.equal(violations.length, 0,
-      `Found assert.ok(true) — unconditionally-passing tests:\n${violations.join('\n')}`);
+      `Found assert.ok(true/1) — unconditionally-passing tests:\n${violations.join('\n')}`);
   });
 
   it('NO eval() or new Function() in test files', () => {

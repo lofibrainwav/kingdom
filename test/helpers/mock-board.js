@@ -48,9 +48,9 @@ function createMockBoard() {
     },
 
     batchGet: async (channels) => {
-      const results = {};
+      const results = [];
       for (const ch of channels) {
-        results[ch] = await board.get(ch);
+        results.push(await board.get(ch));
       }
       return results;
     },

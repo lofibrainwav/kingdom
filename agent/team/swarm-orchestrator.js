@@ -68,16 +68,20 @@ class SwarmOrchestrator {
   }
 
   async handleTerminate(message) {
-    const { swarmId } = typeof message === 'string' ? JSON.parse(message) : message;
-    log.info(this.agentId, `Terminating swarm ${swarmId}`);
-    
-    for (const [id, proc] of this.children.entries()) {
-      if (id.startsWith(swarmId)) {
-        proc.kill();
-        this.children.delete(id);
+    try {
+      const { swarmId } = typeof message === 'string' ? JSON.parse(message) : message;
+      log.info(this.agentId, `Terminating swarm ${swarmId}`);
+
+      for (const [id, proc] of this.children.entries()) {
+        if (id.startsWith(swarmId)) {
+          proc.kill();
+          this.children.delete(id);
+        }
       }
+      await this.board.setHashField('swarms', swarmId + ':status', 'terminated');
+    } catch (err) {
+      log.error(this.agentId, 'Swarm terminate failed', { error: err.message });
     }
-    await this.board.setHashField('swarms', swarmId + ':status', 'terminated');
   }
 
   async updateStatus(state, details) {

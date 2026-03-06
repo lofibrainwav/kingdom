@@ -286,9 +286,7 @@ describe('vault-sync — generic error fallback', () => {
     const { addDashboardLink } = require('../agent/memory/vault-sync');
     const fsp = require('fs').promises;
     mock.method(fsp, 'readFile', async () => { throw new Error('mock err'); });
-    await addDashboardLink('Recent', 'link[]');
-    // wait a tick because no returned promise if it doesn't throw synchronous error (but it is async so it will)
-    assert.ok(1);
+    await assert.doesNotReject(() => addDashboardLink('Recent', 'link[]'));
     mock.restoreAll();
   });
 });
