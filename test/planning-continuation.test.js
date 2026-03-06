@@ -71,7 +71,7 @@ describe('Planning Continuation Metadata', () => {
     };
     decomposer.got = {
       init: async () => {},
-      resolveSynergy: async () => ({ path: 'recover' }),
+      discoverSynergies: async () => ({ path: 'recover' }),
     };
 
     await decomposer.handleDesignComplete({

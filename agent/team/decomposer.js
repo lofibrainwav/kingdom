@@ -48,8 +48,7 @@ class DecomposerAgent {
       await this.updateStatus('decomposing', `Generating GoT for: ${projectId}`);
 
       // 1. Generate Task Tree via GoT Reasoner
-      // (Simplified here: calling GoT to find optimal task synergy)
-      const graph = await this.got.resolveSynergy(goal, architecture);
+      const graph = await this.got.discoverSynergies();
       
       // 2. Format into Task List for Coder
       const tasks = await this.llm.callLLM(

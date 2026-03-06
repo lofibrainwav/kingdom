@@ -45,7 +45,7 @@ describe('DecomposerAgent', () => {
 
     got = {
       init: async () => {},
-      resolveSynergy: async () => ({ nodes: ['setup', 'build'], edges: [] }),
+      discoverSynergies: async () => ({ nodes: ['setup', 'build'], edges: [] }),
     };
 
     agent = new DecomposerAgent();
@@ -73,10 +73,9 @@ describe('DecomposerAgent', () => {
     let gotCalled = false;
     let llmCalled = false;
 
-    got.resolveSynergy = async (goal, _arch) => {
+    got.discoverSynergies = async () => {
       gotCalled = true;
-      assert.equal(goal, 'Build a CLI tool');
-      return { nodes: ['parse', 'execute'], edges: [{ from: 'parse', to: 'execute' }] };
+      return [{ skillA: 'parse', skillB: 'execute', score: 0.8, reason: 'complementary' }];
     };
 
     llm.callLLM = async () => {
