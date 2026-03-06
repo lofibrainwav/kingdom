@@ -259,6 +259,46 @@ class DashboardServer {
       } catch {}
     });
 
+    // Work plane — pipeline progress visibility
+    this.subscriber.subscribe('work:intake', (message) => {
+      try {
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
+        this._broadcast({ type: 'work-intake', channel: 'work:intake', data });
+      } catch {}
+    });
+    this.subscriber.subscribe('work:planning:init', (message) => {
+      try {
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
+        this._broadcast({ type: 'work-planning-init', channel: 'work:planning:init', data });
+      } catch {}
+    });
+    this.subscriber.subscribe('work:planning:designed', (message) => {
+      try {
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
+        this._broadcast({ type: 'work-planning-designed', channel: 'work:planning:designed', data });
+      } catch {}
+    });
+    this.subscriber.subscribe('work:planning:decomposed', (message) => {
+      try {
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
+        this._broadcast({ type: 'work-planning-decomposed', channel: 'work:planning:decomposed', data });
+      } catch {}
+    });
+
+    // Execution plane — deployment + watchdog visibility
+    this.subscriber.subscribe('execution:deployment:completed', (message) => {
+      try {
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
+        this._broadcast({ type: 'deployment-completed', channel: 'execution:deployment:completed', data });
+      } catch {}
+    });
+    this.subscriber.subscribe('governance:watchdog:recovery', (message) => {
+      try {
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
+        this._broadcast({ type: 'watchdog-recovery', channel: 'governance:watchdog:recovery', data });
+      } catch {}
+    });
+
     this.subscriber.pSubscribe('knowledge:reflexion:*', (message, channel) => {
       try {
         const data = typeof message === 'string' ? JSON.parse(message) : message;

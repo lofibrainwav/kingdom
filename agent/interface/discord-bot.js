@@ -234,24 +234,6 @@ class KingdomDiscordBot {
       }
     });
 
-    // Builder arrived at destination -> #neostarz-live
-    this.subscriber.subscribe('builder:arrived', (message) => {
-      try {
-        this._postMilestoneEmbed(typeof message === 'string' ? JSON.parse(message) : message);
-      } catch (err) {
-        log.error('discord', 'failed to parse arrived message', { error: err.message });
-      }
-    });
-
-    // Builder collecting resources -> #neostarz-live
-    this.subscriber.subscribe('builder:collecting', (message) => {
-      try {
-        this._postMilestoneEmbed(typeof message === 'string' ? JSON.parse(message) : message);
-      } catch (err) {
-        log.error('discord', 'failed to parse collecting message', { error: err.message });
-      }
-    });
-
     // Safety threats -> #neostarz-alerts
     this.subscriber.subscribe('governance:safety:threat', (message) => {
       try {
@@ -650,7 +632,7 @@ class KingdomDiscordBot {
 
   async _cmdReflexion(msg) {
     try {
-      await this.board.publish('commands:reflexion', {
+      await this.board.publish('knowledge:reflexion:triggered', {
         author: 'discord-bot',
         trigger: 'manual',
         requestedBy: msg.author.tag,
