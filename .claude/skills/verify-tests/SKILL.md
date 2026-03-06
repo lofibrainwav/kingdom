@@ -22,7 +22,7 @@ Verify that the Kingdom test suite is healthy and all agent files have coverage.
    - Flag any test files that had failures
 
 2. Validate thresholds:
-   - Total tests ≥ 333
+   - Total tests ≥ 341
    - Failed = 0
    - Test files ≥ 38
 
@@ -87,7 +87,7 @@ Verify that the Kingdom test suite is healthy and all agent files have coverage.
 
 4. Report:
 ```
-✅ Tests: 333 pass / 0 fail / 0 skip (38 files)
+✅ Tests: 341 pass / 0 fail / 0 skip (38 files)
 ✅ Coverage: 28/29 agent files have tests (discord-bot exempt)
 ⚠️  Missing: [list any uncovered files]
 ```
