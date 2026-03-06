@@ -32,7 +32,14 @@ class ArchitectAgent {
 
   async handleProjectInit(message) {
     try {
-      const { projectId, goal } = typeof message === 'string' ? JSON.parse(message) : message;
+      const {
+        projectId,
+        goal,
+        taskId = null,
+        retry = false,
+        retryCategory = null,
+        retryGuardrail = null,
+      } = typeof message === 'string' ? JSON.parse(message) : message;
       log.info(this.agentId, `Architecting project ${projectId}: ${goal}`);
       await this.updateStatus('designing', `Architecting: ${projectId}`);
 
@@ -47,14 +54,22 @@ class ArchitectAgent {
       await this.board.setConfig(`${projectId}:architecture`, {
         design: context,
         status: 'designed',
-        designedAt: Date.now()
+        designedAt: Date.now(),
+        taskId,
+        retry,
+        retryCategory,
+        retryGuardrail,
       });
 
       // 3. Trigger Decomposer to break down tasks
       await this.board.publish('work:planning:designed', {
         projectId,
         goal,
-        architecture: context
+        architecture: context,
+        taskId,
+        retry,
+        retryCategory,
+        retryGuardrail,
       });
 
       log.info(this.agentId, `Architecture for ${projectId} completed`);

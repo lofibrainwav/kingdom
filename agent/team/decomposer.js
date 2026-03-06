@@ -8,14 +8,14 @@
 const { Blackboard } = require('../core/blackboard');
 const { getLogger } = require('../core/logger');
 const { ReflexionEngine } = require('../core/ReflexionEngine');
-const { GOTReasoner } = require('../memory/got-reasoner');
+const { GoTReasoner } = require('../memory/got-reasoner');
 const log = getLogger();
 
 class DecomposerAgent {
   constructor() {
     this.board = new Blackboard();
     this.llm = new ReflexionEngine();
-    this.got = new GOTReasoner();
+    this.got = new GoTReasoner();
     this.agentId = 'Octiv_Decomposer';
   }
 
@@ -35,7 +35,15 @@ class DecomposerAgent {
 
   async handleDesignComplete(message) {
     try {
-      const { projectId, goal, architecture } = typeof message === 'string' ? JSON.parse(message) : message;
+      const {
+        projectId,
+        goal,
+        architecture,
+        taskId = null,
+        retry = false,
+        retryCategory = null,
+        retryGuardrail = null,
+      } = typeof message === 'string' ? JSON.parse(message) : message;
       log.info(this.agentId, `Decomposing project ${projectId}: ${goal}`);
       await this.updateStatus('decomposing', `Generating GoT for: ${projectId}`);
 
@@ -55,14 +63,22 @@ class DecomposerAgent {
       await this.board.setConfig(`${projectId}:tasks`, {
         plan: tasks,
         status: 'decomposed',
-        decomposedAt: Date.now()
+        decomposedAt: Date.now(),
+        taskId,
+        retry,
+        retryCategory,
+        retryGuardrail,
       });
 
       // 4. Trigger Coder to start working
       await this.board.publish('work:planning:decomposed', {
         projectId,
         goal,
-        tasks
+        tasks,
+        taskId,
+        retry,
+        retryCategory,
+        retryGuardrail,
       });
 
       log.info(this.agentId, `Decomposition for ${projectId} completed`);

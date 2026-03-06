@@ -35,7 +35,15 @@ class CoderAgent {
 
   async handlePlanComplete(message) {
     try {
-      const { projectId, goal, tasks } = typeof message === 'string' ? JSON.parse(message) : message;
+      const {
+        projectId,
+        goal,
+        tasks,
+        taskId: continuationTaskId = null,
+        retry = false,
+        retryCategory = null,
+        retryGuardrail = null,
+      } = typeof message === 'string' ? JSON.parse(message) : message;
       log.info(this.agentId, `Starting build for project ${projectId}: ${goal}`);
       
       const projectPath = path.join(this.baseWorkspace, projectId.replace(/:/g, '_'));
@@ -64,7 +72,11 @@ class CoderAgent {
         // 3. Mark Task as Done in Blackboard
         await this.board.setConfig(`${projectId}:task:${task.id}:done`, {
           completedAt: Date.now(),
-          file: fileName
+          file: fileName,
+          continuationTaskId,
+          retry,
+          retryCategory,
+          retryGuardrail,
         });
 
         // 4. Trigger Reviewer for this task
@@ -72,7 +84,11 @@ class CoderAgent {
           projectId,
           taskId: task.id,
           file: fileName,
-          content: codeResponse
+          content: codeResponse,
+          continuationTaskId,
+          retry,
+          retryCategory,
+          retryGuardrail,
         });
       }
 
