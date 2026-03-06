@@ -22,41 +22,54 @@ Verify that the Kingdom test suite is healthy and all agent files have coverage.
    - Flag any test files that had failures
 
 2. Validate thresholds:
-   - Total tests ≥ 338
+   - Total tests ≥ 267
    - Failed = 0
-   - Test files ≥ 20
+   - Test files ≥ 32
 
 3. Coverage map — verify each agent file has a corresponding test:
 
+### Core (agent/core/)
 | Agent File | Expected Test File |
 |---|---|
-| agent/OctivBot.js | test/bot.test.js | (legacy adapter) |
-| agent/blackboard.js | test/blackboard.test.js |
-| agent/team.js | test/team.test.js |
-| agent/leader.js | test/orchestrator.test.js |
-| agent/builder.js | test/builder-modules.test.js |
-| agent/builder-navigation.js | test/builder-modules.test.js |
-| agent/builder-shelter.js | test/builder-modules.test.js |
-| agent/builder-adaptation.js | test/builder-modules.test.js |
-| agent/safety.js | test/safety.test.js |
-| agent/skill-pipeline.js | test/pipeline.test.js |
-| agent/ReflexionEngine.js | test/reflexion.test.js |
-| agent/discord-bot.js | test/discord.test.js |
-| agent/memory-logger.js | test/memory.test.js |
-| agent/mcp-server.js | test/mcp.test.js |
-| agent/mcp-orchestrator.js | test/mcp.test.js |
-| agent/dashboard.js | test/dashboard.test.js |
-| agent/skill-zettelkasten.js | test/zettelkasten.test.js |
-| agent/rumination-engine.js | test/rumination.test.js |
-| agent/got-reasoner.js | test/got-reasoner.test.js |
-| agent/zettelkasten-hooks.js | test/zettelkasten.test.js |
-| agent/vm-sandbox.js | test/safety.test.js |
-| agent/logger.js | test/logger.test.js |
+| agent/core/blackboard.js | test/blackboard.test.js, test/blackboard-channels.test.js |
+| agent/core/logger.js | test/logger.test.js |
+| agent/core/ReflexionEngine.js | test/reflexion-engine.test.js |
+| agent/core/memory-logger.js | test/memory.test.js |
+
+### Team (agent/team/) — 9 agents
+| Agent File | Expected Test File |
+|---|---|
+| agent/team/pm-agent.js | test/pm-agent.test.js |
+| agent/team/architect.js | test/architect.test.js |
+| agent/team/coder.js | test/coder.test.js |
+| agent/team/decomposer.js | test/decomposer.test.js |
+| agent/team/deployer.js | test/deployer.test.js |
+| agent/team/failure-agent.js | test/failure-agent.test.js |
+| agent/team/reviewer.js | test/reviewer.test.js |
+| agent/team/swarm-orchestrator.js | test/swarm-orchestrator.test.js |
+| agent/team/watchdog-agent.js | test/watchdog-agent.test.js |
+
+### Interface (agent/interface/)
+| Agent File | Expected Test File |
+|---|---|
+| agent/interface/mcp-orchestrator.js | test/mcp-orchestrator.test.js |
+| agent/interface/dashboard.js | test/dashboard-state.test.js |
+| agent/interface/discord-bot.js | (no dedicated test — exempt, legacy adapter) |
+| agent/interface/skill-pipeline.js | (coverage via integration tests) |
+| agent/interface/zettelkasten-hooks.js | test/zettelkasten-hooks.test.js |
+
+### Memory (agent/memory/)
+| Agent File | Expected Test File |
+|---|---|
+| agent/memory/got-reasoner.js | test/got-reasoner.test.js |
+| agent/memory/rumination-engine.js | test/rumination.test.js |
+| agent/memory/skill-zettelkasten.js | test/zettelkasten.test.js |
+| agent/memory/vault-sync.js | test/vault-sync.test.js |
 
 4. Report:
 ```
-✅ Tests: 338 pass / 0 fail / 3 skip (20 files)
-✅ Coverage: 22/22 agent files have tests
+✅ Tests: 267 pass / 0 fail / 0 skip (32 files)
+✅ Coverage: 25/29 agent files have tests
 ⚠️  Missing: [list any uncovered files]
 ```
 

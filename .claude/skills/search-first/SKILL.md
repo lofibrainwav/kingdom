@@ -66,12 +66,14 @@ Read: existing utility files (agent/*.js, config/*.js)
 ## Kingdom-Specific Search Locations
 | What | Where to look |
 |------|---------------|
-| Bot utilities | `agent/OctivBot.js` (legacy adapter), `agent/team.js` |
-| Redis operations | `agent/blackboard.js` |
-| Logging | `agent/logger.js` |
+| Team agents | `agent/team/*.js` (9 agents) |
+| Redis / Blackboard | `agent/core/blackboard.js` |
+| Logging | `agent/core/logger.js` |
 | Timeout constants | `config/timeouts.js` |
-| Safety checks | `agent/safety.js`, `agent/vm-sandbox.js` |
-| Test helpers | `test/*.test.js` (shared setup patterns) |
+| Knowledge layer | `agent/memory/*.js` (GoT, rumination, zettelkasten, vault-sync) |
+| Interfaces | `agent/interface/*.js` (dashboard, discord, MCP, skill-pipeline) |
+| Test helpers | `test/*.test.js` (shared mock board pattern) |
+| Legacy adapter | `agent/OctivBot.js` (Minecraft only) |
 
 ## Implementation
 
@@ -84,4 +86,4 @@ Read: existing utility files (agent/*.js, config/*.js)
 - Writing a helper that duplicates `lodash`/`underscore` functionality
 - Creating a new file when the function belongs in an existing module
 - Importing a large library for one small function
-- Not checking if mineflayer already provides the needed API
+- Not checking if an existing agent/core module already provides the needed API

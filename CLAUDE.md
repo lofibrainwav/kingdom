@@ -88,7 +88,7 @@ Choose the right pattern for the task at hand:
 
 ### When unsure → `kingdom-orchestrator`
 
-### Agents (13 logical modules, 24 core + 3 role files)
+### Agents (13 logical modules — 9 team + 4 core/interface/memory)
 | Agent | One-liner |
 |-------|-----------|
 | `kingdom-orchestrator` | **START HERE** for complex tasks |
@@ -229,7 +229,7 @@ See `~/.claude/skills/{skill-name}/SKILL.md` for details.
 
 **Access Levels**:
 - `supabase`: ALWAYS `--read-only` in dev. Write access ONLY via migration CLI (`supabase db push`)
-- `github`: Fine-grained PAT scoped to `octivofficial/mvp` only. Scopes: `contents:read`, `issues:write`, `pull_requests:write`
+- `github`: Fine-grained PAT scoped to `lofibrainwav/kingdom` only. Scopes: `contents:read`, `issues:write`, `pull_requests:write`
 - `sentry`: Auth token with `project:read`, `event:read` scopes only. NO `project:write`
 - `figma`: Read-only personal access token. View access only
 - `vercel`: Team-scoped token. Preview deploys only — production promotion requires manual approval
@@ -378,12 +378,16 @@ See `~/.claude/skills/{skill-name}/SKILL.md` for details.
 ---
 
 ## Current Operating Focus
-- Doctrine reset completed
-- Agent definitions are being aligned to the new real-world mission
+- Phase-2 complete: Octiv→Kingdom full rename, 267 tests green, all skills/hooks aligned
+- Codebase structure: `agent/core/`, `agent/team/` (9 agents), `agent/interface/`, `agent/memory/`
+- Completed:
+  1. ~~skill/control-layer cleanup~~ (Phase-2)
+  2. ~~green test baseline restoration~~ (267/267 green)
+  3. ~~Blackboard channel refactor~~ (`work:*`, `knowledge:*`, `execution:*`, `governance:*`)
 - Next priorities:
-  1. skill/control-layer cleanup
-  2. green test baseline restoration
-  3. Blackboard channel refactor for `work:*`, `knowledge:*`, `execution:*`, `governance:*`
+  1. E2E pipeline validation (`npm run e2e`)
+  2. Dashboard + Discord bot integration testing
+  3. Production deployment readiness (Sentry, Vercel, Supabase MCP activation)
 
 ---
 
@@ -392,7 +396,7 @@ See `~/.claude/skills/{skill-name}/SKILL.md` for details.
 - **Legacy PaperMC Adapter**: `localhost:25565` (only for Minecraft adapter work)
 - **Legacy RCON**: `localhost:25575` / pw in `.env` (only for adapter work)
 - **CI**: `.github/workflows/ci.yml`
-- **Repo**: https://github.com/octivofficial/mvp (main)
+- **Repo**: https://github.com/lofibrainwav/kingdom (main)
 
 ## NotebookLM Notebooks
 | Name | ID | URL | Role |

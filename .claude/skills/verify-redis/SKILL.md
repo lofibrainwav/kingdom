@@ -13,7 +13,7 @@ description: Use when Redis-related code changes and you need to verify port con
 4. **Connection lifecycle** — clients must be properly connected and closed
 
 ## When to Use
-- After modifying `agent/blackboard.js`
+- After modifying `agent/core/blackboard.js`
 - After adding new Redis client usage in any agent file
 - When CI fails with ECONNREFUSED or WRONGTYPE errors
 - Before a PR that touches agent files
@@ -22,12 +22,11 @@ description: Use when Redis-related code changes and you need to verify port con
 
 | File | Purpose |
 |------|---------|
-| `agent/blackboard.js` | Redis Blackboard — pub/sub hub |
-| `agent/bot.js` | Single bot entry point |
-| `agent/team.js` | Multi-agent orchestrator |
-| `agent/leader.js` | Strategy agent |
-| `agent/builder.js` | Building agent |
-| `agent/safety.js` | Safety monitor |
+| `agent/core/blackboard.js` | Redis Blackboard — pub/sub hub (PREFIX = 'kingdom:') |
+| `agent/team.js` | Multi-agent launcher |
+| `agent/team/*.js` | 9 team agents (use Blackboard via board instance) |
+| `agent/interface/mcp-orchestrator.js` | MCP orchestrator (uses Redis directly for registry) |
+| `config/timeouts.js` | Reconnect strategy constants |
 
 ## Workflow
 
@@ -36,7 +35,7 @@ description: Use when Redis-related code changes and you need to verify port con
 **Check:** All `createClient` calls must specify port 6380 (host maps container:6379 → host:6380).
 
 ```bash
-grep -n "createClient\|port.*637\|port.*638" agent/blackboard.js
+grep -n "createClient\|port.*637\|port.*638" agent/core/blackboard.js
 ```
 
 **PASS:** All createClient calls show `port: 6380` or equivalent.
@@ -48,7 +47,7 @@ grep -n "createClient\|port.*637\|port.*638" agent/blackboard.js
 **Check:** All Redis pub/sub channel names must start with `kingdom:`.
 
 ```bash
-grep -n "publish\|subscribe\|channel\|CHANNEL" agent/blackboard.js
+grep -n "publish\|subscribe\|channel\|CHANNEL" agent/core/blackboard.js
 ```
 
 **PASS:** All channel names contain `kingdom:` prefix (e.g., `kingdom:cmd:leader`, `kingdom:team:status`).
@@ -60,7 +59,7 @@ grep -n "publish\|subscribe\|channel\|CHANNEL" agent/blackboard.js
 **Check:** All Redis clients must have `.on('error', ...)` handlers.
 
 ```bash
-grep -n "\.on('error'\|\.on(\"error\"" agent/blackboard.js
+grep -n "\.on('error'\|\.on(\"error\"" agent/core/blackboard.js
 ```
 
 **PASS:** At least one error handler per Redis client.
@@ -76,7 +75,7 @@ Agent files should use the Blackboard abstraction.
 grep -rn "createClient" agent/ --include="*.js"
 ```
 
-**PASS:** Only `agent/blackboard.js` contains `createClient`.
+**PASS:** Only `agent/core/blackboard.js` contains `createClient`.
 **FAIL:** Other agent files create Redis clients directly.
 **Fix:** Refactor to use Blackboard pub/sub methods.
 
@@ -98,9 +97,9 @@ redis-cli -p 6380 client list | wc -l
 ```markdown
 | Check | File | Status | Detail |
 |-------|------|--------|--------|
-| Port is 6380 | agent/blackboard.js | ✅ PASS | port: 6380 confirmed |
-| kingdom: prefix | agent/blackboard.js | ✅ PASS | all channels use kingdom: |
-| Error handler | agent/blackboard.js | ✅ PASS | .on('error') found |
+| Port is 6380 | agent/core/blackboard.js | ✅ PASS | port: 6380 confirmed |
+| kingdom: prefix | agent/core/blackboard.js | ✅ PASS | all channels use kingdom: |
+| Error handler | agent/core/blackboard.js | ✅ PASS | .on('error') found |
 | No direct Redis in agents | agent/*.js | ✅ PASS | only blackboard.js uses createClient |
 | Redis connectivity | localhost:6380 | ✅ PASS | PONG |
 ```
