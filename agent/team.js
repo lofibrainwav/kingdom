@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Kingdom Team Launcher
- * Spawned by start.js — initializes all 9 agents with graceful shutdown.
+ * Spawned by start.js — initializes all 14 agents with graceful shutdown.
  */
 const { getLogger } = require('./core/logger');
 const T = require('../config/timeouts');
