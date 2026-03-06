@@ -24,18 +24,22 @@ Verify that the Kingdom test suite is healthy and all agent files have coverage.
 2. Validate thresholds:
    - Total tests ≥ 333
    - Failed = 0
-   - Test files ≥ 32
+   - Test files ≥ 38
 
 3. Coverage map — verify each agent file has a corresponding test:
 
-### Core (agent/core/)
+### Core (agent/core/) — 9 files
 | Agent File | Expected Test File |
 |---|---|
 | agent/core/blackboard.js | test/blackboard.test.js, test/blackboard-channels.test.js |
 | agent/core/logger.js | test/logger.test.js |
 | agent/core/ReflexionEngine.js | test/reflexion-engine.test.js |
 | agent/core/api-clients.js | test/api-clients.test.js |
-| agent/core/memory-logger.js | test/memory.test.js |
+| agent/core/memory-logger.js | test/memory-logger.test.js |
+| agent/core/event-schemas.js | test/event-schemas.test.js |
+| agent/core/skill-evaluator.js | test/skill-evaluator.test.js |
+| agent/core/task-closeout-orchestrator.js | test/task-closeout-orchestrator.test.js |
+| agent/core/task-runner.js | test/task-runner.test.js |
 
 ### Team (agent/team/) — 9 agents
 | Agent File | Expected Test File |
@@ -50,14 +54,14 @@ Verify that the Kingdom test suite is healthy and all agent files have coverage.
 | agent/team/swarm-orchestrator.js | test/swarm-orchestrator.test.js |
 | agent/team/watchdog-agent.js | test/watchdog-agent.test.js |
 
-### Interface (agent/interface/)
+### Interface (agent/interface/) — 3 files
 | Agent File | Expected Test File |
 |---|---|
 | agent/interface/mcp-orchestrator.js | test/mcp-orchestrator.test.js |
 | agent/interface/dashboard.js | test/dashboard-state.test.js |
 | agent/interface/discord-bot.js | (no dedicated test — exempt, external API) |
 
-### Memory (agent/memory/)
+### Memory (agent/memory/) — 7 files
 | Agent File | Expected Test File |
 |---|---|
 | agent/memory/got-reasoner.js | test/got-reasoner.test.js |
@@ -68,10 +72,23 @@ Verify that the Kingdom test suite is healthy and all agent files have coverage.
 | agent/memory/vault-sync.js | test/vault-sync.test.js |
 | agent/memory/zettelkasten-hooks.js | test/zettelkasten-hooks.test.js |
 
+### Infrastructure tests (no 1:1 agent mapping)
+| Test File | Purpose |
+|---|---|
+| test/integration.test.js | Cross-agent pub/sub integration |
+| test/pipeline-integration.test.js | Full pipeline flow |
+| test/planning-continuation.test.js | Multi-step planning flow |
+| test/mock-board.test.js | Shared mock fidelity validation |
+| test/test-quality.test.js | Coverage map enforcement |
+| test/notebooklm-ingestion-queue.test.js | NotebookLM ingestion |
+| test/notebooklm-packet-queue.test.js | NotebookLM packets |
+| test/notebooklm-promotion-queue.test.js | NotebookLM promotions |
+| test/interface-copy.test.js | Interface utilities |
+
 4. Report:
 ```
-✅ Tests: 321 pass / 0 fail / 0 skip (36 files)
-✅ Coverage: 25/30 agent files have tests
+✅ Tests: 333 pass / 0 fail / 0 skip (38 files)
+✅ Coverage: 28/29 agent files have tests (discord-bot exempt)
 ⚠️  Missing: [list any uncovered files]
 ```
 
