@@ -90,7 +90,7 @@ git add -A && git commit -m "fix: Resolve P1~P6 Vibe Coding system issues
 - P1: Add discord.js, groq-sdk to package.json dependencies
 - P2: Create .env.example with all required variables
 - P3: Implement node:vm sandbox in skill-pipeline validateSkill()
-- P4: Add Redis subscriber error handlers to 14 agents
+- P4: Add Redis subscriber error handlers to 15 agents
 - P5: Remove Minecraft remnant constants from config/timeouts.js
 - P6: Replace empty catch blocks with log.error() in discord-bot.js"
 ```
