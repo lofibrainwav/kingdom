@@ -239,4 +239,30 @@ describe('TaskRunner', () => {
     });
     assert.deepEqual(byTaskId.map((task) => task.taskId), ['TASK-31']);
   });
+
+  it('records dry-run evidence before completion and emits a dry-run event', async () => {
+    const runner = new TaskRunner({ board, workspaceRoot: tmpDir });
+    await runner.init();
+    await runner.startTask({
+      author: 'codex',
+      projectId: 'kingdom',
+      taskId: 'TASK-41',
+      goal: 'Rehearse before implementation',
+    });
+
+    const updated = await runner.recordDryRun({
+      author: 'codex',
+      projectId: 'kingdom',
+      taskId: 'TASK-41',
+      summary: 'Validated retry path with a simulated rejection flow',
+      verification: ['simulated review reject', 'simulated retry handoff'],
+      outcome: 'passed',
+    });
+
+    assert.equal(updated.dryRuns.length, 1);
+    assert.equal(updated.dryRuns[0].summary, 'Validated retry path with a simulated rejection flow');
+    assert.equal(updated.dryRuns[0].outcome, 'passed');
+    assert.equal(published.at(-1).channel, 'work:dry-run:recorded');
+    assert.equal(published.at(-1).data.taskId, 'TASK-41');
+  });
 });

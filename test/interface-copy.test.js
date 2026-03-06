@@ -30,6 +30,8 @@ describe('Interface Copy', () => {
     assert.match(DASHBOARD_HTML, /Latest Lesson/);
     assert.match(DASHBOARD_HTML, /Latest Improvement/);
     assert.match(DASHBOARD_HTML, /Knowledge Updated/);
+    assert.match(DASHBOARD_HTML, /Dry Run Count/);
+    assert.match(DASHBOARD_HTML, /Latest Dry Run/);
     assert.match(DASHBOARD_HTML, /Project Recovery Rate/);
     assert.match(DASHBOARD_HTML, /Task Recovery Rate/);
     assert.match(DASHBOARD_HTML, /history\.replaceState/);

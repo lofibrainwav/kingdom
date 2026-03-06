@@ -115,6 +115,41 @@ class TaskRunner {
     return updated;
   }
 
+  async recordDryRun({ author, projectId, taskId, summary, verification, outcome = 'passed' }) {
+    if (!author || !projectId || !taskId || !summary) {
+      throw new Error('[TaskRunner] author, projectId, taskId, and summary are required for dry-run records');
+    }
+    if (!Array.isArray(verification) || verification.length === 0) {
+      throw new Error('[TaskRunner] dry-run verification evidence is required');
+    }
+
+    const updated = await this._patchTaskState(projectId, taskId, (current) => ({
+      ...current,
+      dryRuns: [
+        ...(current.dryRuns || []),
+        {
+          summary,
+          verification,
+          outcome,
+          author,
+          recordedAt: Date.now(),
+        },
+      ],
+      updatedAt: Date.now(),
+    }));
+
+    await this.board.publish('work:dry-run:recorded', {
+      author,
+      projectId,
+      taskId,
+      summary,
+      outcome,
+      verificationCount: verification.length,
+    });
+
+    return updated;
+  }
+
   async listTasks({ projectId, taskId, status, retryGuardrail, retryCategory } = {}) {
     if (!this.board.listConfigs) {
       return [];

@@ -180,6 +180,13 @@ describe('KnowledgeOperator', () => {
       goal: 'Close the loop',
       workspacePath: '/tmp/kingdom/TASK-3',
       verification: ['npm test', 'npm run lint'],
+      dryRuns: [
+        {
+          summary: 'Simulated closeout before final run',
+          verification: ['dry-run review request'],
+          outcome: 'passed',
+        },
+      ],
     });
     board.createSubscriber = async () => ({
       on: () => {},
@@ -211,6 +218,10 @@ describe('KnowledgeOperator', () => {
     assert.equal(published[0].channel, 'knowledge:capture:stored');
     assert.equal(published[0].data.title, 'Completed TASK-3');
     assert.equal(dashboardLinks[0].section, 'Recent Achievements');
+
+    const notePath = path.join(tmpDir, 'completed-task-3.md');
+    const note = await fsp.readFile(notePath, 'utf-8');
+    assert.match(note, /Simulated closeout before final run/);
   });
 
   it('captures retry resolution context when a completed task closes a previous guardrail', async () => {

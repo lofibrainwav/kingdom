@@ -4,6 +4,7 @@ const SCHEMAS = {
   'work:planning:designed': ['projectId', 'goal', 'architecture'],
   'work:planning:decomposed': ['projectId', 'goal', 'tasks'],
   'work:task:started': ['author', 'projectId', 'taskId', 'goal'],
+  'work:dry-run:recorded': ['author', 'projectId', 'taskId', 'summary', 'outcome'],
   'execution:dispatch:*': ['author', 'action'],
   'execution:broadcast:*': ['author', 'action'],
   'execution:swarm:spawn': ['swarmId', 'agentType', 'count'],

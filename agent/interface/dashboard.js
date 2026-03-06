@@ -989,6 +989,8 @@ function renderTasks() {
         + field('Goal', escapeHtml(task.goal || 'n/a'))
         + field('Review', escapeHtml(task.review?.status || '-'))
         + field('Retry', escapeHtml(task.retry?.handoff?.status || task.retry?.guardrail || '-'))
+        + field('Dry Run Count', escapeHtml(String(task.dryRuns?.length || 0)))
+        + field('Latest Dry Run', escapeHtml(task.dryRuns?.at(-1)?.summary || '-'))
         + field('Latest Lesson', escapeHtml(task.latestKnowledge?.lesson || '-'))
         + field('Latest Improvement', escapeHtml(task.latestKnowledge?.improvementNote || '-'))
         + field('Knowledge Updated', timeAgo(Date.parse(task.latestKnowledge?.capturedAt || 0)))

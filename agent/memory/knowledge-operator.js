@@ -184,6 +184,9 @@ class KnowledgeOperator {
     const summary = taskState
       ? `Task ${data.taskId} completed for goal: ${taskState.goal}. Workspace: ${taskState.workspacePath}.`
       : `Task ${data.taskId} completed with ${data.verificationCount} verification checks.`;
+    const dryRunSummary = Array.isArray(taskState?.dryRuns) && taskState.dryRuns.length > 0
+      ? taskState.dryRuns.at(-1).summary
+      : null;
     const verification = Array.isArray(taskState?.verification) && taskState.verification.length > 0
       ? taskState.verification
       : [`${data.verificationCount} verification checks recorded`];
@@ -201,7 +204,9 @@ class KnowledgeOperator {
       summary,
       outcome: 'passed',
       verification,
-      lesson: 'Completed tasks should become durable project memory with verification attached.',
+      lesson: dryRunSummary
+        ? `Completed tasks should become durable project memory with verification attached. Latest dry-run: ${dryRunSummary}`
+        : 'Completed tasks should become durable project memory with verification attached.',
       retryCategory,
       retryGuardrail,
       continuationTaskId: data.taskId,
