@@ -19,23 +19,27 @@ class TaskCloseoutOrchestrator {
   async start() {
     this.subscriber = await this.board.createSubscriber();
     if (this.subscriber.on) {
-      this.subscriber.on('error', () => {});
+      this.subscriber.on('error', (err) => this._logError('subscriber', err));
     }
 
     await this.subscriber.subscribe('governance:task:completed', async (message) => {
-      await this.handleTaskCompleted(message);
+      try { await this.handleTaskCompleted(message); }
+      catch (err) { this._logError('handleTaskCompleted', err); }
     });
 
     await this.subscriber.subscribe('governance:review:approved', async (message) => {
-      await this.handleReviewApproved(message);
+      try { await this.handleReviewApproved(message); }
+      catch (err) { this._logError('handleReviewApproved', err); }
     });
 
     await this.subscriber.subscribe('governance:review:rejected', async (message) => {
-      await this.handleReviewRejected(message);
+      try { await this.handleReviewRejected(message); }
+      catch (err) { this._logError('handleReviewRejected', err); }
     });
 
     await this.subscriber.subscribe('governance:failure:retry-requested', async (message) => {
-      await this.handleRetryRequested(message);
+      try { await this.handleRetryRequested(message); }
+      catch (err) { this._logError('handleRetryRequested', err); }
     });
   }
 
@@ -113,6 +117,11 @@ class TaskCloseoutOrchestrator {
     });
 
     return updated;
+  }
+
+  _logError(handler, err) {
+    const log = require('./logger').getLogger();
+    log.error('task-closeout-orchestrator', `${handler} failed`, { error: err.message });
   }
 
   _buildReviewPayload(eventData, taskState) {

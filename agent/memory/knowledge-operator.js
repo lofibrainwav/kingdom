@@ -32,19 +32,23 @@ class KnowledgeOperator {
     this.subscriber.on('error', (err) => log.error('knowledge-operator', 'Redis sub error', { error: err.message }));
 
     await this.subscriber.subscribe('governance:task:completed', async (message) => {
-      await this.handleTaskCompleted(message);
+      try { await this.handleTaskCompleted(message); }
+      catch (err) { log.error('knowledge-operator', 'handleTaskCompleted failed', { error: err.message }); }
     });
 
     await this.subscriber.subscribe('governance:review:approved', async (message) => {
-      await this.handleReviewApproved(message);
+      try { await this.handleReviewApproved(message); }
+      catch (err) { log.error('knowledge-operator', 'handleReviewApproved failed', { error: err.message }); }
     });
 
     await this.subscriber.subscribe('governance:failure:retry-requested', async (message) => {
-      await this.handleRetryRequested(message);
+      try { await this.handleRetryRequested(message); }
+      catch (err) { log.error('knowledge-operator', 'handleRetryRequested failed', { error: err.message }); }
     });
 
     await this.subscriber.subscribe('knowledge:skill:eval-completed', async (message) => {
-      await this.handleSkillEvalCompleted(message);
+      try { await this.handleSkillEvalCompleted(message); }
+      catch (err) { log.error('knowledge-operator', 'handleSkillEvalCompleted failed', { error: err.message }); }
     });
   }
 

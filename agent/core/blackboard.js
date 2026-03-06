@@ -428,6 +428,29 @@ class Blackboard {
   }
 
   /**
+   * Update agent status in the agents:status hash
+   */
+  async updateStatus(agentId, statusObj) {
+    await this.setHashField('agents:status', agentId, statusObj);
+  }
+
+  /**
+   * Get all agent statuses from the agents:status hash
+   */
+  async getAllStatuses() {
+    const raw = await this.getHash('agents:status');
+    const result = {};
+    for (const [key, value] of Object.entries(raw)) {
+      try {
+        result[key] = typeof value === 'string' ? JSON.parse(value) : value;
+      } catch {
+        result[key] = value;
+      }
+    }
+    return result;
+  }
+
+  /**
    * Get all entries from a hash (e.g., 'agents:registry')
    */
   async getHash(key) {

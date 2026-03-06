@@ -35,7 +35,8 @@ class ReviewerAgent {
 
   async handleTaskComplete(message) {
     try {
-      const { projectId, taskId, file, content } = typeof message === 'string' ? JSON.parse(message) : message;
+      const parsed = typeof message === 'string' ? JSON.parse(message) : message;
+      const { projectId, taskId, file, content } = parsed;
       log.info(this.agentId, `Reviewing task ${taskId} for project ${projectId} in ${file}`);
       await this.updateStatus('reviewing', `Reviewing ${file}`);
 
@@ -54,13 +55,20 @@ class ReviewerAgent {
         reviewedAt: Date.now()
       });
 
-      // 3. Publish result
+      // 3. Forward retry metadata from incoming review request
+      const retryMeta = {};
+      if (parsed.continuationTaskId) retryMeta.continuationTaskId = parsed.continuationTaskId;
+      if (parsed.retry) retryMeta.retry = parsed.retry;
+      if (parsed.retryCategory) retryMeta.retryCategory = parsed.retryCategory;
+      if (parsed.retryGuardrail) retryMeta.retryGuardrail = parsed.retryGuardrail;
+
+      // 4. Publish result
       if (reviewResult.approved) {
         log.info(this.agentId, `Task ${taskId} APPROVED in ${file}`);
-        await this.board.publish('governance:review:approved', { projectId, taskId, file, author: this.agentId });
+        await this.board.publish('governance:review:approved', { projectId, taskId, file, author: this.agentId, ...retryMeta });
       } else {
         log.warn(this.agentId, `Task ${taskId} REJECTED: ${reviewResult.feedback}`);
-        await this.board.publish('governance:review:rejected', { projectId, taskId, file, feedback: reviewResult.feedback, author: this.agentId });
+        await this.board.publish('governance:review:rejected', { projectId, taskId, file, feedback: reviewResult.feedback, author: this.agentId, ...retryMeta });
       }
 
       await this.updateStatus('idle', `Finished review for ${file}`);

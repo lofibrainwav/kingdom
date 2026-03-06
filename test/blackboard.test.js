@@ -290,6 +290,20 @@ describe('Blackboard — Supplemental methods', () => {
     assert.equal(bAfter, null);
   });
 
+  it('updateStatus and getAllStatuses should manage agent status hash', async () => {
+    await board.updateStatus('Kingdom_PM', { state: 'idle', task: 'Ready', health: 20, lastUpdate: 1 });
+    await board.updateStatus('Kingdom_Coder', { state: 'coding', task: 'TASK-1', health: 20, lastUpdate: 2 });
+
+    const all = await board.getAllStatuses();
+    assert.equal(all['Kingdom_PM'].state, 'idle');
+    assert.equal(all['Kingdom_Coder'].state, 'coding');
+    assert.equal(all['Kingdom_Coder'].task, 'TASK-1');
+
+    // Cleanup
+    await board.client.hDel('kingdom:agents:status', 'Kingdom_PM');
+    await board.client.hDel('kingdom:agents:status', 'Kingdom_Coder');
+  });
+
   it('getListRange should retrieve list elements', async () => {
     // isolated agent ID
     const aid = 'sup-logs-' + Date.now();
