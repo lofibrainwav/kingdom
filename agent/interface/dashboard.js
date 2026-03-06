@@ -12,6 +12,12 @@ const log = getLogger();
 
 const PORT = process.env.DASHBOARD_PORT || 3000;
 
+function _sanitizeParam(val) {
+  if (!val || typeof val !== 'string') return null;
+  if (val.length > 256) return null;
+  return val.replace(/[^\w:._\-/@ ]/g, '');
+}
+
 function parseDashboardQuery(searchParams) {
   const filter = searchParams.get('filter') || 'all';
 
@@ -557,11 +563,11 @@ class DashboardServer {
 
   async _handleAPIState(req, res, requestUrl) {
     const filters = {
-      projectId: requestUrl.searchParams.get('projectId') || undefined,
-      taskId: requestUrl.searchParams.get('taskId') || undefined,
-      status: requestUrl.searchParams.get('status') || undefined,
-      retryGuardrail: requestUrl.searchParams.get('retryGuardrail') || undefined,
-      retryCategory: requestUrl.searchParams.get('retryCategory') || undefined,
+      projectId: _sanitizeParam(requestUrl.searchParams.get('projectId')) || undefined,
+      taskId: _sanitizeParam(requestUrl.searchParams.get('taskId')) || undefined,
+      status: _sanitizeParam(requestUrl.searchParams.get('status')) || undefined,
+      retryGuardrail: _sanitizeParam(requestUrl.searchParams.get('retryGuardrail')) || undefined,
+      retryCategory: _sanitizeParam(requestUrl.searchParams.get('retryCategory')) || undefined,
     };
     const tasks = await this.taskRunner.listTasks(filters);
     this.taskRunnerCachedTasks = tasks;
