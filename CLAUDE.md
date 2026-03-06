@@ -389,9 +389,9 @@ See `~/.claude/skills/{skill-name}/SKILL.md` for details.
 ---
 
 ## Current Operating Focus
-- Phase-4 complete: 453 tests green, all synapses wired, 0 dead events, 0 phantom listeners
-- Codebase structure: `agent/core/` (9), `agent/team/` (9), `agent/interface/` (3), `agent/memory/` (8) = 29 files
-- Team launcher: 15 agents (9 team + 6 core/memory)
+- Phase-5 complete: 490 tests green, 17 agents, 0 dead events, 0 phantom listeners
+- Codebase structure: `agent/core/` (9), `agent/team/` (10), `agent/interface/` (3), `agent/memory/` (9) = 31 files
+- Team launcher: 17 agents (10 team + 2 phase-5 + 6 core/memory → but TeamLead is in team/, ResearchAgent is in memory/)
 - Event map: 0 dead events, 0 phantom listeners
 - Completed:
   1. ~~skill/control-layer cleanup~~ (Phase-2)
@@ -404,6 +404,7 @@ See `~/.claude/skills/{skill-name}/SKILL.md` for details.
   8. ~~Phase-4 synapse wiring~~ (VaultBridge + RuminationEngine + GoTReasoner + NotebookLMQueue)
   9. ~~Dead event elimination~~ (6→0 dead events, dashboard full visibility)
   10. ~~Test gap closure~~ (vault-bridge.test.js, notebooklm-queue.test.js)
+  11. ~~Phase-5 TeamLead + ResearchAgent~~ (Claude metacognitive supervisor + Grok→NLM pipeline + Spider Web 진선미)
 - Next priorities:
   1. E2E runtime validation (`npm run e2e` with live agents + Redis)
   2. ~~Swarm trigger wiring~~ (Decomposer → spawn, Deployer → terminate)

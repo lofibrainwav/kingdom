@@ -38,6 +38,7 @@ const SCHEMAS = {
   'orchestrator:registered': ['author', 'agentId', 'role'],
   'orchestrator:deregistered': ['author', 'agentId'],
   'governance:teamlead:reviewed': ['author', 'batchSize', 'taskIds', 'verdict'],
+  'governance:teamlead:vibe-translated': ['author', 'failureCount', 'taskIds'],
   'knowledge:research:trigger': ['author', 'question'],
   'knowledge:research:completed': ['author', 'question', 'researchId'],
   'team:celebration': ['author', 'event', 'skill'],
