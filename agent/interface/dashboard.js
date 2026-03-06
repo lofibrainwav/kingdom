@@ -455,6 +455,27 @@ class DashboardServer {
       });
   }
 
+  async _loadNotebookLMQueue({ projectId, taskId } = {}) {
+    if (!this.board.listConfigs) {
+      return [];
+    }
+
+    const prefix = projectId
+      ? `knowledge:notebooklm:${projectId}:`
+      : 'knowledge:notebooklm:';
+    const entries = await this.board.listConfigs(prefix);
+
+    return entries
+      .map(({ value }) => value)
+      .filter((value) => value?.projectId && value?.taskId)
+      .filter((value) => !taskId || value.taskId === taskId)
+      .sort((a, b) => {
+        const aTime = Date.parse(a.queuedAt || 0);
+        const bTime = Date.parse(b.queuedAt || 0);
+        return bTime - aTime || a.taskId.localeCompare(b.taskId);
+      });
+  }
+
   async _handleAPIState(req, res, requestUrl) {
     const filters = {
       projectId: requestUrl.searchParams.get('projectId') || undefined,
@@ -467,6 +488,7 @@ class DashboardServer {
     this.taskRunnerCachedTasks = tasks;
     const taskKnowledge = await this._loadTaskKnowledgeIndex(filters);
     const promotionCandidates = await this._loadPromotionCandidates(filters);
+    const notebooklmQueue = await this._loadNotebookLMQueue(filters);
     const hydratedTasks = tasks.map((task) => ({
       ...task,
       latestKnowledge: taskKnowledge.get(`${task.projectId}:${task.taskId}`) || null,
@@ -484,6 +506,8 @@ class DashboardServer {
         promotionCandidates,
         promotionQueueCounts: this._derivePromotionQueueCounts(promotionCandidates),
         promotionAppliedCount: promotionCandidates.filter((entry) => entry.status === 'promoted').length,
+        promotionConversionCounts: this._derivePromotionConversionCounts(promotionCandidates),
+        notebooklmQueueCount: notebooklmQueue.length,
       },
       timestamp: Date.now(),
     }));
@@ -506,6 +530,15 @@ class DashboardServer {
       acc[status] = (acc[status] || 0) + 1;
       return acc;
     }, {});
+  }
+
+  _derivePromotionConversionCounts(candidates = []) {
+    return candidates
+      .filter((candidate) => candidate.status === 'promoted' && candidate.promotedTo)
+      .reduce((acc, candidate) => {
+        acc[candidate.promotedTo] = (acc[candidate.promotedTo] || 0) + 1;
+        return acc;
+      }, {});
   }
 
   _deriveRateList(retryBucket = {}, resolvedBucket = {}) {
@@ -1053,13 +1086,21 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
           <div class="feed-title">Winning Dry-Run Plays</div>
           <div id="dry-run-summary-wins" class="feed-list"></div>
         </div>
-        <div class="pressure-card">
+      <div class="pressure-card">
           <div class="feed-title">Promotion Queue</div>
           <div id="promotion-queue" class="feed-list"></div>
         </div>
         <div class="pressure-card">
           <div class="feed-title">Applied Promotions</div>
           <div id="promotion-applied" class="feed-list"></div>
+        </div>
+        <div class="pressure-card">
+          <div class="feed-title">Promotion Targets</div>
+          <div id="promotion-targets" class="feed-list"></div>
+        </div>
+        <div class="pressure-card">
+          <div class="feed-title">NotebookLM Queue</div>
+          <div id="notebooklm-queue" class="feed-list"></div>
         </div>
       </div>
     </aside>
@@ -1133,6 +1174,8 @@ const projectDryRunRecoveryGapDiv = document.getElementById('project-dry-run-rec
 const dryRunSummaryWinsDiv = document.getElementById('dry-run-summary-wins');
 const promotionQueueDiv = document.getElementById('promotion-queue');
 const promotionAppliedDiv = document.getElementById('promotion-applied');
+const promotionTargetsDiv = document.getElementById('promotion-targets');
+const notebooklmQueueDiv = document.getElementById('notebooklm-queue');
 const state = {};
 const tasks = {};
 const metrics = {
@@ -1157,6 +1200,8 @@ const metrics = {
   promotionCandidates: [],
   promotionQueueCounts: {},
   promotionAppliedCount: 0,
+  promotionConversionCounts: {},
+  notebooklmQueueCount: 0,
 };
 let totalEvents = 0;
 let totalHealthSignals = 0;
@@ -1517,6 +1562,8 @@ function renderRetryPressure() {
   renderDryRunSummaryWins(dryRunSummaryWinsDiv, metrics.dryRunSummaryWinRates, 'No dry-run plays ranked yet');
   renderPromotionQueueBucket(promotionQueueDiv, metrics.promotionQueueCounts, 'No promotion queue yet');
   renderPromotionAppliedBucket(promotionAppliedDiv, metrics.promotionAppliedCount);
+  renderPromotionQueueBucket(promotionTargetsDiv, metrics.promotionConversionCounts, 'No promotion targets yet');
+  renderPromotionAppliedBucket(notebooklmQueueDiv, metrics.notebooklmQueueCount, 'NotebookLM queued');
 }
 
 function renderPromotionQueueBucket(container, counts, emptyLabel) {
@@ -1532,8 +1579,8 @@ function renderPromotionQueueBucket(container, counts, emptyLabel) {
     .join('');
 }
 
-function renderPromotionAppliedBucket(container, count) {
-  container.innerHTML = '<div class="feed-item"><div class="feed-title">Promoted</div><div class="feed-meta">' + escapeHtml(String(count || 0) + ' applied promotions') + '</div></div>';
+function renderPromotionAppliedBucket(container, count, label) {
+  container.innerHTML = '<div class="feed-item"><div class="feed-title">' + escapeHtml(label || 'Promoted') + '</div><div class="feed-meta">' + escapeHtml(String(count || 0) + ' applied promotions') + '</div></div>';
 }
 
 function renderBucket(container, bucket, emptyLabel, drilldownType) {

@@ -204,6 +204,30 @@ class KnowledgeOperator {
       promotedAt: new Date().toISOString(),
     };
 
+    if (promotedTo === 'obsidian-pattern') {
+      const patternName = existing.dryRunSummary || existing.title;
+      updated.patternPath = await this.writePattern(
+        patternName,
+        this._renderPromotedPattern(existing)
+      );
+    }
+
+    if (promotedTo === 'notebooklm-source') {
+      const notebookKey = `knowledge:notebooklm:${projectId}:${taskId}:queued`;
+      const notebookQueue = {
+        author,
+        projectId,
+        taskId,
+        sourcePath: existing.notePath,
+        queueType: 'promotion-source',
+        sourceTitle: existing.title,
+        status: 'queued',
+        queuedAt: new Date().toISOString(),
+      };
+      await this.board.setConfig(notebookKey, notebookQueue);
+      await this.board.publish('knowledge:notebooklm:queued', notebookQueue);
+    }
+
     await this.board.setConfig(key, updated);
     await this.board.publish('knowledge:promotion:applied', {
       author,
@@ -214,6 +238,30 @@ class KnowledgeOperator {
     });
 
     return updated;
+  }
+
+  _renderPromotedPattern(candidate) {
+    return `# ${candidate.dryRunSummary || candidate.title}
+
+## Source
+
+- Project: ${candidate.projectId}
+- Task: ${candidate.taskId}
+- Note: ${candidate.notePath}
+
+## Pattern
+
+${candidate.dryRunSummary || candidate.title}
+
+## Guardrail Recovered
+
+- Category: ${candidate.retryCategory || 'unknown'}
+- Guardrail: ${candidate.retryGuardrail || 'unknown'}
+
+## Improvement
+
+${candidate.improvementNote || 'Promotion candidate created from a successful retry recovery.'}
+`;
   }
 
   async handleReviewApproved(message) {

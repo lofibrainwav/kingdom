@@ -382,7 +382,10 @@ describe('KnowledgeOperator', () => {
       board,
       zettelkasten: zk,
       vaultDir: tmpDir,
-      writePattern: async (name) => `/vault/patterns/${name}.md`,
+      writePattern: async (name, content) => {
+        patterns.push({ name, content });
+        return `/vault/patterns/${name}.md`;
+      },
       addDashboardLink: async () => {},
     });
 
@@ -394,6 +397,9 @@ describe('KnowledgeOperator', () => {
       notePath: '/tmp/completed-task-30.md',
       promotionType: 'dry-run-recovery-play',
       status: 'queued',
+      dryRunSummary: 'Rehearse review evidence checklist',
+      retryCategory: 'review',
+      retryGuardrail: 'missing-evidence',
     });
 
     const result = await operator.markPromotionApplied({
@@ -405,9 +411,50 @@ describe('KnowledgeOperator', () => {
 
     assert.equal(result.status, 'promoted');
     assert.equal(result.promotedTo, 'obsidian-pattern');
+    assert.match(result.patternPath, /Rehearse review evidence checklist\.md$/);
     assert.equal(configs.get('knowledge:promotion:kingdom:TASK-30:candidate').status, 'promoted');
     assert.equal(published.at(-1).channel, 'knowledge:promotion:applied');
     assert.equal(published.at(-1).data.promotedTo, 'obsidian-pattern');
+    assert.equal(patterns.length, 1);
+  });
+
+  it('queues notebooklm source promotion when promotedTo requests grounded ingestion', async () => {
+    const operator = new KnowledgeOperator({
+      board,
+      zettelkasten: zk,
+      vaultDir: tmpDir,
+      writePattern: async (name, content) => {
+        patterns.push({ name, content });
+        return `/vault/patterns/${name}.md`;
+      },
+      addDashboardLink: async () => {},
+    });
+
+    configs.set('knowledge:promotion:kingdom:TASK-31:candidate', {
+      author: 'knowledge-operator',
+      projectId: 'kingdom',
+      taskId: 'TASK-31',
+      title: 'Completed TASK-31',
+      notePath: '/tmp/completed-task-31.md',
+      promotionType: 'dry-run-recovery-play',
+      status: 'queued',
+      dryRunSummary: 'Replay implementation proof before handoff',
+    });
+
+    const result = await operator.markPromotionApplied({
+      author: 'codex',
+      projectId: 'kingdom',
+      taskId: 'TASK-31',
+      promotedTo: 'notebooklm-source',
+    });
+
+    assert.equal(result.promotedTo, 'notebooklm-source');
+    const notebookQueue = configs.get('knowledge:notebooklm:kingdom:TASK-31:queued');
+    assert.ok(notebookQueue);
+    assert.equal(notebookQueue.queueType, 'promotion-source');
+    assert.equal(notebookQueue.sourcePath, '/tmp/completed-task-31.md');
+    assert.equal(published.at(-2).channel, 'knowledge:notebooklm:queued');
+    assert.equal(published.at(-1).channel, 'knowledge:promotion:applied');
   });
 
   it('captures skill evaluation events into durable knowledge notes', async () => {
