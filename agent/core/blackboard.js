@@ -250,7 +250,8 @@ class Blackboard {
    */
   async getSkill(name) {
     const val = await this.client.hGet(PREFIX + 'skills:library', name);
-    return val ? JSON.parse(val) : null;
+    if (!val) return null;
+    try { return JSON.parse(val); } catch { return null; }
   }
 
   /**

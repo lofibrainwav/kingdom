@@ -27,7 +27,9 @@ class DecomposerAgent {
     this.subscriber.on('error', (err) => log.error('decomposer', 'Redis sub error', { error: err.message }));
     
     // Listen for design completion from Architect
-    await this.subscriber.subscribe('work:planning:designed', (msg) => this.handleDesignComplete(msg));
+    await this.subscriber.subscribe('work:planning:designed', async (msg) => {
+      try { await this.handleDesignComplete(msg); } catch (err) { log.error(this.agentId, 'subscribe handler error', { error: err.message }); }
+    });
     
     log.info(this.agentId, 'initialized and waiting for designs');
     await this.updateStatus('idle', 'Awaiting architect design');

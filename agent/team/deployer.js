@@ -24,7 +24,9 @@ class DeployerAgent {
     this.subscriber.on('error', (err) => log.error('deployer', 'Redis sub error', { error: err.message }));
     
     // Listen for project completion
-    await this.subscriber.subscribe('governance:project:approved', (msg) => this.handleProjectApproved(msg));
+    await this.subscriber.subscribe('governance:project:approved', async (msg) => {
+      try { await this.handleProjectApproved(msg); } catch (err) { log.error(this.agentId, 'subscribe handler error', { error: err.message }); }
+    });
     
     log.info(this.agentId, 'initialized and ready for deployment');
     await this.updateStatus('idle', 'Awaiting project approvals');

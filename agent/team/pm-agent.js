@@ -24,7 +24,9 @@ class PMAgent {
     this.subscriber.on('error', (err) => log.error('pm-agent', 'Redis sub error', { error: err.message }));
     
     // Listen for manual assignments from Discord/Dashboard
-    await this.subscriber.subscribe('work:intake', (msg) => this.handleManualAssign(msg));
+    await this.subscriber.subscribe('work:intake', async (msg) => {
+      try { await this.handleManualAssign(msg); } catch (err) { log.error(this.agentId, 'subscribe handler error', { error: err.message }); }
+    });
     
     log.info(this.agentId, 'initialized and listening for assignments');
     await this.updateStatus('idle', 'Ready for new projects');

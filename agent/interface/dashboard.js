@@ -569,41 +569,47 @@ class DashboardServer {
   }
 
   async _handleAPIState(req, res, requestUrl) {
-    const filters = {
-      projectId: _sanitizeParam(requestUrl.searchParams.get('projectId')) || undefined,
-      taskId: _sanitizeParam(requestUrl.searchParams.get('taskId')) || undefined,
-      status: _sanitizeParam(requestUrl.searchParams.get('status')) || undefined,
-      retryGuardrail: _sanitizeParam(requestUrl.searchParams.get('retryGuardrail')) || undefined,
-      retryCategory: _sanitizeParam(requestUrl.searchParams.get('retryCategory')) || undefined,
-    };
-    const tasks = await this.taskRunner.listTasks(filters);
-    this.taskRunnerCachedTasks = tasks;
-    const taskKnowledge = await this._loadTaskKnowledgeIndex(filters);
-    const promotionCandidates = await this._loadPromotionCandidates(filters);
-    const notebooklmQueue = await this._loadNotebookLMQueue(filters);
-    const hydratedTasks = tasks.map((task) => ({
-      ...task,
-      latestKnowledge: taskKnowledge.get(`${task.projectId}:${task.taskId}`) || null,
-      dryRunImpact: this._deriveDryRunImpact(task),
-      promotionSignal: this._derivePromotionSignal(task, taskKnowledge.get(`${task.projectId}:${task.taskId}`) || null),
-    }));
-    const derivedMetrics = this._buildRecoveryMetrics();
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({
-      agents: this.agentState,
-      tasks: hydratedTasks,
-      metrics: {
-        ...this.metrics,
-        ...derivedMetrics,
-        promotionCandidates,
-        promotionQueueCounts: this._derivePromotionQueueCounts(promotionCandidates),
-        promotionAppliedCount: promotionCandidates.filter((entry) => entry.status === 'promoted').length,
-        promotionConversionCounts: this._derivePromotionConversionCounts(promotionCandidates),
-        notebooklmQueueCount: notebooklmQueue.length,
-        notebooklmQueueCounts: this._derivePromotionQueueCounts(notebooklmQueue),
-      },
-      timestamp: Date.now(),
-    }));
+    try {
+      const filters = {
+        projectId: _sanitizeParam(requestUrl.searchParams.get('projectId')) || undefined,
+        taskId: _sanitizeParam(requestUrl.searchParams.get('taskId')) || undefined,
+        status: _sanitizeParam(requestUrl.searchParams.get('status')) || undefined,
+        retryGuardrail: _sanitizeParam(requestUrl.searchParams.get('retryGuardrail')) || undefined,
+        retryCategory: _sanitizeParam(requestUrl.searchParams.get('retryCategory')) || undefined,
+      };
+      const tasks = await this.taskRunner.listTasks(filters);
+      this.taskRunnerCachedTasks = tasks;
+      const taskKnowledge = await this._loadTaskKnowledgeIndex(filters);
+      const promotionCandidates = await this._loadPromotionCandidates(filters);
+      const notebooklmQueue = await this._loadNotebookLMQueue(filters);
+      const hydratedTasks = tasks.map((task) => ({
+        ...task,
+        latestKnowledge: taskKnowledge.get(`${task.projectId}:${task.taskId}`) || null,
+        dryRunImpact: this._deriveDryRunImpact(task),
+        promotionSignal: this._derivePromotionSignal(task, taskKnowledge.get(`${task.projectId}:${task.taskId}`) || null),
+      }));
+      const derivedMetrics = this._buildRecoveryMetrics();
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        agents: this.agentState,
+        tasks: hydratedTasks,
+        metrics: {
+          ...this.metrics,
+          ...derivedMetrics,
+          promotionCandidates,
+          promotionQueueCounts: this._derivePromotionQueueCounts(promotionCandidates),
+          promotionAppliedCount: promotionCandidates.filter((entry) => entry.status === 'promoted').length,
+          promotionConversionCounts: this._derivePromotionConversionCounts(promotionCandidates),
+          notebooklmQueueCount: notebooklmQueue.length,
+          notebooklmQueueCounts: this._derivePromotionQueueCounts(notebooklmQueue),
+        },
+        timestamp: Date.now(),
+      }));
+    } catch (err) {
+      log.error('dashboard', '_handleAPIState failed', { error: err.message });
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Internal server error' }));
+    }
   }
 
   _buildRecoveryMetrics() {

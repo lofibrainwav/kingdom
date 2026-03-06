@@ -364,9 +364,13 @@ class GoTReasoner {
       },
     };
 
-    // Save full reasoning trace + skill graph
-    await this._saveReasoningTrace('full-cycle', result);
-    await this._generateMermaidGraph();
+    // Save full reasoning trace + skill graph (non-critical — don't block publish)
+    try {
+      await this._saveReasoningTrace('full-cycle', result);
+      await this._generateMermaidGraph();
+    } catch (err) {
+      log.warn('got', 'Failed to save reasoning trace', { error: err.message });
+    }
 
     // Publish to Blackboard
     await this.board.publish('knowledge:got:completed', {

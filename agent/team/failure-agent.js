@@ -24,7 +24,9 @@ class FailureAgent {
     this.subscriber.on('error', (err) => log.error('failure-agent', 'Redis sub error', { error: err.message }));
     
     // Listen for code rejection from Reviewer
-    await this.subscriber.subscribe('governance:review:rejected', (msg) => this.handleTaskRejection(msg));
+    await this.subscriber.subscribe('governance:review:rejected', async (msg) => {
+      try { await this.handleTaskRejection(msg); } catch (err) { log.error(this.agentId, 'subscribe handler error', { error: err.message }); }
+    });
     
     log.info(this.agentId, 'initialized and ready to classify failures');
     await this.updateStatus('idle', 'Awaiting failure reports');

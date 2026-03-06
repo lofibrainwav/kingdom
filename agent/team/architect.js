@@ -24,7 +24,9 @@ class ArchitectAgent {
     this.subscriber.on('error', (err) => log.error('architect', 'Redis sub error', { error: err.message }));
     
     // Listen for project initiation from PM
-    await this.subscriber.subscribe('work:planning:init', (msg) => this.handleProjectInit(msg));
+    await this.subscriber.subscribe('work:planning:init', async (msg) => {
+      try { await this.handleProjectInit(msg); } catch (err) { log.error(this.agentId, 'subscribe handler error', { error: err.message }); }
+    });
     
     log.info(this.agentId, 'initialized and waiting for projects');
     await this.updateStatus('idle', 'Awaiting PM initiation');

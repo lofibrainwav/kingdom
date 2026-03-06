@@ -24,8 +24,12 @@ class SwarmOrchestrator {
     this.subscriber.on('error', (err) => log.error('swarm-orchestrator', 'Redis sub error', { error: err.message }));
     
     // Listen for swarm requests (e.g., from PM or User)
-    await this.subscriber.subscribe('execution:swarm:spawn', (msg) => this.handleSpawn(msg));
-    await this.subscriber.subscribe('execution:swarm:terminate', (msg) => this.handleTerminate(msg));
+    await this.subscriber.subscribe('execution:swarm:spawn', async (msg) => {
+      try { await this.handleSpawn(msg); } catch (err) { log.error(this.agentId, 'subscribe handler error', { error: err.message }); }
+    });
+    await this.subscriber.subscribe('execution:swarm:terminate', async (msg) => {
+      try { await this.handleTerminate(msg); } catch (err) { log.error(this.agentId, 'subscribe handler error', { error: err.message }); }
+    });
     
     log.info(this.agentId, 'initialized and ready to orchestrate swarms');
     await this.updateStatus('idle', 'Ready to spawn swarm');
