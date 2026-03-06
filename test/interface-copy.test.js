@@ -20,6 +20,7 @@ describe('Interface Copy', () => {
     assert.match(DASHBOARD_HTML, /Current lifecycle state from stored task configs/);
     assert.match(DASHBOARD_HTML, /Retry Ready/);
     assert.match(DASHBOARD_HTML, /Blocked/);
+    assert.match(DASHBOARD_HTML, /Dry-Run Wins/);
     assert.match(DASHBOARD_HTML, /Retry Pressure/);
     assert.match(DASHBOARD_HTML, /Category Load/);
     assert.match(DASHBOARD_HTML, /Guardrail Heat/);

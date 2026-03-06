@@ -924,6 +924,7 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
           <button type="button" class="task-filter active" data-filter="all">All Tasks</button>
           <button type="button" class="task-filter" data-filter="retry">Retry Ready</button>
           <button type="button" class="task-filter" data-filter="blocked">Blocked</button>
+          <button type="button" class="task-filter" data-filter="dry-run-wins">Dry-Run Wins</button>
           <button type="button" class="task-filter" data-filter="clear-focus">Reset Focus</button>
         </div>
         <div id="task-focus" class="focus-strip"></div>
@@ -1160,6 +1161,10 @@ function matchesTaskFilter(task) {
 
   if (activeTaskFilter === 'blocked') {
     return task.status === 'changes_requested' || task.review?.status === 'rejected';
+  }
+
+  if (activeTaskFilter === 'dry-run-wins') {
+    return task.dryRunImpact === 'dry-run helped recovery';
   }
 
   return true;
