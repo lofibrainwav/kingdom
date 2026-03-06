@@ -115,3 +115,14 @@ It is no longer the definition of the project.
 3. Refactor Blackboard channels around work, knowledge, and governance
 4. Formalize Obsidian, NotebookLM, and GoT as the shared knowledge system
 5. Turn BMAD workflows into the default control plane for delivery
+
+## Workflow Contract
+
+This repository now keeps a repo-owned workflow contract in [WORKFLOW.md](./WORKFLOW.md).
+
+Use it as the operating agreement for:
+
+- task lifecycle
+- workspace preparation
+- verification before closeout
+- knowledge capture after validated work

@@ -19,6 +19,7 @@ This document explains how Kingdom should operate in practice so the system can 
 ### Execution Plane
 - Use Claude Code, Codex, Antigravity, and local agents to perform work
 - Coordinate through Blackboard and explicit artifacts
+- Use `TaskRunner` to prepare deterministic task workspaces and lifecycle state
 
 ### Governance Plane
 - Verify, review, and measure before claiming success

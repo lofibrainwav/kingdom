@@ -16,6 +16,7 @@ This document defines the canonical event vocabulary for Kingdom's Redis blackbo
 - `work:planning:init`: PM starts planning for a project
 - `work:planning:designed`: architect completes design context
 - `work:planning:decomposed`: decomposer publishes task plan
+- `work:task:started`: a task has entered execution with a declared goal
 
 ### Execution
 
@@ -23,6 +24,7 @@ This document defines the canonical event vocabulary for Kingdom's Redis blackbo
 - `execution:broadcast:<agentId>`: broadcast command mirrored per agent
 - `execution:swarm:spawn`: request swarm creation
 - `execution:swarm:terminate`: request swarm termination
+- `execution:task:workspace-ready`: the deterministic workspace for a task is prepared
 - `execution:deployment:completed`: deployer finished a deployment
 
 ### Knowledge
@@ -41,6 +43,7 @@ This document defines the canonical event vocabulary for Kingdom's Redis blackbo
 - `governance:review:approved`: reviewer approved a task result
 - `governance:review:rejected`: reviewer rejected a task result
 - `governance:failure:retry-requested`: failure agent classified a failure and requested retry
+- `governance:task:completed`: a task closed with explicit verification evidence
 - `governance:project:approved`: reviewer approved a project for deployment
 - `governance:watchdog:recovery`: watchdog initiated a recovery action
 - `governance:safety:threat`: safety plane detected a threat

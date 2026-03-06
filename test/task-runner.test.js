@@ -1,0 +1,115 @@
+const { describe, it, beforeEach } = require('node:test');
+const assert = require('node:assert/strict');
+const os = require('node:os');
+const path = require('node:path');
+const fsp = require('node:fs/promises');
+
+const { TaskRunner } = require('../agent/core/task-runner');
+
+describe('TaskRunner', () => {
+  let tmpDir;
+  let configs;
+  let published;
+  let board;
+
+  beforeEach(async () => {
+    tmpDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'task-runner-'));
+    configs = new Map();
+    published = [];
+
+    board = {
+      client: { isOpen: true },
+      setConfig: async (key, value) => {
+        configs.set(key, value);
+      },
+      getConfig: async (key) => configs.get(key) || null,
+      batchPublish: async (entries) => {
+        published.push(...entries);
+        return { count: entries.length };
+      },
+      publish: async (channel, data) => {
+        published.push({ channel, data });
+      },
+    };
+  });
+
+  it('creates deterministic workspace state and publishes start events', async () => {
+    const runner = new TaskRunner({ board, workspaceRoot: tmpDir });
+    await runner.init();
+
+    const state = await runner.startTask({
+      author: 'codex',
+      projectId: 'kingdom:core',
+      taskId: 'TASK-42',
+      goal: 'Implement task lifecycle runner',
+    });
+
+    assert.match(state.workspacePath, /workspace|task-runner-/);
+    assert.equal(state.status, 'started');
+    assert.equal(configs.get('tasks:kingdom:core:TASK-42').status, 'started');
+    assert.equal(published[0].channel, 'work:task:started');
+    assert.equal(published[1].channel, 'execution:task:workspace-ready');
+
+    const stat = await fsp.stat(state.workspacePath);
+    assert.equal(stat.isDirectory(), true);
+  });
+
+  it('completes a task only with verification evidence', async () => {
+    const runner = new TaskRunner({ board, workspaceRoot: tmpDir });
+    await runner.init();
+    await runner.startTask({
+      author: 'codex',
+      projectId: 'kingdom',
+      taskId: 'TASK-7',
+      goal: 'Keep verification attached to closeout',
+    });
+
+    const completed = await runner.completeTask({
+      author: 'codex',
+      projectId: 'kingdom',
+      taskId: 'TASK-7',
+      verification: ['npm test', 'npm run lint'],
+    });
+
+    assert.equal(completed.status, 'completed');
+    assert.equal(completed.verification.length, 2);
+    assert.equal(published.at(-1).channel, 'governance:task:completed');
+    assert.equal(published.at(-1).data.verificationCount, 2);
+  });
+
+  it('rejects completion without verification evidence', async () => {
+    const runner = new TaskRunner({ board, workspaceRoot: tmpDir });
+    await runner.init();
+
+    await assert.rejects(() => runner.completeTask({
+      author: 'codex',
+      projectId: 'kingdom',
+      taskId: 'TASK-9',
+      verification: [],
+    }), /verification evidence is required/);
+  });
+
+  it('records failure state and emits retry request', async () => {
+    const runner = new TaskRunner({ board, workspaceRoot: tmpDir });
+    await runner.init();
+    await runner.startTask({
+      author: 'codex',
+      projectId: 'kingdom',
+      taskId: 'TASK-11',
+      goal: 'Handle failure cleanly',
+    });
+
+    const failed = await runner.failTask({
+      author: 'codex',
+      projectId: 'kingdom',
+      taskId: 'TASK-11',
+      category: 'test',
+      guardrail: 'keep-green',
+    });
+
+    assert.equal(failed.status, 'failed');
+    assert.equal(failed.failure.category, 'test');
+    assert.equal(published.at(-1).channel, 'governance:failure:retry-requested');
+    assert.equal(published.at(-1).data.guardrail, 'keep-green');
+  });
+});
