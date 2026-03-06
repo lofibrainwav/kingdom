@@ -414,6 +414,7 @@ class DashboardServer {
       taskRecoveryRates: this._deriveRateList(this.metrics.retryByTask, this.metrics.resolvedByTask),
       projectDryRunCoverage: this._deriveDryRunCoverageList(this.taskRunnerCachedTasks || []),
       projectDryRunSuccessRates: this._deriveDryRunSuccessList(this.taskRunnerCachedTasks || []),
+      projectDryRunRecoveryComparison: this._deriveDryRunRecoveryComparison(this.taskRunnerCachedTasks || []),
     };
   }
 
@@ -476,6 +477,55 @@ class DashboardServer {
         successRate: entry.dryRunTasks > 0 ? Number((entry.successfulTasks / entry.dryRunTasks).toFixed(2)) : 0,
       }))
       .sort((a, b) => b.successRate - a.successRate || b.successfulTasks - a.successfulTasks || a.key.localeCompare(b.key));
+  }
+
+  _deriveDryRunRecoveryComparison(tasks = []) {
+    const byProject = new Map();
+    for (const task of tasks) {
+      if (!task.retry) {
+        continue;
+      }
+
+      const key = task.projectId || 'unknown';
+      const current = byProject.get(key) || {
+        key,
+        dryRunRetries: 0,
+        dryRunResolved: 0,
+        nonDryRunRetries: 0,
+        nonDryRunResolved: 0,
+      };
+      const hasDryRun = (task.dryRuns || []).length > 0;
+      const isResolved = task.status === 'completed' || task.status === 'approved';
+
+      if (hasDryRun) {
+        current.dryRunRetries += 1;
+        if (isResolved) {
+          current.dryRunResolved += 1;
+        }
+      } else {
+        current.nonDryRunRetries += 1;
+        if (isResolved) {
+          current.nonDryRunResolved += 1;
+        }
+      }
+
+      byProject.set(key, current);
+    }
+
+    return [...byProject.values()]
+      .map((entry) => ({
+        ...entry,
+        dryRunRate: entry.dryRunRetries > 0 ? Number((entry.dryRunResolved / entry.dryRunRetries).toFixed(2)) : 0,
+        nonDryRunRate: entry.nonDryRunRetries > 0 ? Number((entry.nonDryRunResolved / entry.nonDryRunRetries).toFixed(2)) : 0,
+      }))
+      .sort((a, b) => {
+        const totalRetriesA = a.dryRunRetries + a.nonDryRunRetries;
+        const totalRetriesB = b.dryRunRetries + b.nonDryRunRetries;
+        if (totalRetriesB !== totalRetriesA) {
+          return totalRetriesB - totalRetriesA;
+        }
+        return a.key.localeCompare(b.key);
+      });
   }
 
   _serveDashboard(req, res) {
@@ -827,6 +877,10 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
           <div class="feed-title">Dry-Run Assisted Wins</div>
           <div id="project-dry-run-success" class="feed-list"></div>
         </div>
+        <div class="pressure-card">
+          <div class="feed-title">Dry-Run Recovery Gap</div>
+          <div id="project-dry-run-recovery-gap" class="feed-list"></div>
+        </div>
       </div>
     </aside>
   </section>
@@ -892,6 +946,7 @@ const projectRecoveryRateDiv = document.getElementById('project-recovery-rate');
 const taskRecoveryRateDiv = document.getElementById('task-recovery-rate');
 const projectDryRunCoverageDiv = document.getElementById('project-dry-run-coverage');
 const projectDryRunSuccessDiv = document.getElementById('project-dry-run-success');
+const projectDryRunRecoveryGapDiv = document.getElementById('project-dry-run-recovery-gap');
 const state = {};
 const tasks = {};
 const metrics = {
@@ -910,6 +965,7 @@ const metrics = {
   taskRecoveryRates: [],
   projectDryRunCoverage: [],
   projectDryRunSuccessRates: [],
+  projectDryRunRecoveryComparison: [],
 };
 let totalEvents = 0;
 let totalHealthSignals = 0;
@@ -1230,6 +1286,7 @@ function renderRetryPressure() {
   renderRateBucket(taskRecoveryRateDiv, deriveRateList(metrics.retryByTask, metrics.resolvedByTask), 'No task recovery rates yet');
   renderSummaryRateBucket(projectDryRunCoverageDiv, metrics.projectDryRunCoverage, 'No dry-run coverage yet', 'coverage', (entry) => entry.dryRunTasks + '/' + entry.totalTasks + ' tasks rehearsed');
   renderSummaryRateBucket(projectDryRunSuccessDiv, metrics.projectDryRunSuccessRates, 'No dry-run success rates yet', 'successRate', (entry) => entry.successfulTasks + '/' + entry.dryRunTasks + ' dry-run tasks landed');
+  renderRecoveryComparisonBucket(projectDryRunRecoveryGapDiv, metrics.projectDryRunRecoveryComparison, 'No dry-run recovery comparison yet');
 }
 
 function renderBucket(container, bucket, emptyLabel, drilldownType) {
@@ -1347,6 +1404,23 @@ function renderSummaryRateBucket(container, entries, emptyLabel, rateField, deta
     return '<div class="feed-item">'
       + '<div class="feed-title">' + escapeHtml(entry.key) + '</div>'
       + '<div class="feed-meta">' + escapeHtml(detailBuilder(entry) + ' • ' + Math.round(entry[rateField] * 100) + '%') + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+function renderRecoveryComparisonBucket(container, entries, emptyLabel) {
+  if (!entries || entries.length === 0) {
+    container.innerHTML = '<div class="feed-meta">' + escapeHtml(emptyLabel) + '</div>';
+    return;
+  }
+
+  container.innerHTML = entries.map((entry) => {
+    return '<div class="feed-item">'
+      + '<div class="feed-title">' + escapeHtml(entry.key) + '</div>'
+      + '<div class="feed-meta">' + escapeHtml(
+        'dry-run ' + Math.round(entry.dryRunRate * 100) + '% (' + entry.dryRunResolved + '/' + entry.dryRunRetries + ')'
+        + ' • non-dry-run ' + Math.round(entry.nonDryRunRate * 100) + '% (' + entry.nonDryRunResolved + '/' + entry.nonDryRunRetries + ')'
+      ) + '</div>'
       + '</div>';
   }).join('');
 }

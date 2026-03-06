@@ -220,4 +220,75 @@ describe('DashboardServer state API', () => {
       { key: 'kingdom', dryRunTasks: 2, successfulTasks: 1, successRate: 0.5 },
     ]);
   });
+
+  it('derives project recovery comparison between dry-run and non-dry-run tasks', async () => {
+    const dashboard = new DashboardServer(0);
+    dashboard.taskRunner = {
+      listTasks: async () => ([
+        {
+          projectId: 'kingdom',
+          taskId: 'TASK-1',
+          status: 'approved',
+          dryRuns: [{ summary: 'rehearsed recovery path' }],
+          retry: { guardrail: 'missing-evidence' },
+        },
+        {
+          projectId: 'kingdom',
+          taskId: 'TASK-2',
+          status: 'retry_requested',
+          dryRuns: [{ summary: 'rehearsed guardrail handling' }],
+          retry: { guardrail: 'missing-tests' },
+        },
+        {
+          projectId: 'kingdom',
+          taskId: 'TASK-3',
+          status: 'approved',
+          dryRuns: [],
+          retry: { guardrail: 'missing-tests' },
+        },
+        {
+          projectId: 'sandbox',
+          taskId: 'TASK-4',
+          status: 'changes_requested',
+          dryRuns: [],
+          retry: { guardrail: 'missing-review' },
+        },
+      ]),
+    };
+    dashboard.board = {
+      listConfigs: async () => [],
+    };
+
+    let payload = '';
+    const res = {
+      writeHead: () => {},
+      end: (body) => {
+        payload = body;
+      },
+    };
+
+    await dashboard._handleAPIState({}, res, new URL('http://localhost/api/state'));
+
+    const data = JSON.parse(payload);
+    assert.deepEqual(data.metrics.projectDryRunRecoveryComparison, [
+      {
+        key: 'kingdom',
+        dryRunRetries: 2,
+        dryRunResolved: 1,
+        dryRunRate: 0.5,
+        nonDryRunRetries: 1,
+        nonDryRunResolved: 1,
+        nonDryRunRate: 1,
+      },
+      {
+        key: 'sandbox',
+        dryRunRetries: 0,
+        dryRunResolved: 0,
+        dryRunRate: 0,
+        nonDryRunRetries: 1,
+        nonDryRunResolved: 0,
+        nonDryRunRate: 0,
+      },
+    ]);
+  });
 });
