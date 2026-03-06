@@ -79,6 +79,6 @@ console.log(issues === 0 ? '✅ All subscribers have error handlers' : issues + 
 await board.publish('vibe-fix:step-02', {
   author: 'coder',
   status: 'completed',
-  P4: '11 Redis subscriber error handlers added',
+  P4: '14 Redis subscriber error handlers added',
 });
 ```

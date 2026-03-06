@@ -46,7 +46,7 @@ describe('team.js — Phase 4 synapse registration', () => {
     assert.ok(teamSrc.includes("name: 'GoTReasoner'"));
   });
 
-  it('should have 14 agents total (11 existing + 3 new)', () => {
+  it('should have 14 agents total (9 team + 5 core/memory)', () => {
     const matches = teamSrc.match(/\{\s*name:\s*'/g);
     assert.equal(matches.length, 14);
   });
