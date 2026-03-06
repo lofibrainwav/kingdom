@@ -88,7 +88,7 @@ Choose the right pattern for the task at hand:
 
 ### When unsure → `kingdom-orchestrator`
 
-### Agents (13 logical modules — 9 team + 4 core/interface/memory)
+### Agents (28 files — 9 team + 9 core + 3 interface + 7 memory)
 | Agent | One-liner |
 |-------|-----------|
 | `kingdom-orchestrator` | **START HERE** for complex tasks |
@@ -124,6 +124,16 @@ Choose the right pattern for the task at hand:
 | `/eval <target>` | Feature completeness evaluation (pass@1 metrics) |
 | `/learn [topic]` | Extract patterns from session → instincts |
 | `/checkpoint [name]` | Save session state snapshot for recovery |
+
+**BMAD Commands** (41 commands — `.claude/commands/bmad-*`):
+Planning and methodology commands from the BMAD framework. Key ones:
+| Command | What it does |
+|---------|-------------|
+| `/bmad-bmm-quick-dev` | Quick solo dev flow |
+| `/bmad-bmm-create-prd` | Create product requirements |
+| `/bmad-bmm-create-architecture` | Create architecture doc |
+| `/bmad-bmm-code-review` | Structured code review |
+| `/bmad-bmm-create-epics-and-stories` | Epic/story breakdown |
 
 ### Skills (25 Kingdom + 5 global + 3 utility — with SKILL.md)
 

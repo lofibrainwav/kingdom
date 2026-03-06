@@ -38,7 +38,7 @@ jobs:
       - name: 🔍 Lint
         run: npm run lint
 
-      - name: 🧪 Test (267+ required)
+      - name: 🧪 Test (301+ required)
         run: npm test
         env:
           BLACKBOARD_REDIS_URL: redis://localhost:6380

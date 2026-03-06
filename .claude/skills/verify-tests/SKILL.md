@@ -22,7 +22,7 @@ Verify that the Kingdom test suite is healthy and all agent files have coverage.
    - Flag any test files that had failures
 
 2. Validate thresholds:
-   - Total tests ≥ 267
+   - Total tests ≥ 301
    - Failed = 0
    - Test files ≥ 32
 
@@ -34,6 +34,7 @@ Verify that the Kingdom test suite is healthy and all agent files have coverage.
 | agent/core/blackboard.js | test/blackboard.test.js, test/blackboard-channels.test.js |
 | agent/core/logger.js | test/logger.test.js |
 | agent/core/ReflexionEngine.js | test/reflexion-engine.test.js |
+| agent/core/api-clients.js | test/api-clients.test.js |
 | agent/core/memory-logger.js | test/memory.test.js |
 
 ### Team (agent/team/) — 9 agents
@@ -54,22 +55,23 @@ Verify that the Kingdom test suite is healthy and all agent files have coverage.
 |---|---|
 | agent/interface/mcp-orchestrator.js | test/mcp-orchestrator.test.js |
 | agent/interface/dashboard.js | test/dashboard-state.test.js |
-| agent/interface/discord-bot.js | (no dedicated test — exempt, legacy adapter) |
-| agent/interface/skill-pipeline.js | (coverage via integration tests) |
-| agent/interface/zettelkasten-hooks.js | test/zettelkasten-hooks.test.js |
+| agent/interface/discord-bot.js | (no dedicated test — exempt, external API) |
 
 ### Memory (agent/memory/)
 | Agent File | Expected Test File |
 |---|---|
 | agent/memory/got-reasoner.js | test/got-reasoner.test.js |
+| agent/memory/knowledge-operator.js | test/knowledge-operator.test.js |
 | agent/memory/rumination-engine.js | test/rumination.test.js |
+| agent/memory/skill-pipeline.js | test/skill-pipeline.test.js |
 | agent/memory/skill-zettelkasten.js | test/zettelkasten.test.js |
 | agent/memory/vault-sync.js | test/vault-sync.test.js |
+| agent/memory/zettelkasten-hooks.js | test/zettelkasten-hooks.test.js |
 
 4. Report:
 ```
-✅ Tests: 267 pass / 0 fail / 0 skip (32 files)
-✅ Coverage: 25/29 agent files have tests
+✅ Tests: 301 pass / 0 fail / 0 skip (35 files)
+✅ Coverage: 25/30 agent files have tests
 ⚠️  Missing: [list any uncovered files]
 ```
 
