@@ -7,38 +7,13 @@
  */
 
 module.exports = {
-  // -- Core Bot Lifecycle --
-
-  /** Heartbeat publish frequency */
-  HEARTBEAT_INTERVAL_MS: parseInt(process.env.HEARTBEAT_INTERVAL_MS) || 10000,
-
-  /** Bot spawn timeout before retry */
-  SPAWN_TIMEOUT_MS: parseInt(process.env.SPAWN_TIMEOUT_MS) || 30000,
+  // -- Reconnection --
 
   /** Base delay for exponential backoff on reconnect */
   BASE_RECONNECT_DELAY_MS: 1000,
 
   /** Max reconnect attempts before giving up */
   MAX_RECONNECT_ATTEMPTS: 10,
-
-  // -- Team Orchestration --
-
-  /** Leader mission distribution interval */
-  MISSION_LOOP_INTERVAL_MS: 10000,
-
-  /** Team status logging interval */
-  STATUS_LOG_INTERVAL_MS: 30000,
-
-  /** Force exit timeout during graceful shutdown */
-  SHUTDOWN_TIMEOUT_MS: 10000,
-
-  // -- Deduplication & Cooldowns --
-
-  /** Emergency event deduplication window */
-  EMERGENCY_DEDUP_MS: parseInt(process.env.EMERGENCY_DEDUP_MS) || 3000,
-
-  /** Safety threat cooldown */
-  THREAT_COOLDOWN_MS: parseInt(process.env.SAFETY_THREAT_COOLDOWN_MS) || 2000,
 
   // -- VM Sandbox --
 

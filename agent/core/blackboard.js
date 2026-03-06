@@ -93,6 +93,10 @@ const CHANNEL_RULES = [
     aliases: ['leader:reflexion'],
   },
   {
+    canonical: 'governance:task:completed',
+    aliases: ['task:completed'],
+  },
+  {
     match: /^execution:dispatch:(.+)$/ ,
     canonicalFromMatch: (match) => `execution:dispatch:${match[1]}`,
     aliasesFromMatch: (match) => [`command:${match[1]}:task`],
