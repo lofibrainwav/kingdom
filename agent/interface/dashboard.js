@@ -33,6 +33,7 @@ class DashboardServer {
       retryByTask: {},
       resolvedGuardrails: {},
       resolvedByProject: {},
+      resolvedByTask: {},
     };
   }
 
@@ -177,6 +178,13 @@ class DashboardServer {
         if (data.outcome === 'passed' && data.retryGuardrail) {
           this._incrementMetricBucket('resolvedGuardrails', data.retryGuardrail);
           this._incrementMetricBucket('resolvedByProject', data.projectId || 'unknown');
+          this._incrementMetricBucket(
+            'resolvedByTask',
+            this._taskMetricKey({
+              projectId: data.projectId,
+              taskId: data.taskId || data.continuationTaskId,
+            })
+          );
         }
         this._rememberKnowledgeEvent({
           type: 'capture',
@@ -311,8 +319,42 @@ class DashboardServer {
       ...task,
       latestKnowledge: taskKnowledge.get(`${task.projectId}:${task.taskId}`) || null,
     }));
+    const derivedMetrics = this._buildRecoveryMetrics();
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ agents: this.agentState, tasks: hydratedTasks, metrics: this.metrics, timestamp: Date.now() }));
+    res.end(JSON.stringify({
+      agents: this.agentState,
+      tasks: hydratedTasks,
+      metrics: {
+        ...this.metrics,
+        ...derivedMetrics,
+      },
+      timestamp: Date.now(),
+    }));
+  }
+
+  _buildRecoveryMetrics() {
+    return {
+      projectRecoveryRates: this._deriveRateList(this.metrics.retryByProject, this.metrics.resolvedByProject),
+      taskRecoveryRates: this._deriveRateList(this.metrics.retryByTask, this.metrics.resolvedByTask),
+    };
+  }
+
+  _deriveRateList(retryBucket = {}, resolvedBucket = {}) {
+    return Object.entries(retryBucket)
+      .map(([key, retries]) => {
+        const resolved = resolvedBucket[key] || 0;
+        const rate = retries > 0 ? Number((resolved / retries).toFixed(2)) : 0;
+        return { key, retries, resolved, rate };
+      })
+      .sort((a, b) => {
+        if (b.rate !== a.rate) {
+          return b.rate - a.rate;
+        }
+        if (b.resolved !== a.resolved) {
+          return b.resolved - a.resolved;
+        }
+        return a.key.localeCompare(b.key);
+      });
   }
 
   _serveDashboard(req, res) {
@@ -648,6 +690,14 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
           <div class="feed-title">Task Hotspots</div>
           <div id="retry-task" class="feed-list"></div>
         </div>
+        <div class="pressure-card">
+          <div class="feed-title">Project Recovery Rate</div>
+          <div id="project-recovery-rate" class="feed-list"></div>
+        </div>
+        <div class="pressure-card">
+          <div class="feed-title">Task Recovery Rate</div>
+          <div id="task-recovery-rate" class="feed-list"></div>
+        </div>
       </div>
     </aside>
   </section>
@@ -709,6 +759,8 @@ const retryGuardrailDiv = document.getElementById('retry-guardrail');
 const resolvedGuardrailDiv = document.getElementById('resolved-guardrail');
 const retryProjectDiv = document.getElementById('retry-project');
 const retryTaskDiv = document.getElementById('retry-task');
+const projectRecoveryRateDiv = document.getElementById('project-recovery-rate');
+const taskRecoveryRateDiv = document.getElementById('task-recovery-rate');
 const state = {};
 const tasks = {};
 const metrics = {
@@ -722,6 +774,9 @@ const metrics = {
   retryByTask: {},
   resolvedGuardrails: {},
   resolvedByProject: {},
+  resolvedByTask: {},
+  projectRecoveryRates: [],
+  taskRecoveryRates: [],
 };
 let totalEvents = 0;
 let totalHealthSignals = 0;
@@ -766,6 +821,7 @@ es.onmessage = (e) => {
     if (evt.data?.outcome === 'passed' && evt.data?.retryGuardrail) {
       incrementBucket(metrics.resolvedGuardrails, evt.data.retryGuardrail);
       incrementBucket(metrics.resolvedByProject, evt.data?.projectId || 'unknown');
+      incrementBucket(metrics.resolvedByTask, buildTaskMetricKey(evt.data?.projectId, evt.data?.taskId || evt.data?.continuationTaskId));
     }
     pushKnowledgeFeed({
       type: 'capture',
@@ -1029,6 +1085,8 @@ function renderRetryPressure() {
   renderBucket(resolvedGuardrailDiv, metrics.resolvedGuardrails, 'No resolved guardrails yet', 'guardrail');
   renderBucket(retryProjectDiv, metrics.retryByProject, 'No project hotspots yet', 'project');
   renderBucket(retryTaskDiv, metrics.retryByTask, 'No task hotspots yet', 'task');
+  renderRateBucket(projectRecoveryRateDiv, deriveRateList(metrics.retryByProject, metrics.resolvedByProject), 'No project recovery rates yet');
+  renderRateBucket(taskRecoveryRateDiv, deriveRateList(metrics.retryByTask, metrics.resolvedByTask), 'No task recovery rates yet');
 }
 
 function renderBucket(container, bucket, emptyLabel, drilldownType) {
@@ -1058,6 +1116,35 @@ function renderBucket(container, bucket, emptyLabel, drilldownType) {
 
 function buildTaskMetricKey(projectId, taskId) {
   return (projectId || 'unknown-project') + '/' + (taskId || 'unknown-task');
+}
+
+function deriveRateList(retryBucket, resolvedBucket) {
+  return Object.entries(retryBucket || {})
+    .map(([key, retries]) => {
+      const resolved = (resolvedBucket || {})[key] || 0;
+      const rate = retries > 0 ? Number((resolved / retries).toFixed(2)) : 0;
+      return { key, retries, resolved, rate };
+    })
+    .sort((a, b) => {
+      if (b.rate !== a.rate) return b.rate - a.rate;
+      if (b.resolved !== a.resolved) return b.resolved - a.resolved;
+      return a.key.localeCompare(b.key);
+    })
+    .slice(0, 6);
+}
+
+function renderRateBucket(container, entries, emptyLabel) {
+  if (!entries || entries.length === 0) {
+    container.innerHTML = '<div class="feed-meta">' + escapeHtml(emptyLabel) + '</div>';
+    return;
+  }
+
+  container.innerHTML = entries.map((entry) => {
+    return '<div class="feed-item">'
+      + '<div class="feed-title">' + escapeHtml(entry.key) + '</div>'
+      + '<div class="feed-meta">' + escapeHtml((entry.resolved + '/' + entry.retries + ' resolved • ' + Math.round(entry.rate * 100) + '%')) + '</div>'
+      + '</div>';
+  }).join('');
 }
 
 function timeAgo(ts) {

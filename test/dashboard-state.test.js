@@ -89,4 +89,50 @@ describe('DashboardServer state API', () => {
       retryCategory: 'review',
     });
   });
+
+  it('derives project and task recovery rates from retry and resolved metrics', async () => {
+    const dashboard = new DashboardServer(0);
+    dashboard.taskRunner = {
+      listTasks: async () => [],
+    };
+    dashboard.board = {
+      listConfigs: async () => [],
+    };
+    dashboard.metrics.retryByProject = {
+      kingdom: 4,
+      sandbox: 2,
+    };
+    dashboard.metrics.resolvedByProject = {
+      kingdom: 3,
+      sandbox: 1,
+    };
+    dashboard.metrics.retryByTask = {
+      'kingdom/TASK-1': 3,
+      'kingdom/TASK-2': 1,
+    };
+    dashboard.metrics.resolvedByTask = {
+      'kingdom/TASK-1': 2,
+      'kingdom/TASK-2': 1,
+    };
+
+    let payload = '';
+    const res = {
+      writeHead: () => {},
+      end: (body) => {
+        payload = body;
+      },
+    };
+
+    await dashboard._handleAPIState({}, res, new URL('http://localhost/api/state'));
+
+    const data = JSON.parse(payload);
+    assert.deepEqual(data.metrics.projectRecoveryRates, [
+      { key: 'kingdom', retries: 4, resolved: 3, rate: 0.75 },
+      { key: 'sandbox', retries: 2, resolved: 1, rate: 0.5 },
+    ]);
+    assert.deepEqual(data.metrics.taskRecoveryRates, [
+      { key: 'kingdom/TASK-2', retries: 1, resolved: 1, rate: 1 },
+      { key: 'kingdom/TASK-1', retries: 3, resolved: 2, rate: 0.67 },
+    ]);
+  });
 });
