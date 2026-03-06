@@ -405,6 +405,25 @@ class Blackboard {
   }
 
   /**
+   * List JSON configs by key prefix
+   */
+  async listConfigs(prefix = '') {
+    const keys = await this.client.keys(PREFIX + prefix + '*');
+    const results = [];
+
+    for (const fullKey of keys.sort()) {
+      const raw = await this.client.get(fullKey);
+      if (!raw) continue;
+      results.push({
+        key: this._stripPrefix(fullKey),
+        value: JSON.parse(raw),
+      });
+    }
+
+    return results;
+  }
+
+  /**
    * Get all entries from a hash (e.g., 'agents:registry')
    */
   async getHash(key) {

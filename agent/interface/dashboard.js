@@ -6,6 +6,7 @@
 const http = require('http');
 const { Blackboard } = require('../core/blackboard');
 const { getLogger } = require('../core/logger');
+const { TaskRunner } = require('../core/task-runner');
 const log = getLogger();
 
 const PORT = process.env.DASHBOARD_PORT || 3000;
@@ -18,6 +19,7 @@ class DashboardServer {
     this.sseClients = [];
     this.subscriber = null;
     this.agentState = {};
+    this.taskRunner = new TaskRunner({ board: this.board });
     this.metrics = {
       knowledgeCaptures: 0,
       skillEvals: 0,
@@ -33,7 +35,9 @@ class DashboardServer {
     this.subscriber.on('error', (err) => log.error('dashboard', 'Redis sub error', { error: err.message }));
     this._subscribeUpdates();
 
-    this.server = http.createServer((req, res) => this._handleRequest(req, res));
+    this.server = http.createServer((req, res) => {
+      void this._handleRequest(req, res);
+    });
     return new Promise((resolve) => {
       this.server.listen(this.port, () => {
         log.info('dashboard', `http://localhost:${this.port}`);
@@ -213,7 +217,7 @@ class DashboardServer {
     });
   }
 
-  _handleRequest(req, res) {
+  async _handleRequest(req, res) {
     if (req.url === '/events') {
       return this._handleSSE(req, res);
     }
@@ -241,9 +245,10 @@ class DashboardServer {
     });
   }
 
-  _handleAPIState(req, res) {
+  async _handleAPIState(req, res) {
+    const tasks = await this.taskRunner.listTasks();
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ agents: this.agentState, metrics: this.metrics, timestamp: Date.now() }));
+    res.end(JSON.stringify({ agents: this.agentState, tasks, metrics: this.metrics, timestamp: Date.now() }));
   }
 
   _serveDashboard(req, res) {
@@ -372,6 +377,9 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
     grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
     gap: 20px;
   }
+  .task-board {
+    margin-bottom: 20px;
+  }
   .section { padding: 22px; }
   .section-header {
     display: flex;
@@ -387,6 +395,11 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: 14px;
   }
+  #tasks {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+  }
   .agent-card {
     background: rgba(255,255,255,0.7);
     border: 1px solid var(--line);
@@ -397,6 +410,13 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
   .field { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; font-size: 14px; }
   .label { color: var(--muted); }
   .value { text-align: right; }
+  .task-card {
+    background: rgba(255,255,255,0.7);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 16px;
+  }
+  .task-card h3 { margin: 0 0 10px; font-size: 17px; }
   .ok { color: var(--ok); }
   .warn { color: var(--warn); }
   .danger { color: var(--danger); }
@@ -499,6 +519,13 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
 
   <section class="content">
     <div class="panel section">
+      <div class="task-board">
+        <div class="section-header">
+          <h2 class="section-title">Task Board</h2>
+          <div class="section-note">Current lifecycle state from stored task configs</div>
+        </div>
+        <div id="tasks"></div>
+      </div>
       <div class="section-header">
         <h2 class="section-title">Agent Constellation</h2>
         <div class="section-note">Current system heartbeat and responsibilities</div>
@@ -516,6 +543,7 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
 </div>
 <script>
 const agentsDiv = document.getElementById('agents');
+const tasksDiv = document.getElementById('tasks');
 const eventsDiv = document.getElementById('events');
 const statAgents = document.getElementById('stat-agents');
 const statEvents = document.getElementById('stat-events');
@@ -526,6 +554,7 @@ const statSkillEvals = document.getElementById('stat-skill-evals');
 const knowledgeFeedDiv = document.getElementById('knowledge-feed');
 const taskFeedDiv = document.getElementById('task-feed');
 const state = {};
+const tasks = {};
 const metrics = { knowledgeCaptures: 0, skillEvals: 0, recentKnowledge: [], recentTasks: [] };
 let totalEvents = 0;
 let totalHealthSignals = 0;
@@ -563,6 +592,7 @@ es.onmessage = (e) => {
     });
   }
   if (evt.type === 'task-closeout') {
+    rememberTaskState(evt);
     pushTaskFeed({
       type: evt.channel?.split(':').slice(1).join('-') || 'task',
       title: evt.data?.taskId || 'task',
@@ -571,6 +601,7 @@ es.onmessage = (e) => {
     });
   }
   addEvent(evt);
+  renderTasks();
   renderStats();
 };
 
@@ -602,6 +633,27 @@ function renderAgents() {
       + field('Updated', timeAgo(s.lastUpdate))
       + '</article>';
   }).join('');
+}
+
+function renderTasks() {
+  const entries = Object.entries(tasks);
+  if (entries.length === 0) {
+    tasksDiv.innerHTML = '<article class="task-card"><h3>No tasks yet</h3><div class="field"><span class="label">Status</span><span class="value">Waiting for task state</span></div></article>';
+    return;
+  }
+
+  tasksDiv.innerHTML = entries
+    .sort((a, b) => (b[1].updatedAt || 0) - (a[1].updatedAt || 0))
+    .map(([, task]) => {
+      return '<article class="task-card"><h3>' + escapeHtml(task.taskId || 'task') + '</h3>'
+        + field('Project', escapeHtml(task.projectId || 'unknown'))
+        + field('Status', escapeHtml(task.status || 'unknown'))
+        + field('Goal', escapeHtml(task.goal || 'n/a'))
+        + field('Review', escapeHtml(task.review?.status || '-'))
+        + field('Retry', escapeHtml(task.retry?.guardrail || '-'))
+        + field('Updated', timeAgo(task.updatedAt))
+        + '</article>';
+    }).join('');
 }
 
 function inferPlane(task, state) {
@@ -653,6 +705,54 @@ function pushTaskFeed(entry) {
   metrics.recentTasks = metrics.recentTasks.slice(0, 6);
 }
 
+function rememberTaskState(evt) {
+  const taskId = evt.data?.taskId;
+  const projectId = evt.data?.projectId;
+  if (!taskId || !projectId) return;
+  const key = projectId + ':' + taskId;
+  const current = tasks[key] || { projectId, taskId };
+
+  if (evt.channel === 'governance:task:completed') {
+    tasks[key] = { ...current, status: 'completed', updatedAt: Date.now() };
+    return;
+  }
+  if (evt.channel === 'governance:review:requested') {
+    tasks[key] = {
+      ...current,
+      status: current.status || 'completed',
+      review: { status: 'requested', file: evt.data?.file },
+      updatedAt: Date.now(),
+    };
+    return;
+  }
+  if (evt.channel === 'governance:review:approved') {
+    tasks[key] = {
+      ...current,
+      status: 'approved',
+      review: { status: 'approved', file: evt.data?.file },
+      updatedAt: Date.now(),
+    };
+    return;
+  }
+  if (evt.channel === 'governance:review:rejected') {
+    tasks[key] = {
+      ...current,
+      status: 'changes_requested',
+      review: { status: 'rejected', file: evt.data?.file, feedback: evt.data?.feedback },
+      updatedAt: Date.now(),
+    };
+    return;
+  }
+  if (evt.channel === 'governance:failure:retry-requested') {
+    tasks[key] = {
+      ...current,
+      status: 'retry_requested',
+      retry: { guardrail: evt.data?.guardrail, category: evt.data?.category },
+      updatedAt: Date.now(),
+    };
+  }
+}
+
 function renderTaskFeed() {
   if (metrics.recentTasks.length === 0) {
     taskFeedDiv.innerHTML = '<div class="feed-item"><div class="feed-title">No closeout signals yet</div><div class="feed-meta">Task completion, review, and retry events will appear here.</div></div>';
@@ -684,7 +784,11 @@ function escapeHtml(value) {
 
 fetch('/api/state').then(r => r.json()).then(d => {
   Object.assign(state, d.agents);
+  for (const task of (d.tasks || [])) {
+    tasks[task.projectId + ':' + task.taskId] = task;
+  }
   Object.assign(metrics, d.metrics || {});
+  renderTasks();
   renderAgents();
   renderStats();
 });

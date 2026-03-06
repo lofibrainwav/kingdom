@@ -23,6 +23,11 @@ describe('TaskRunner', () => {
         configs.set(key, value);
       },
       getConfig: async (key) => configs.get(key) || null,
+      listConfigs: async (prefix) => {
+        return [...configs.entries()]
+          .filter(([key]) => key.startsWith(prefix))
+          .map(([key, value]) => ({ key, value }));
+      },
       batchPublish: async (entries) => {
         published.push(...entries);
         return { count: entries.length };
@@ -159,5 +164,27 @@ describe('TaskRunner', () => {
     });
     assert.equal(approved.status, 'approved');
     assert.equal(approved.review.status, 'approved');
+  });
+
+  it('lists stored tasks in reverse updated order', async () => {
+    const runner = new TaskRunner({ board, workspaceRoot: tmpDir });
+    await runner.init();
+    await runner.startTask({
+      author: 'codex',
+      projectId: 'kingdom',
+      taskId: 'TASK-21',
+      goal: 'First task',
+    });
+    await runner.startTask({
+      author: 'codex',
+      projectId: 'kingdom',
+      taskId: 'TASK-22',
+      goal: 'Second task',
+    });
+
+    const tasks = await runner.listTasks({ projectId: 'kingdom' });
+    assert.equal(tasks.length, 2);
+    assert.equal(tasks[0].taskId, 'TASK-22');
+    assert.equal(tasks[1].taskId, 'TASK-21');
   });
 });

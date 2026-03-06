@@ -262,6 +262,15 @@ describe('Blackboard — Supplemental methods', () => {
     assert.equal(miss, null);
   });
 
+  it('listConfigs should return prefixed config entries', async () => {
+    await board.setConfig('sup:config:list:a', { a: 1 });
+    await board.setConfig('sup:config:list:b', { b: 2 });
+    const configs = await board.listConfigs('sup:config:list:');
+    assert.equal(configs.length, 2);
+    assert.equal(configs[0].key, 'sup:config:list:a');
+    assert.equal(configs[1].key, 'sup:config:list:b');
+  });
+
   it('Hash fields: setHashField, getHashField, getHash, deleteHashField', async () => {
     await board.setHashField('sup:hash1', 'fieldA', { x: 10 });
     await board.setHashField('sup:hash1', 'fieldB', { x: 20 });
@@ -304,4 +313,3 @@ describe('Blackboard — Supplemental methods', () => {
     await assert.doesNotReject(() => fresh.disconnect());
   });
 });
-

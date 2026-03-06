@@ -115,6 +115,33 @@ class TaskRunner {
     return updated;
   }
 
+  async listTasks({ projectId } = {}) {
+    if (!this.board.listConfigs) {
+      return [];
+    }
+
+    const prefix = projectId ? `tasks:${projectId}:` : 'tasks:';
+    const entries = await this.board.listConfigs(prefix);
+    return entries
+      .map(({ key, value }) => ({
+        key,
+        ...value,
+      }))
+      .sort((a, b) => {
+        const updatedDelta = (b.updatedAt || 0) - (a.updatedAt || 0);
+        if (updatedDelta !== 0) {
+          return updatedDelta;
+        }
+
+        const startedDelta = (b.startedAt || 0) - (a.startedAt || 0);
+        if (startedDelta !== 0) {
+          return startedDelta;
+        }
+
+        return String(b.taskId || '').localeCompare(String(a.taskId || ''));
+      });
+  }
+
   async markReviewRequested({ projectId, taskId, file }) {
     return this._patchTaskState(projectId, taskId, (current) => ({
       ...current,

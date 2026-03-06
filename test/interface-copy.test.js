@@ -16,6 +16,8 @@ describe('Interface Copy', () => {
     assert.match(DASHBOARD_HTML, /Recent captures and skill evaluation outcomes/);
     assert.match(DASHBOARD_HTML, /Task Closeout Feed/);
     assert.match(DASHBOARD_HTML, /Recent completion, review, and retry outcomes/);
+    assert.match(DASHBOARD_HTML, /Task Board/);
+    assert.match(DASHBOARD_HTML, /Current lifecycle state from stored task configs/);
   });
 
   it('discord help copy should reference the Kingdom operating system', () => {
