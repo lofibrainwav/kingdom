@@ -111,6 +111,9 @@ const CHANNEL_RULES = [
   { canonical: 'config:llm:updated', aliases: [] },
   { canonical: 'orchestrator:registered', aliases: [] },
   { canonical: 'orchestrator:deregistered', aliases: [] },
+  { canonical: 'governance:teamlead:reviewed', aliases: [] },
+  { canonical: 'knowledge:research:trigger', aliases: [] },
+  { canonical: 'knowledge:research:completed', aliases: [] },
   { canonical: 'team:celebration', aliases: [] },
   {
     match: /^execution:dispatch:(.+)$/ ,

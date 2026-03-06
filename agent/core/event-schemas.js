@@ -37,6 +37,9 @@ const SCHEMAS = {
   'config:llm:updated': ['author'],
   'orchestrator:registered': ['author', 'agentId', 'role'],
   'orchestrator:deregistered': ['author', 'agentId'],
+  'governance:teamlead:reviewed': ['author', 'batchSize', 'taskIds', 'verdict'],
+  'knowledge:research:trigger': ['author', 'question'],
+  'knowledge:research:completed': ['author', 'question', 'researchId'],
   'team:celebration': ['author', 'event', 'skill'],
 };
 

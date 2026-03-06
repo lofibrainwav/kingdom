@@ -1,5 +1,5 @@
 /**
- * E2E Boot Test — verifies all 15 agents can init() and shutdown() with live Redis.
+ * E2E Boot Test — verifies all 17 agents can init() and shutdown() with live Redis.
  * Requires Redis on localhost:6380 (Docker).
  * Run: node --test test/e2e-boot.test.js
  */
@@ -23,6 +23,8 @@ const { RuminationEngine } = require('../agent/memory/rumination-engine');
 const { GoTReasoner } = require('../agent/memory/got-reasoner');
 const { SkillZettelkasten } = require('../agent/memory/skill-zettelkasten');
 const { NotebookLMQueue } = require('../agent/memory/notebooklm-queue');
+const { TeamLeadAgent } = require('../agent/team/team-lead');
+const { ResearchAgent } = require('../agent/memory/research-agent');
 
 const REDIS_URL = process.env.BLACKBOARD_REDIS_URL || 'redis://localhost:6380';
 
@@ -56,6 +58,8 @@ function createAgentDefs() {
     { name: 'VaultBridge', factory: () => new VaultBridge(), postInit: (inst) => inst.start() },
     { name: 'RuminationEngine', factory: () => new RuminationEngine(sharedZK), postInit: (inst) => inst.startEventFeed() },
     { name: 'NotebookLMQueue', factory: () => new NotebookLMQueue(), postInit: (inst) => inst.start() },
+    { name: 'TeamLead', factory: () => new TeamLeadAgent(), postInit: (inst) => inst.start() },
+    { name: 'ResearchAgent', factory: () => new ResearchAgent(), postInit: (inst) => inst.start() },
     {
       name: 'GoTReasoner',
       factory: () => new GoTReasoner(sharedZK),
@@ -69,7 +73,7 @@ function createAgentDefs() {
   ];
 }
 
-describe('E2E Boot — 15 agents init + shutdown with live Redis', async () => {
+describe('E2E Boot — 17 agents init + shutdown with live Redis', async () => {
   const available = await isRedisAvailable();
   if (!available) {
     it('SKIP: Redis not available', { skip: 'Redis not reachable on ' + REDIS_URL }, () => {
@@ -78,8 +82,8 @@ describe('E2E Boot — 15 agents init + shutdown with live Redis', async () => {
     return;
   }
 
-  it('should have 15 agent definitions', () => {
-    assert.equal(createAgentDefs().length, 15);
+  it('should have 17 agent definitions', () => {
+    assert.equal(createAgentDefs().length, 17);
   });
 
   const agentDefs = createAgentDefs();
@@ -92,7 +96,7 @@ describe('E2E Boot — 15 agents init + shutdown with live Redis', async () => {
     });
   }
 
-  it('all 15 agents boot sequentially then shutdown (team.js simulation)', async () => {
+  it('all 17 agents boot sequentially then shutdown (team.js simulation)', async () => {
     const defs = createAgentDefs();
     const instances = [];
     const errors = [];
@@ -109,7 +113,7 @@ describe('E2E Boot — 15 agents init + shutdown with live Redis', async () => {
     }
 
     assert.equal(errors.length, 0, `Boot failures: ${JSON.stringify(errors)}`);
-    assert.equal(instances.length, 15, `Only ${instances.length}/15 agents booted`);
+    assert.equal(instances.length, 17, `Only ${instances.length}/17 agents booted`);
 
     // Shutdown all (reverse order like a real system)
     for (const { instance } of [...instances].reverse()) {

@@ -46,9 +46,25 @@ describe('team.js — Phase 4 synapse registration', () => {
     assert.ok(teamSrc.includes("name: 'GoTReasoner'"));
   });
 
-  it('should have 15 agents total (9 team + 6 core/memory)', () => {
+  it('should have 17 agents total (9 team + 2 phase-5 + 6 core/memory)', () => {
     const matches = teamSrc.match(/\{\s*name:\s*'/g);
-    assert.equal(matches.length, 15);
+    assert.equal(matches.length, 17);
+  });
+
+  it('should import TeamLeadAgent', () => {
+    assert.ok(teamSrc.includes("require('./team/team-lead')"));
+  });
+
+  it('should import ResearchAgent', () => {
+    assert.ok(teamSrc.includes("require('./memory/research-agent')"));
+  });
+
+  it('should register TeamLead in AGENTS', () => {
+    assert.ok(teamSrc.includes("name: 'TeamLead'"));
+  });
+
+  it('should register ResearchAgent in AGENTS', () => {
+    assert.ok(teamSrc.includes("name: 'ResearchAgent'"));
   });
 
   it('should call startEventFeed for RuminationEngine postInit', () => {
