@@ -14,7 +14,7 @@ const log = getLogger();
 class DeployerAgent {
   constructor() {
     this.board = new Blackboard();
-    this.agentId = 'Octiv_Deployer';
+    this.agentId = 'Kingdom_Deployer';
     this.projectRoot = path.join(__dirname, '..', '..');
   }
 

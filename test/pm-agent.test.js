@@ -93,7 +93,7 @@ describe('PMAgent', () => {
     const taskState = configs.get('tasks:kingdom:TASK-501');
     assert.equal(taskState.status, 'replanning');
     assert.equal(taskState.retry.handoff.status, 'claimed');
-    assert.equal(taskState.retry.handoff.claimedBy, 'Octiv_PM');
+    assert.equal(taskState.retry.handoff.claimedBy, 'Kingdom_PM');
 
     assert.equal(published.length, 1);
     assert.equal(published[0].channel, 'work:planning:init');

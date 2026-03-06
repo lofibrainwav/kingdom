@@ -14,7 +14,7 @@ const log = getLogger();
 class PMAgent {
   constructor() {
     this.board = new Blackboard();
-    this.agentId = 'Octiv_PM';
+    this.agentId = 'Kingdom_PM';
     this.taskRunner = new TaskRunner({ board: this.board });
   }
 

@@ -14,7 +14,7 @@ class ArchitectAgent {
   constructor() {
     this.board = new Blackboard();
     this.llm = new ReflexionEngine();
-    this.agentId = 'Octiv_Architect';
+    this.agentId = 'Kingdom_Architect';
   }
 
   async init() {

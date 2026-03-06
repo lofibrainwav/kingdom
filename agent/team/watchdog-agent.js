@@ -14,7 +14,7 @@ const log = getLogger();
 class WatchdogAgent {
   constructor() {
     this.board = new Blackboard();
-    this.agentId = 'Octiv_Watchdog';
+    this.agentId = 'Kingdom_Watchdog';
     this.checkInterval = 30000; // 30s
     this.unresponsiveThreshold = 60000; // 60s
   }
@@ -51,14 +51,14 @@ class WatchdogAgent {
   async recoverAgent(agentId) {
     // Mapping agentId to script filename
     const nameMap = {
-      'Octiv_PM': 'pm-agent.js',
-      'Octiv_Architect': 'architect.js',
-      'Octiv_Decomposer': 'decomposer.js',
-      'Octiv_Coder': 'coder.js',
-      'Octiv_Reviewer': 'reviewer.js',
-      'Octiv_Failure': 'failure-agent.js',
-      'Octiv_Deployer': 'deployer.js',
-      'Octiv_Swarm': 'swarm-orchestrator.js'
+      'Kingdom_PM': 'pm-agent.js',
+      'Kingdom_Architect': 'architect.js',
+      'Kingdom_Decomposer': 'decomposer.js',
+      'Kingdom_Coder': 'coder.js',
+      'Kingdom_Reviewer': 'reviewer.js',
+      'Kingdom_Failure': 'failure-agent.js',
+      'Kingdom_Deployer': 'deployer.js',
+      'Kingdom_Swarm': 'swarm-orchestrator.js'
     };
 
     const script = nameMap[agentId];

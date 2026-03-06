@@ -14,7 +14,7 @@ class FailureAgent {
   constructor() {
     this.board = new Blackboard();
     this.llm = new ReflexionEngine();
-    this.agentId = 'Octiv_Failure';
+    this.agentId = 'Kingdom_Failure';
   }
 
   async init() {

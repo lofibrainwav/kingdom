@@ -16,7 +16,7 @@ class DecomposerAgent {
     this.board = new Blackboard();
     this.llm = new ReflexionEngine();
     this.got = new GoTReasoner();
-    this.agentId = 'Octiv_Decomposer';
+    this.agentId = 'Kingdom_Decomposer';
   }
 
   async init() {

@@ -56,7 +56,7 @@ describe('SwarmOrchestrator — Vibe Coding Parallel Execution', () => {
   it('Should initialize swarm orchestrator and register as agent', async () => {
     let statusSaved = false;
     mock.method(mockBoard, 'setHashField', async (key, field, val) => {
-      if (key === 'agents:status' && field === 'Octiv_Swarm') {
+      if (key === 'agents:status' && field === 'Kingdom_Swarm') {
         assert.equal(val.state, 'idle');
         statusSaved = true;
       }
@@ -71,7 +71,7 @@ describe('SwarmOrchestrator — Vibe Coding Parallel Execution', () => {
     let orchestratingStatus = false;
     
     mock.method(mockBoard, 'setHashField', async (key, field, val) => {
-      if (key === 'agents:status' && field === 'Octiv_Swarm') {
+      if (key === 'agents:status' && field === 'Kingdom_Swarm') {
         if (val.state === 'orchestrating') orchestratingStatus = true;
       }
       if (key === 'swarms' && field === 'test-swarm') {

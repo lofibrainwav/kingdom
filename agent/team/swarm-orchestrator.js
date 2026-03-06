@@ -14,7 +14,7 @@ const log = getLogger();
 class SwarmOrchestrator {
   constructor() {
     this.board = new Blackboard();
-    this.agentId = 'Octiv_Swarm';
+    this.agentId = 'Kingdom_Swarm';
     this.children = new Map(); // childId -> process
   }
 

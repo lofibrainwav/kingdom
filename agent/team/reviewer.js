@@ -16,7 +16,7 @@ class ReviewerAgent {
     this.board = new Blackboard();
     this.llm = new ReflexionEngine();
     this.rumination = new RuminationEngine();
-    this.agentId = 'Octiv_Reviewer';
+    this.agentId = 'Kingdom_Reviewer';
   }
 
   async init() {

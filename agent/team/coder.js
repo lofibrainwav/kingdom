@@ -16,7 +16,7 @@ class CoderAgent {
   constructor() {
     this.board = new Blackboard();
     this.llm = new ReflexionEngine();
-    this.agentId = 'Octiv_Coder';
+    this.agentId = 'Kingdom_Coder';
     this.baseWorkspace = path.join(__dirname, '..', '..', 'workspace');
   }
 
