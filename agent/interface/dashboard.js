@@ -395,6 +395,7 @@ class DashboardServer {
       ...task,
       latestKnowledge: taskKnowledge.get(`${task.projectId}:${task.taskId}`) || null,
       dryRunImpact: this._deriveDryRunImpact(task),
+      promotionSignal: this._derivePromotionSignal(task, taskKnowledge.get(`${task.projectId}:${task.taskId}`) || null),
     }));
     const derivedMetrics = this._buildRecoveryMetrics();
     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -547,6 +548,16 @@ class DashboardServer {
       return 'dry-run recorded';
     }
     return 'no dry-run signal';
+  }
+
+  _derivePromotionSignal(task = {}, latestKnowledge = null) {
+    if (this._deriveDryRunImpact(task) === 'dry-run helped recovery' && latestKnowledge?.title) {
+      return 'ready to promote';
+    }
+    if (latestKnowledge?.title) {
+      return 'knowledge captured';
+    }
+    return 'awaiting capture';
   }
 
   _serveDashboard(req, res) {
@@ -1128,6 +1139,8 @@ function renderTasks() {
         + field('Dry Run Count', escapeHtml(String(task.dryRuns?.length || 0)))
         + field('Latest Dry Run', escapeHtml(task.dryRuns?.at(-1)?.summary || '-'))
         + field('Dry-Run Impact', escapeHtml(task.dryRunImpact || 'no dry-run signal'))
+        + field('Knowledge Capture', escapeHtml(task.latestKnowledge?.title || '-'))
+        + field('Promotion Signal', escapeHtml(task.promotionSignal || 'awaiting capture'))
         + field('Latest Lesson', escapeHtml(task.latestKnowledge?.lesson || '-'))
         + field('Latest Improvement', escapeHtml(task.latestKnowledge?.improvementNote || '-'))
         + field('Knowledge Updated', timeAgo(Date.parse(task.latestKnowledge?.capturedAt || 0)))

@@ -63,6 +63,7 @@ describe('DashboardServer state API', () => {
     assert.equal(data.tasks[0].latestKnowledge.title, 'Completed TASK-14');
     assert.match(data.tasks[0].latestKnowledge.improvementNote, /missing-lesson/);
     assert.equal(data.tasks[0].dryRunImpact, 'dry-run helped recovery');
+    assert.equal(data.tasks[0].promotionSignal, 'ready to promote');
   });
 
   it('passes API query filters into task listing', async () => {
