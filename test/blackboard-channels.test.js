@@ -10,10 +10,10 @@ describe('Blackboard Channel Compatibility', () => {
   before(async () => {
     board = new Blackboard();
     await board.connect();
-    const keys = await board.client.keys('octiv:work:*');
-    const legacyKeys = await board.client.keys('octiv:commands:*');
-    const execKeys = await board.client.keys('octiv:execution:*');
-    const commandKeys = await board.client.keys('octiv:command:*');
+    const keys = await board.client.keys('kingdom:work:*');
+    const legacyKeys = await board.client.keys('kingdom:commands:*');
+    const execKeys = await board.client.keys('kingdom:execution:*');
+    const commandKeys = await board.client.keys('kingdom:command:*');
     const all = [...keys, ...legacyKeys, ...execKeys, ...commandKeys];
     if (all.length > 0) {
       await board.client.del(all);
@@ -21,10 +21,10 @@ describe('Blackboard Channel Compatibility', () => {
   });
 
   after(async () => {
-    const keys = await board.client.keys('octiv:work:*');
-    const legacyKeys = await board.client.keys('octiv:commands:*');
-    const execKeys = await board.client.keys('octiv:execution:*');
-    const commandKeys = await board.client.keys('octiv:command:*');
+    const keys = await board.client.keys('kingdom:work:*');
+    const legacyKeys = await board.client.keys('kingdom:commands:*');
+    const execKeys = await board.client.keys('kingdom:execution:*');
+    const commandKeys = await board.client.keys('kingdom:command:*');
     const all = [...keys, ...legacyKeys, ...execKeys, ...commandKeys];
     if (all.length > 0) {
       await board.client.del(all);

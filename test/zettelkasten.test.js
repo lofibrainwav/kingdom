@@ -24,11 +24,11 @@ const TEMP_VAULT = path.join(os.tmpdir(), `octiv-zk-test-${Date.now()}`);
 // Clean up Redis keys used by these tests
 async function cleanZkKeys(board) {
   const client = board.client;
-  const keys = await client.keys('octiv:zettelkasten:*');
+  const keys = await client.keys('kingdom:zettelkasten:*');
   if (keys.length > 0) await client.del(keys);
-  const linkKeys = await client.keys('octiv:zettelkasten:links:*');
+  const linkKeys = await client.keys('kingdom:zettelkasten:links:*');
   if (linkKeys.length > 0) await client.del(linkKeys);
-  const configKeys = await client.keys('octiv:config:zettelkasten:*');
+  const configKeys = await client.keys('kingdom:config:zettelkasten:*');
   if (configKeys.length > 0) await client.del(configKeys);
 }
 

@@ -9,7 +9,7 @@ const { validateEventPayload } = require('./event-schemas');
 const log = getLogger();
 
 const REDIS_URL = process.env.BLACKBOARD_REDIS_URL || 'redis://localhost:6380';
-const PREFIX = 'octiv:';
+const PREFIX = 'kingdom:';
 
 const CHANNEL_RULES = [
   {

@@ -14,7 +14,7 @@ describe('Blackboard — Redis Integration', () => {
     await board.connect();
     // Cleanup previous test keys before running tests
     const client = board.client;
-    const keys = await client.keys('octiv:test:*');
+    const keys = await client.keys('kingdom:test:*');
     if (keys.length > 0) {
       await client.del(keys);
     }
@@ -23,7 +23,7 @@ describe('Blackboard — Redis Integration', () => {
   after(async () => {
     // Cleanup test keys after tests
     const client = board.client;
-    const keys = await client.keys('octiv:test:*');
+    const keys = await client.keys('kingdom:test:*');
     if (keys.length > 0) {
       await client.del(keys);
     }
@@ -56,7 +56,7 @@ describe('Blackboard — Redis Integration', () => {
   it('Should set TTL on :latest keys (300s)', async () => {
     await board.publish('test:ttl', { author: 'test', check: true });
 
-    const ttl = await board.client.ttl('octiv:test:ttl:latest');
+    const ttl = await board.client.ttl('kingdom:test:ttl:latest');
     assert.ok(ttl > 0, `TTL should be positive, got: ${ttl}`);
     assert.ok(ttl <= 300, `TTL should be <= 300, got: ${ttl}`);
   });
@@ -87,7 +87,7 @@ describe('Blackboard — Redis Integration', () => {
       await board.logReflexion('test-bot', { error: `test-error-${i}`, iteration: i });
     }
 
-    const logs = await board.client.lRange('octiv:agent:test-bot:reflexion', 0, -1);
+    const logs = await board.client.lRange('kingdom:agent:test-bot:reflexion', 0, -1);
     assert.ok(logs.length <= 50, `Should keep max 50, got: ${logs.length}`);
   });
 
@@ -193,12 +193,12 @@ describe('Blackboard — Supplemental methods', () => {
   before(async () => {
     board = new Blackboard();
     await board.connect();
-    const keys = await board.client.keys('octiv:sup:*');
+    const keys = await board.client.keys('kingdom:sup:*');
     if (keys.length > 0) await board.client.del(keys);
   });
 
   after(async () => {
-    const keys = await board.client.keys('octiv:sup:*');
+    const keys = await board.client.keys('kingdom:sup:*');
     if (keys.length > 0) await board.client.del(keys);
     await board.disconnect();
   });

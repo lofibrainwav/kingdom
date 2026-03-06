@@ -9,14 +9,14 @@ describe('MCPOrchestrator — Vibe Coding Agent Registry', () => {
         const { createClient } = require('redis');
         redisClient = createClient({ url: 'redis://localhost:6380' });
         await redisClient.connect();
-        await redisClient.del('octiv:agents:registry');
+        await redisClient.del('kingdom:agents:registry');
         orch = new MCPOrchestrator();
     });
 
     after(async () => {
-        await redisClient.del('octiv:agents:registry');
-        const commandKeys = await redisClient.keys('octiv:command:*');
-        const executionKeys = await redisClient.keys('octiv:execution:*');
+        await redisClient.del('kingdom:agents:registry');
+        const commandKeys = await redisClient.keys('kingdom:command:*');
+        const executionKeys = await redisClient.keys('kingdom:execution:*');
         const keys = [...commandKeys, ...executionKeys];
         if (keys.length > 0) await redisClient.del(keys);
         await orch.shutdown();
@@ -63,8 +63,8 @@ describe('MCPOrchestrator — Vibe Coding Agent Registry', () => {
         await orch.registerAgent('canonical-agent', 'coder');
         await orch.assignTask('canonical-agent', { action: 'implement_footer' });
 
-        const legacyRaw = await redisClient.get('octiv:command:canonical-agent:task:latest');
-        const canonicalRaw = await redisClient.get('octiv:execution:dispatch:canonical-agent:latest');
+        const legacyRaw = await redisClient.get('kingdom:command:canonical-agent:task:latest');
+        const canonicalRaw = await redisClient.get('kingdom:execution:dispatch:canonical-agent:latest');
 
         assert.ok(legacyRaw);
         assert.ok(canonicalRaw);
@@ -76,8 +76,8 @@ describe('MCPOrchestrator — Vibe Coding Agent Registry', () => {
         await orch.registerAgent('broadcast-agent', 'test');
         await orch.broadcastCommand({ action: 'sync_context' });
 
-        const legacyRaw = await redisClient.get('octiv:command:broadcast-agent:broadcast:latest');
-        const canonicalRaw = await redisClient.get('octiv:execution:broadcast:broadcast-agent:latest');
+        const legacyRaw = await redisClient.get('kingdom:command:broadcast-agent:broadcast:latest');
+        const canonicalRaw = await redisClient.get('kingdom:execution:broadcast:broadcast-agent:latest');
 
         assert.ok(legacyRaw);
         assert.ok(canonicalRaw);
@@ -97,7 +97,7 @@ describe('MCPOrchestrator — Vibe Coding Agent Registry', () => {
     });
 
     it('Should handle invalid JSON during init registry parsing', async () => {
-        await redisClient.hSet('octiv:agents:registry', 'broken-agent', '{ invalid json ');
+        await redisClient.hSet('kingdom:agents:registry', 'broken-agent', '{ invalid json ');
         const badOrch = new MCPOrchestrator();
         await badOrch.init();
         
