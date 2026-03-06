@@ -75,7 +75,7 @@ async function runE2E() {
   }
 
   // Blackboard 상태 확인
-  const status = await board.client.hGetAll('octiv:team:status:latest').catch(() => ({}));
+  const status = await board.client.hGetAll('kingdom:team:status:latest').catch(() => ({}));
   if (Object.keys(status).length > 0) {
     console.log('\n📡 Blackboard 현재 에이전트 상태:');
     Object.entries(status).forEach(([k, v]) => {
