@@ -189,10 +189,27 @@ class TaskRunner {
       ...current,
       status: 'retry_requested',
       retry: {
+        ...(current.retry || {}),
         category,
         guardrail,
         requestedAt: Date.now(),
         count: (current.retry?.count || 0) + 1,
+      },
+      updatedAt: Date.now(),
+    }));
+  }
+
+  async markRetryHandedOff({ projectId, taskId, channel, author }) {
+    return this._patchTaskState(projectId, taskId, (current) => ({
+      ...current,
+      retry: {
+        ...(current.retry || {}),
+        handoff: {
+          status: 'queued',
+          channel,
+          author,
+          queuedAt: Date.now(),
+        },
       },
       updatedAt: Date.now(),
     }));

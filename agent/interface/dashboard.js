@@ -380,6 +380,25 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
   .task-board {
     margin-bottom: 20px;
   }
+  .task-board-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .task-filter {
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,0.72);
+    color: var(--ink);
+    border-radius: 999px;
+    padding: 8px 12px;
+    font: inherit;
+    cursor: pointer;
+  }
+  .task-filter.active {
+    background: var(--ink);
+    color: #fff;
+  }
   .section { padding: 22px; }
   .section-header {
     display: flex;
@@ -524,6 +543,11 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
           <h2 class="section-title">Task Board</h2>
           <div class="section-note">Current lifecycle state from stored task configs</div>
         </div>
+        <div class="task-board-toolbar">
+          <button type="button" class="task-filter active" data-filter="all">All Tasks</button>
+          <button type="button" class="task-filter" data-filter="retry">Retry Ready</button>
+          <button type="button" class="task-filter" data-filter="blocked">Blocked</button>
+        </div>
         <div id="tasks"></div>
       </div>
       <div class="section-header">
@@ -544,6 +568,7 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
 <script>
 const agentsDiv = document.getElementById('agents');
 const tasksDiv = document.getElementById('tasks');
+const taskFilters = Array.from(document.querySelectorAll('.task-filter'));
 const eventsDiv = document.getElementById('events');
 const statAgents = document.getElementById('stat-agents');
 const statEvents = document.getElementById('stat-events');
@@ -559,6 +584,17 @@ const metrics = { knowledgeCaptures: 0, skillEvals: 0, recentKnowledge: [], rece
 let totalEvents = 0;
 let totalHealthSignals = 0;
 let totalAlerts = 0;
+let activeTaskFilter = 'all';
+
+for (const button of taskFilters) {
+  button.addEventListener('click', () => {
+    activeTaskFilter = button.dataset.filter || 'all';
+    for (const item of taskFilters) {
+      item.classList.toggle('active', item === button);
+    }
+    renderTasks();
+  });
+}
 
 const es = new EventSource('/events');
 es.onmessage = (e) => {
@@ -637,12 +673,13 @@ function renderAgents() {
 
 function renderTasks() {
   const entries = Object.entries(tasks);
-  if (entries.length === 0) {
+  const filtered = entries.filter(([, task]) => matchesTaskFilter(task));
+  if (filtered.length === 0) {
     tasksDiv.innerHTML = '<article class="task-card"><h3>No tasks yet</h3><div class="field"><span class="label">Status</span><span class="value">Waiting for task state</span></div></article>';
     return;
   }
 
-  tasksDiv.innerHTML = entries
+  tasksDiv.innerHTML = filtered
     .sort((a, b) => (b[1].updatedAt || 0) - (a[1].updatedAt || 0))
     .map(([, task]) => {
       return '<article class="task-card"><h3>' + escapeHtml(task.taskId || 'task') + '</h3>'
@@ -650,10 +687,22 @@ function renderTasks() {
         + field('Status', escapeHtml(task.status || 'unknown'))
         + field('Goal', escapeHtml(task.goal || 'n/a'))
         + field('Review', escapeHtml(task.review?.status || '-'))
-        + field('Retry', escapeHtml(task.retry?.guardrail || '-'))
+        + field('Retry', escapeHtml(task.retry?.handoff?.status || task.retry?.guardrail || '-'))
         + field('Updated', timeAgo(task.updatedAt))
         + '</article>';
     }).join('');
+}
+
+function matchesTaskFilter(task) {
+  if (activeTaskFilter === 'retry') {
+    return task.status === 'retry_requested' || task.retry?.handoff?.status === 'queued';
+  }
+
+  if (activeTaskFilter === 'blocked') {
+    return task.status === 'changes_requested' || task.review?.status === 'rejected';
+  }
+
+  return true;
 }
 
 function inferPlane(task, state) {
@@ -747,7 +796,12 @@ function rememberTaskState(evt) {
     tasks[key] = {
       ...current,
       status: 'retry_requested',
-      retry: { guardrail: evt.data?.guardrail, category: evt.data?.category },
+      retry: {
+        ...(current.retry || {}),
+        guardrail: evt.data?.guardrail,
+        category: evt.data?.category,
+        handoff: { status: 'queued', channel: 'work:intake' },
+      },
       updatedAt: Date.now(),
     };
   }

@@ -85,7 +85,18 @@ class TaskCloseoutOrchestrator {
 
   async handleRetryRequested(message) {
     const data = typeof message === 'string' ? JSON.parse(message) : message;
-    return this.taskRunner.markRetryRequested(data);
+    const updated = await this.taskRunner.markRetryRequested(data);
+    const intakePayload = this._buildRetryIntakePayload(data, updated);
+
+    await this.board.publish('work:intake', intakePayload);
+    await this.taskRunner.markRetryHandedOff({
+      projectId: data.projectId,
+      taskId: data.taskId,
+      channel: 'work:intake',
+      author: data.author || 'task-closeout-orchestrator',
+    });
+
+    return updated;
   }
 
   _buildReviewPayload(eventData, taskState) {
@@ -106,6 +117,22 @@ class TaskCloseoutOrchestrator {
       taskId: eventData.taskId,
       file,
       content,
+    };
+  }
+
+  _buildRetryIntakePayload(eventData, taskState) {
+    const task = `Retry ${eventData.taskId}: ${taskState?.goal || eventData.category || 'recover failed work'}`;
+
+    return {
+      author: eventData.author || 'task-closeout-orchestrator',
+      task,
+      projectId: eventData.projectId,
+      taskId: eventData.taskId,
+      retry: true,
+      retryCategory: eventData.category,
+      retryGuardrail: eventData.guardrail,
+      goal: taskState?.goal || null,
+      workspacePath: taskState?.workspacePath || null,
     };
   }
 }

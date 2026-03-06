@@ -190,4 +190,43 @@ description: Use when testing the closeout orchestrator skill evaluation flow.
     assert.equal(finalState.retry.guardrail, 'verification-gap');
     assert.equal(finalState.retry.count, 1);
   });
+
+  it('hands retry-requested tasks back into work intake with deterministic metadata', async () => {
+    const runner = new TaskRunner({ board, workspaceRoot });
+    const evaluator = new SkillEvaluator({ board, skillsRoot });
+    const closeout = new TaskCloseoutOrchestrator({ board, skillEvaluator: evaluator, taskRunner: runner });
+
+    await runner.init();
+    await closeout.init();
+    await closeout.start();
+
+    await runner.startTask({
+      author: 'codex',
+      projectId: 'kingdom',
+      taskId: 'TASK-99',
+      goal: 'Retry handoff should re-enter intake',
+      reviewArtifacts: [{ file: 'docs/retry.md', summary: 'Retry summary' }],
+    });
+
+    await board.publish('governance:failure:retry-requested', {
+      author: 'failure-agent',
+      projectId: 'kingdom',
+      taskId: 'TASK-99',
+      category: 'review',
+      guardrail: 'missing-evidence',
+    });
+
+    const intakeEvent = published.find((entry) => entry.channel === 'work:intake');
+    assert.ok(intakeEvent);
+    assert.equal(intakeEvent.data.author, 'failure-agent');
+    assert.equal(intakeEvent.data.projectId, 'kingdom');
+    assert.equal(intakeEvent.data.taskId, 'TASK-99');
+    assert.equal(intakeEvent.data.retry, true);
+    assert.match(intakeEvent.data.task, /Retry TASK-99/);
+
+    const finalState = configs.get('tasks:kingdom:TASK-99');
+    assert.equal(finalState.status, 'retry_requested');
+    assert.equal(finalState.retry.handoff.status, 'queued');
+    assert.equal(finalState.retry.handoff.channel, 'work:intake');
+  });
 });
