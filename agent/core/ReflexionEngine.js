@@ -148,7 +148,9 @@ class ReflexionEngine {
 function parseLLMJson(response) {
   if (typeof response === 'object' && response !== null) return response;
   try {
-    const match = String(response).match(/\{[\s\S]*\}/);
+    // Strip <think>...</think> blocks from reasoning models (e.g., glm-4.6v-flash)
+    let text = String(response).replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+    const match = text.match(/\{[\s\S]*\}/);
     if (match) return JSON.parse(match[0]);
   } catch {}
   return null;

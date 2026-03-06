@@ -1,7 +1,7 @@
 const { describe, it, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
 
-const { ReflexionEngine, DEFAULT_CONFIG } = require('../agent/core/ReflexionEngine');
+const { ReflexionEngine, DEFAULT_CONFIG, parseLLMJson } = require('../agent/core/ReflexionEngine');
 
 describe('ReflexionEngine', () => {
   let configs;
@@ -179,6 +179,30 @@ describe('ReflexionEngine', () => {
     const stats = engine.getStats();
     assert.equal(stats.totalCalls, 2);
     assert.equal(stats.modelUsage['local:m'], 2);
+  });
+
+  it('parseLLMJson strips <think> blocks from reasoning models', () => {
+    const response = '<think>Let me analyze this... The user wants JSON.</think>\n{"name":"hello","code":"return 1"}';
+    const result = parseLLMJson(response);
+    assert.equal(result.name, 'hello');
+    assert.equal(result.code, 'return 1');
+  });
+
+  it('parseLLMJson handles nested <think> with JSON-like content', () => {
+    const response = '<think>I should return {"wrong": true} but actually...</think>{"correct": true}';
+    const result = parseLLMJson(response);
+    assert.equal(result.correct, true);
+    assert.equal(result.wrong, undefined);
+  });
+
+  it('parseLLMJson works without <think> blocks', () => {
+    const result = parseLLMJson('Here is the result: {"tasks": [1,2,3]}');
+    assert.deepEqual(result.tasks, [1, 2, 3]);
+  });
+
+  it('parseLLMJson returns object directly if already parsed', () => {
+    const obj = { already: 'parsed' };
+    assert.equal(parseLLMJson(obj), obj);
   });
 
   it('shutdown disconnects board', async () => {
