@@ -194,8 +194,10 @@ describe('SwarmOrchestrator — Main Execution', () => {
     
     try {
       require('../agent/team/swarm-orchestrator.js');
-      // wait a bit for the promise rejection
-      await new Promise(r => setTimeout(r, 100));
+      // poll for process.exit call — CI DNS resolution can be slow
+      for (let i = 0; i < 50 && exitedCode === null; i++) {
+        await new Promise(r => setTimeout(r, 100));
+      }
       assert.equal(exitedCode, 1);
     } finally {
       process.exit = ogExit;
