@@ -14,6 +14,7 @@
     "memory:operator": "node --env-file=.env scripts/run-knowledge-operator.js",
     "memory:notebooklm-queue": "node --env-file=.env scripts/run-notebooklm-promotion-queue.js",
     "memory:notebooklm-prepare": "node --env-file=.env scripts/run-notebooklm-packet-queue.js",
+    "memory:notebooklm-ingest": "node --env-file=.env scripts/run-notebooklm-ingestion-queue.js",
     "skills:eval": "node scripts/run-skill-evals.js",
     "compound": "node --env-file=.env scripts/compound-demo.js",
     "party": "node --env-file=.env scripts/party-mode.js",

@@ -358,6 +358,19 @@ class DashboardServer {
         this._broadcast({ type: 'notebooklm-prepared', channel: 'knowledge:notebooklm:prepared', data });
       } catch {}
     });
+
+    this.subscriber.subscribe('knowledge:notebooklm:ingested', (message) => {
+      try {
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
+        this._rememberPromotionEvent({
+          type: 'notebooklm-ingested',
+          title: data.taskId,
+          outcome: data.queueType,
+          detail: 'ingested',
+        });
+        this._broadcast({ type: 'notebooklm-ingested', channel: 'knowledge:notebooklm:ingested', data });
+      } catch {}
+    });
   }
 
   _rememberKnowledgeEvent(event) {
@@ -1131,7 +1144,7 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
         </div>
         <div class="pressure-card">
           <div class="feed-title">NotebookLM Lifecycle</div>
-          <div class="feed-meta">queued, claimed, prepared</div>
+          <div class="feed-meta">queued, claimed, prepared, ingested</div>
           <div id="notebooklm-lifecycle" class="feed-list"></div>
         </div>
       </div>

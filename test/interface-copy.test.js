@@ -52,6 +52,7 @@ describe('Interface Copy', () => {
     assert.match(DASHBOARD_HTML, /queued/);
     assert.match(DASHBOARD_HTML, /claimed/);
     assert.match(DASHBOARD_HTML, /prepared/);
+    assert.match(DASHBOARD_HTML, /ingested/);
     assert.match(DASHBOARD_HTML, /dryRunSummary/);
     assert.match(DASHBOARD_HTML, /history\.replaceState/);
     assert.match(DASHBOARD_HTML, /URLSearchParams/);

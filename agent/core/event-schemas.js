@@ -18,6 +18,7 @@ const SCHEMAS = {
   'knowledge:notebooklm:claimed': ['author', 'projectId', 'taskId', 'sourcePath', 'queueType'],
   'knowledge:notebooklm:queued': ['author', 'projectId', 'taskId', 'sourcePath', 'queueType'],
   'knowledge:notebooklm:prepared': ['author', 'projectId', 'taskId', 'packetPath', 'queueType'],
+  'knowledge:notebooklm:ingested': ['author', 'projectId', 'taskId', 'registryPath', 'queueType'],
   'knowledge:skill:eval-completed': ['author', 'skillName', 'score', 'findingCount', 'passed'],
   'knowledge:rumination:digested': ['author', 'digestionNumber', 'experienceCount', 'insightCount', 'actionCount'],
   'knowledge:zettelkasten:tier-up': ['author', 'skill', 'oldTier', 'newTier', 'xp'],

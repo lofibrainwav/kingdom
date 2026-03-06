@@ -12,6 +12,7 @@ describe('Event Schemas', () => {
     assert.deepEqual(getSchemaForChannel('knowledge:notebooklm:claimed'), ['author', 'projectId', 'taskId', 'sourcePath', 'queueType']);
     assert.deepEqual(getSchemaForChannel('knowledge:notebooklm:queued'), ['author', 'projectId', 'taskId', 'sourcePath', 'queueType']);
     assert.deepEqual(getSchemaForChannel('knowledge:notebooklm:prepared'), ['author', 'projectId', 'taskId', 'packetPath', 'queueType']);
+    assert.deepEqual(getSchemaForChannel('knowledge:notebooklm:ingested'), ['author', 'projectId', 'taskId', 'registryPath', 'queueType']);
     assert.deepEqual(getSchemaForChannel('knowledge:skill:eval-completed'), ['author', 'skillName', 'score', 'findingCount', 'passed']);
     assert.equal(getSchemaForChannel('unknown:event'), null);
   });

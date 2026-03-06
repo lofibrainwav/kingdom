@@ -465,6 +465,17 @@ describe('DashboardServer state API', () => {
                 status: 'prepared',
               },
             },
+            {
+              key: 'knowledge:notebooklm:kingdom:TASK-33:queued',
+              value: {
+                projectId: 'kingdom',
+                taskId: 'TASK-33',
+                queueType: 'promotion-source',
+                sourcePath: '/tmp/completed-task-33.md',
+                status: 'ingested',
+                registryPath: '/tmp/notebooklm-ingestion-registry.md',
+              },
+            },
           ];
         }
         return [];
@@ -486,10 +497,11 @@ describe('DashboardServer state API', () => {
     assert.equal(data.metrics.promotionQueueCounts.promoted, 1);
     assert.equal(data.metrics.promotionAppliedCount, 1);
     assert.equal(data.metrics.promotionConversionCounts['obsidian-pattern'], 1);
-    assert.equal(data.metrics.notebooklmQueueCount, 3);
+    assert.equal(data.metrics.notebooklmQueueCount, 4);
     assert.equal(data.metrics.notebooklmQueueCounts.queued, 1);
     assert.equal(data.metrics.notebooklmQueueCounts.claimed, 1);
     assert.equal(data.metrics.notebooklmQueueCounts.prepared, 1);
+    assert.equal(data.metrics.notebooklmQueueCounts.ingested, 1);
     assert.equal(data.metrics.promotionCandidates[0].taskId, 'TASK-22');
     assert.equal(data.metrics.promotionCandidates[1].status, 'promoted');
   });
