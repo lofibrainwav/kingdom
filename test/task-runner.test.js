@@ -42,10 +42,14 @@ describe('TaskRunner', () => {
       projectId: 'kingdom:core',
       taskId: 'TASK-42',
       goal: 'Implement task lifecycle runner',
+      skillsToEvaluate: ['verify-tests'],
+      reviewArtifacts: [{ file: 'docs/task-runner.md', summary: 'Task runner notes' }],
     });
 
     assert.match(state.workspacePath, /workspace|task-runner-/);
     assert.equal(state.status, 'started');
+    assert.deepEqual(state.skillsToEvaluate, ['verify-tests']);
+    assert.equal(state.reviewArtifacts[0].file, 'docs/task-runner.md');
     assert.equal(configs.get('tasks:kingdom:core:TASK-42').status, 'started');
     assert.equal(published[0].channel, 'work:task:started');
     assert.equal(published[1].channel, 'execution:task:workspace-ready');

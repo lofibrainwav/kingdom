@@ -26,7 +26,7 @@ class TaskRunner {
     );
   }
 
-  async startTask({ author, projectId, taskId, goal }) {
+  async startTask({ author, projectId, taskId, goal, skillsToEvaluate = [], reviewArtifacts = [] }) {
     this._validateTaskInput({ author, projectId, taskId, goal });
     const workspacePath = this.getWorkspacePath(projectId, taskId);
     await fsp.mkdir(workspacePath, { recursive: true });
@@ -37,6 +37,8 @@ class TaskRunner {
       goal,
       status: 'started',
       workspacePath,
+      skillsToEvaluate,
+      reviewArtifacts,
       startedAt: Date.now(),
       updatedAt: Date.now(),
     };
