@@ -236,7 +236,7 @@ describe('RuminationEngine — digest (Stomach 4)', () => {
     assert.equal(engine.rawBuffer.length, 0); // buffer drained
     assert.equal(engine.totalDigestions, 1);
     // Should have published results
-    assert.ok(published.some(p => p.ch === 'rumination:digested'));
+    assert.ok(published.some(p => p.ch === 'knowledge:rumination:digested'));
   });
 
   it('should call logger if provided', async () => {

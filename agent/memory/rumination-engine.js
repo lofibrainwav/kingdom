@@ -240,7 +240,7 @@ class RuminationEngine {
 
     // Publish digestion results
     if (insights.length > 0) {
-      await this.board.publish('rumination:digested', {
+      await this.board.publish('knowledge:rumination:digested', {
         author: 'rumination-engine',
         digestionNumber: this.totalDigestions,
         experienceCount: batch.length,

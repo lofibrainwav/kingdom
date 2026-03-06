@@ -5,6 +5,7 @@ const SCHEMAS = {
   'work:planning:decomposed': ['projectId', 'goal', 'tasks'],
   'work:task:started': ['author', 'projectId', 'taskId', 'goal'],
   'work:dry-run:recorded': ['author', 'projectId', 'taskId', 'summary', 'outcome'],
+  'rc:cmd:*': ['author', 'requestId', 'subcmd'],
   'execution:dispatch:*': ['author', 'action'],
   'execution:broadcast:*': ['author', 'action'],
   'execution:swarm:spawn': ['swarmId', 'agentType', 'count'],
@@ -33,6 +34,10 @@ const SCHEMAS = {
   'governance:watchdog:recovery': ['agentId', 'timestamp', 'action'],
   'governance:safety:threat': ['author'],
   'knowledge:reflexion:triggered': ['author'],
+  'config:llm:updated': ['author'],
+  'orchestrator:registered': ['author', 'agentId', 'role'],
+  'orchestrator:deregistered': ['author', 'agentId'],
+  'team:celebration': ['author', 'event', 'skill'],
 };
 
 function getSchemaForChannel(channel) {

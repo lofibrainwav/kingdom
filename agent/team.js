@@ -52,15 +52,21 @@ async function main() {
   log.info('team', `${instances.length}/${AGENTS.length} agents running`);
 }
 
+const SHUTDOWN_TIMEOUT_MS = 5000;
+
 let shuttingDown = false;
 async function shutdown(signal) {
   if (shuttingDown) return;
   shuttingDown = true;
   log.info('team', `Shutting down (${signal})...`);
 
+  const timeout = (ms) => new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('shutdown timeout')), ms)
+  );
+
   for (const { name, instance } of instances) {
     try {
-      await instance.shutdown();
+      await Promise.race([instance.shutdown(), timeout(SHUTDOWN_TIMEOUT_MS)]);
       log.info('team', `${name} stopped`);
     } catch (err) {
       log.error('team', `${name} shutdown error: ${err.message}`);
