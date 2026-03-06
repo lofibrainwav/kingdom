@@ -15,12 +15,14 @@ const TIMEOUT_MS = 30_000;
 
 // 관찰할 Pub/Sub 채널 (파이프라인 순서)
 const PIPELINE_CHANNELS = [
-  { ch: 'pm:project_init',          label: '📋 PM → Architect', emoji: '1️⃣' },
-  { ch: 'architect:design_complete', label: '🏗️  Architect → Decomposer', emoji: '2️⃣' },
-  { ch: 'decomposer:plan_complete',  label: '📐 Decomposer → Coder', emoji: '3️⃣' },
-  { ch: 'coder:task_complete',       label: '💻 Coder → Reviewer', emoji: '4️⃣' },
-  { ch: 'reviewer:project_approved', label: '✅ Reviewer → Deployer', emoji: '5️⃣' },
-  { ch: 'reviewer:task_rejected',    label: '🔄 Reviewer → FailureAgent', emoji: '↩️' },
+  { ch: 'work:planning:init',            label: '📋 PM → Architect', emoji: '1️⃣' },
+  { ch: 'work:planning:designed',        label: '🏗️  Architect → Decomposer', emoji: '2️⃣' },
+  { ch: 'work:planning:decomposed',      label: '📐 Decomposer → Coder', emoji: '3️⃣' },
+  { ch: 'governance:review:requested',   label: '💻 Coder → Reviewer', emoji: '4️⃣' },
+  { ch: 'governance:review:approved',    label: '✅ Reviewer → Deployer', emoji: '5️⃣' },
+  { ch: 'governance:review:rejected',    label: '🔄 Reviewer → FailureAgent', emoji: '↩️' },
+  { ch: 'execution:deployment:completed', label: '🚀 Deployer → Done', emoji: '6️⃣' },
+  { ch: 'governance:failure:retry-requested', label: '🔁 FailureAgent → Retry', emoji: '7️⃣' },
 ];
 
 async function runE2E() {
@@ -53,7 +55,7 @@ async function runE2E() {
 
   // PM에게 태스크 발행
   console.log('📤 PM에게 태스크 전송 중...\n');
-  await board.publish('commands:assign', {
+  await board.publish('work:intake', {
     task: TASK,
     author: 'e2e-simulator',
   });
