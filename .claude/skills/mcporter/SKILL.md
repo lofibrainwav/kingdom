@@ -56,7 +56,7 @@ It is preserved as:
 docker compose up -d minecraft
 
 # RCON commands
-docker exec octiv-mc rcon-cli gamemode creative OctivBot_builder-01
+docker exec kingdom-mc rcon-cli gamemode creative KingdomBot_builder-01
 ```
 
 ## Implementation

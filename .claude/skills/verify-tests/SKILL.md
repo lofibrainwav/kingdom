@@ -5,7 +5,7 @@ description: Use when changing runtime or test code and you need to confirm the 
 
 # verify-tests
 
-Verify that the Octiv test suite is healthy and all agent files have coverage.
+Verify that the Kingdom test suite is healthy and all agent files have coverage.
 
 ## When to Use
 

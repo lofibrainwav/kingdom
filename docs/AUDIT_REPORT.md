@@ -1,4 +1,4 @@
-# Octiv MVP Codebase Audit — Brutally Honest Assessment
+# Kingdom MVP Codebase Audit — Brutally Honest Assessment
 
 **Date**: March 3, 2026
 **Auditor**: Claude

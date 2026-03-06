@@ -50,7 +50,7 @@ attempt 3: opus   (final escalation)
 - Rate limit: respect `retry-after` header
 - Budget cap: set `max_cost_per_call` in config
 
-## Octiv Integration
+## Kingdom Integration
 
 ### `agent/ReflexionEngine.js` — Model Chain
 ```

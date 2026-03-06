@@ -8,7 +8,7 @@ description: Use when Redis-related code changes and you need to verify port con
 ## Purpose
 
 1. **Port consistency** — all Redis clients must use port 6380
-2. **Channel naming** — all pub/sub channels must use `octiv:` prefix
+2. **Channel naming** — all pub/sub channels must use `kingdom:` prefix
 3. **Error handling** — Redis connections must have error listeners
 4. **Connection lifecycle** — clients must be properly connected and closed
 
@@ -43,17 +43,17 @@ grep -n "createClient\|port.*637\|port.*638" agent/blackboard.js
 **FAIL:** Any `port: 6379` or missing port (defaults to 6379).
 **Fix:** Change `port: 6379` → `port: 6380` in the createClient options.
 
-### Step 2: Verify `octiv:` Channel Prefix
+### Step 2: Verify `kingdom:` Channel Prefix
 
-**Check:** All Redis pub/sub channel names must start with `octiv:`.
+**Check:** All Redis pub/sub channel names must start with `kingdom:`.
 
 ```bash
 grep -n "publish\|subscribe\|channel\|CHANNEL" agent/blackboard.js
 ```
 
-**PASS:** All channel names contain `octiv:` prefix (e.g., `octiv:cmd:leader`, `octiv:team:status`).
+**PASS:** All channel names contain `kingdom:` prefix (e.g., `kingdom:cmd:leader`, `kingdom:team:status`).
 **FAIL:** Channel names like `cmd:leader` without prefix.
-**Fix:** Prepend `octiv:` to any bare channel names.
+**Fix:** Prepend `kingdom:` to any bare channel names.
 
 ### Step 3: Verify Error Handlers
 
@@ -99,7 +99,7 @@ redis-cli -p 6380 client list | wc -l
 | Check | File | Status | Detail |
 |-------|------|--------|--------|
 | Port is 6380 | agent/blackboard.js | ✅ PASS | port: 6380 confirmed |
-| octiv: prefix | agent/blackboard.js | ✅ PASS | all channels use octiv: |
+| kingdom: prefix | agent/blackboard.js | ✅ PASS | all channels use kingdom: |
 | Error handler | agent/blackboard.js | ✅ PASS | .on('error') found |
 | No direct Redis in agents | agent/*.js | ✅ PASS | only blackboard.js uses createClient |
 | Redis connectivity | localhost:6380 | ✅ PASS | PONG |

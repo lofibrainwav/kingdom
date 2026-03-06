@@ -156,18 +156,18 @@ description: Use when you need to decide which Kingdom agent, skill, MCP server,
 | Command | What it does |
 |---------|-------------|
 | `redis-cli -p 6380 ping` | Health check |
-| `redis-cli -p 6380 keys 'octiv:*'` | List all Octiv keys |
+| `redis-cli -p 6380 keys 'kingdom:*'` | List all Kingdom keys |
 | `redis-cli -p 6380 monitor` | Live command stream |
-| `redis-cli -p 6380 hgetall octiv:team:status:latest` | Team status |
+| `redis-cli -p 6380 hgetall kingdom:team:status:latest` | Team status |
 
 ### Legacy Adapter Admin
 Use only for origin-story adapter work.
 
 | Command | What it does |
 |---------|-------------|
-| `docker exec octiv-mc rcon-cli gamemode creative OctivBot_builder-01` | Creative mode |
-| `docker exec octiv-mc rcon-cli time set day` | Force daytime |
-| `docker exec octiv-mc rcon-cli tp OctivBot_builder-01 0 100 0` | Teleport bot |
+| `docker exec kingdom-mc rcon-cli gamemode creative KingdomBot_builder-01` | Creative mode |
+| `docker exec kingdom-mc rcon-cli time set day` | Force daytime |
+| `docker exec kingdom-mc rcon-cli tp KingdomBot_builder-01 0 100 0` | Teleport bot |
 
 ### Git
 | Command | What it does |

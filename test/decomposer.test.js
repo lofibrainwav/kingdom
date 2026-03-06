@@ -73,7 +73,7 @@ describe('DecomposerAgent', () => {
     let gotCalled = false;
     let llmCalled = false;
 
-    got.resolveSynergy = async (goal, arch) => {
+    got.resolveSynergy = async (goal, _arch) => {
       gotCalled = true;
       assert.equal(goal, 'Build a CLI tool');
       return { nodes: ['parse', 'execute'], edges: [{ from: 'parse', to: 'execute' }] };

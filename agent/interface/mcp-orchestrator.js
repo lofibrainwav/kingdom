@@ -1,5 +1,5 @@
 /**
- * Octiv Multi-Agent MCP Orchestrator — Phase 3.4
+ * Kingdom Multi-Agent MCP Orchestrator — Phase 3.4
  * Agent registry, task routing, broadcast commands via Blackboard
  */
 const { Blackboard } = require('../core/blackboard');

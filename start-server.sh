@@ -1,10 +1,10 @@
 #!/bin/bash
-# Octiv PaperMC Server Start Script
+# Kingdom PaperMC Server Start Script
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SERVER_DIR="$SCRIPT_DIR/server"
 JAR="paper-1.21.1.jar"
 
-echo "🦞 Starting Octiv PaperMC Server..."
+echo "🦞 Starting Kingdom PaperMC Server..."
 echo "   Port: 25565 | RCON: 25575 | Mode: offline"
 echo ""
 

@@ -1,5 +1,5 @@
 /**
- * Octiv Skill Pipeline — Phase 4.1 + 4.2
+ * Kingdom Skill Pipeline — Phase 4.1 + 4.2
  * Failure → LLM skill generation → sandbox validation → deploy to library
  * Dynamic skill library with successRate tracking and daily limits.
  *

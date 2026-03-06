@@ -98,7 +98,7 @@ class ArchitectAgent {
 if (require.main === module) {
   const architect = new ArchitectAgent();
   architect.init().catch(err => {
-    log.error('Octiv_Architect', 'Startup failed', { error: err.message });
+    log.error('Kingdom_Architect', 'Startup failed', { error: err.message });
     process.exit(1);
   });
 

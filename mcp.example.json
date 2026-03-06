@@ -6,7 +6,7 @@
     "filesystem": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/Users/YOUR_USER/Octiv_MVP"],
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/Users/YOUR_USER/Kingdom"],
       "env": {}
     },
     "memory": {
@@ -65,7 +65,7 @@
     "serena": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "serena-mcp", "--workspace", "/Users/YOUR_USER/Octiv_MVP"],
+      "args": ["-y", "serena-mcp", "--workspace", "/Users/YOUR_USER/Kingdom"],
       "env": {}
     }
   }

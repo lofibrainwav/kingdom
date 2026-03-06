@@ -79,7 +79,7 @@ class DeployerAgent {
 if (require.main === module) {
   const deployer = new DeployerAgent();
   deployer.init().catch(err => {
-    log.error('Octiv_Deployer', 'Startup failed', { error: err.message });
+    log.error('Kingdom_Deployer', 'Startup failed', { error: err.message });
     process.exit(1);
   });
 

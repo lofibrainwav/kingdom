@@ -1,5 +1,5 @@
 /**
- * Octiv Dashboard Server — Phase 6.1
+ * Kingdom Dashboard Server — Phase 6.1
  * Real-time web dashboard with SSE for agent monitoring.
  * Usage: node agent/dashboard.js (port 3000)
  */

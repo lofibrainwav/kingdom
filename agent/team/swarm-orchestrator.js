@@ -99,7 +99,7 @@ class SwarmOrchestrator {
 if (require.main === module || process.env.TEST_SWARM_MAIN) {
   const swarm = new SwarmOrchestrator();
   swarm.init().catch(err => {
-    log.error('Octiv_Swarm', 'Startup failed', { error: err.message });
+    log.error('Kingdom_Swarm', 'Startup failed', { error: err.message });
     process.exit(1);
   });
 

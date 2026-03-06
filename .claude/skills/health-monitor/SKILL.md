@@ -19,8 +19,8 @@ Monitors the Kingdom operating system infrastructure.
 1. **Check Blackboard / Redis**:
    ```bash
    docker compose ps
-   docker exec octiv-redis redis-cli ping
-   docker exec octiv-redis redis-cli keys "octiv:*"
+   docker exec kingdom-redis redis-cli ping
+   docker exec kingdom-redis redis-cli keys "kingdom:*"
    ```
 
 2. **Check process and port conflicts**:
@@ -30,8 +30,8 @@ Monitors the Kingdom operating system infrastructure.
 
 3. **Check Blackboard status channels**:
    ```bash
-   docker exec octiv-redis redis-cli keys "octiv:*status*"
-   docker exec octiv-redis redis-cli keys "octiv:*knowledge*"
+   docker exec kingdom-redis redis-cli keys "kingdom:*status*"
+   docker exec kingdom-redis redis-cli keys "kingdom:*knowledge*"
    ```
 
 4. **Run baseline tests**:

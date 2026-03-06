@@ -19,7 +19,7 @@ const { ZettelkastenHooks } = require('../agent/memory/zettelkasten-hooks');
 const { Blackboard } = require('../agent/core/blackboard');
 
 // Temp vault dir to avoid polluting real vault/
-const TEMP_VAULT = path.join(os.tmpdir(), `octiv-zk-test-${Date.now()}`);
+const TEMP_VAULT = path.join(os.tmpdir(), `kingdom-zk-test-${Date.now()}`);
 
 // Clean up Redis keys used by these tests
 async function cleanZkKeys(board) {

@@ -50,7 +50,7 @@ For each skill in order:
 | Check | File | Status | Detail |
 |-------|------|--------|--------|
 | Redis port is 6380 | agent/blackboard.js | ✅ PASS | port: 6380 found |
-| octiv: prefix on channels | agent/blackboard.js | ✅ PASS | |
+| kingdom: prefix on channels | agent/blackboard.js | ✅ PASS | |
 | heartbeat interval set | agent/OctivBot.js | ❌ FAIL | setInterval not found |
 ```
 

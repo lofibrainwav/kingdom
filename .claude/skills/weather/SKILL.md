@@ -21,14 +21,14 @@ It is not part of the default real-world Kingdom operating model.
 
 1. **Check in-game time via RCON**:
    ```bash
-   docker exec octiv-mc rcon-cli time query daytime
-   docker exec octiv-mc rcon-cli time query gametime
+   docker exec kingdom-mc rcon-cli time query daytime
+   docker exec kingdom-mc rcon-cli time query gametime
    ```
 
 2. **Force time/weather for testing**:
    ```bash
-   docker exec octiv-mc rcon-cli time set day
-   docker exec octiv-mc rcon-cli weather clear
+   docker exec kingdom-mc rcon-cli time set day
+   docker exec kingdom-mc rcon-cli weather clear
    ```
 
 3. **Minecraft time reference**:

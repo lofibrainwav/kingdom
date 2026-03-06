@@ -22,7 +22,7 @@ description: Use when orchestrating multiple agents across parallel browser prof
         └─ Sub-Agent D (Profile 4 / Task D)
 
 통신: MCP (실시간 컨텍스트 동기화)
-Blackboard: octiv:agent-teams:* 채널
+Blackboard: kingdom:agent-teams:* 채널
 ```
 
 ## 실행 패턴
@@ -67,7 +67,7 @@ Opus/Claude 모드로 시작.
 
 ```javascript
 // 태스크 배분
-board.publish('octiv:agent-teams:task', {
+board.publish('kingdom:agent-teams:task', {
   taskId: 'at-001',
   subAgent: 'A',
   profile: 1,
@@ -75,12 +75,12 @@ board.publish('octiv:agent-teams:task', {
 });
 
 // 진행 상황 모니터링
-board.subscribe('octiv:agent-teams:progress', (data) => {
+board.subscribe('kingdom:agent-teams:progress', (data) => {
   console.log(`Sub-agent ${data.agent}: ${data.status}`);
 });
 
 // 결과 수집
-board.subscribe('octiv:agent-teams:result', (data) => {
+board.subscribe('kingdom:agent-teams:result', (data) => {
   results.push(data);
   if (results.length === totalAgents) synthesize(results);
 });

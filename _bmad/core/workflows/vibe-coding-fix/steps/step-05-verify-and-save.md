@@ -29,7 +29,7 @@ npm run test
 ℹ fail 0
 ```
 
-실패 시: 에러 로그를 `octiv:vibe-fix:error` 채널에 게시 후 Step 해당으로 롤백
+실패 시: 에러 로그를 `kingdom:vibe-fix:error` 채널에 게시 후 Step 해당으로 롤백
 
 ---
 

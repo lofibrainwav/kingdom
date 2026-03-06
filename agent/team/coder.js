@@ -118,7 +118,7 @@ class CoderAgent {
 if (require.main === module) {
   const coder = new CoderAgent();
   coder.init().catch(err => {
-    log.error('Octiv_Coder', 'Startup failed', { error: err.message });
+    log.error('Kingdom_Coder', 'Startup failed', { error: err.message });
     process.exit(1);
   });
 

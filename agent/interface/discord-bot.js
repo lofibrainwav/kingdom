@@ -1,5 +1,5 @@
 /**
- * Octiv Discord Bot — Blackboard <-> Discord bridge
+ * Kingdom Discord Bot — Blackboard <-> Discord bridge
  *
  * Bridges Redis pub/sub events to Discord channels and handles
  * user commands for team monitoring and control.
@@ -43,7 +43,7 @@ const DEFAULT_COLOR = 0x95a5a6;
 
 /** Extract role name from agent ID string */
 function _roleFromAgentId(agentId, explicitRole) {
-  return explicitRole || agentId.split('-')[0].replace(/^OctivBot_/, '');
+  return explicitRole || agentId.split('-')[0].replace(/^KingdomBot_/, '');
 }
 
 /** Get embed color for a role */
@@ -67,7 +67,7 @@ function loadConfig() {
   }
 }
 
-class OctivDiscordBot {
+class KingdomDiscordBot {
   constructor(options = {}) {
     this.token = options.token || process.env.DISCORD_TOKEN;
     this.guildId = options.guildId || process.env.DISCORD_GUILD_ID;
@@ -480,7 +480,7 @@ class OctivDiscordBot {
 
   /**
    * Post a confession to the Shinmungo forum as a new thread.
-   * Agents publish to octiv:agent:<id>:confess with:
+   * Agents publish to kingdom:agent:<id>:confess with:
    *   { title, message, tag?, anonymous? }
    */
   async _postShinmungo(data) {
@@ -692,12 +692,12 @@ class OctivDiscordBot {
         });
       } else {
         agents = [
-          { id: 'OctivBot_leader-01', role: 'leader' },
-          { id: 'OctivBot_builder-01', role: 'builder' },
-          { id: 'OctivBot_builder-02', role: 'builder' },
-          { id: 'OctivBot_builder-03', role: 'builder' },
-          { id: 'OctivBot_safety-01', role: 'safety' },
-          { id: 'OctivBot_explorer-01', role: 'explorer' }
+          { id: 'KingdomBot_leader-01', role: 'leader' },
+          { id: 'KingdomBot_builder-01', role: 'builder' },
+          { id: 'KingdomBot_builder-02', role: 'builder' },
+          { id: 'KingdomBot_builder-03', role: 'builder' },
+          { id: 'KingdomBot_safety-01', role: 'safety' },
+          { id: 'KingdomBot_explorer-01', role: 'explorer' }
         ];
       }
 
@@ -781,7 +781,7 @@ class OctivDiscordBot {
 
 // --- Helpers ---
 
-/** Extract agent ID from channel like "octiv:agent:builder-01:react" */
+/** Extract agent ID from channel like "kingdom:agent:builder-01:react" */
 function _extractAgentId(channel) {
   const parts = (channel || '').split(':');
   // Pattern: PREFIX + agent:<id>:<event>
@@ -808,12 +808,12 @@ function logSendError(err) {
   log.error('discord', 'failed to send message', { error: err.message });
 }
 
-module.exports = { OctivDiscordBot, REACT_THROTTLE_MS, ROLE_COLORS, DEFAULT_COLOR, _anonymousHash, _roleColor };
+module.exports = { KingdomDiscordBot, REACT_THROTTLE_MS, ROLE_COLORS, DEFAULT_COLOR, _anonymousHash, _roleColor };
 
 // --- CLI Entry Point ---
 
 if (require.main === module) {
-  const bot = new OctivDiscordBot();
+  const bot = new KingdomDiscordBot();
   bot.start().catch((err) => {
     log.error('discord', 'failed to start', { error: err.message });
     process.exit(1);

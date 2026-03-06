@@ -107,7 +107,7 @@ class DecomposerAgent {
 if (require.main === module) {
   const decomposer = new DecomposerAgent();
   decomposer.init().catch(err => {
-    log.error('Octiv_Decomposer', 'Startup failed', { error: err.message });
+    log.error('Kingdom_Decomposer', 'Startup failed', { error: err.message });
     process.exit(1);
   });
 

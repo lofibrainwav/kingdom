@@ -63,7 +63,7 @@ Read: existing utility files (agent/*.js, config/*.js)
 - Follow existing naming conventions
 - Add tests alongside implementation
 
-## Octiv-Specific Search Locations
+## Kingdom-Specific Search Locations
 | What | Where to look |
 |------|---------------|
 | Bot utilities | `agent/OctivBot.js`, `agent/team.js` |

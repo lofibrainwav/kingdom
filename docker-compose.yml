@@ -1,5 +1,5 @@
 ---
-# Octiv — One-Click Stack
+# Kingdom — One-Click Stack
 # docker compose up -d
 #
 # Services:
@@ -10,7 +10,7 @@ services:
 
   redis:
     image: redis:latest
-    container_name: octiv-redis
+    container_name: kingdom-redis
     restart: unless-stopped
     ports:
       - "6380:6379"   # 6380 → avoids conflict with local Redis on 6379
@@ -25,7 +25,7 @@ services:
 
   minecraft:
     image: itzg/minecraft-server:latest
-    container_name: octiv-mc
+    container_name: kingdom-mc
     restart: unless-stopped
     environment:
       EULA: "TRUE"
@@ -35,8 +35,8 @@ services:
       DIFFICULTY: normal
       GAMEMODE: survival
       MAX_PLAYERS: "20"
-      LEVEL: octiv-world
-      MOTD: "Octiv | AI Agent Sandbox"
+      LEVEL: kingdom-world
+      MOTD: "Kingdom | AI Agent Sandbox"
       ENABLE_RCON: "true"
       RCON_PASSWORD: ${RCON_PASSWORD:-changeme}  # Set RCON_PASSWORD in .env; default 'changeme' is for local dev only
       RCON_PORT: "25575"
@@ -45,7 +45,7 @@ services:
       ENABLE_COMMAND_BLOCK: "true"
       # NOTE: After first run, set connection-throttle: 0 in bukkit.yml
       # (Docker bridge = same IP for all bots, default 4000ms throttle blocks reconnects)
-      # docker exec octiv-mc sed -i 's/connection-throttle: .*/connection-throttle: 0/' /data/bukkit.yml
+      # docker exec kingdom-mc sed -i 's/connection-throttle: .*/connection-throttle: 0/' /data/bukkit.yml
       MEMORY: "3G"
       JVM_OPTS: "-XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200"
     ports:

@@ -96,7 +96,7 @@ class PMAgent {
 if (require.main === module) {
   const pm = new PMAgent();
   pm.init().catch(err => {
-    log.error('Octiv_PM', 'Startup failed', { error: err.message });
+    log.error('Kingdom_PM', 'Startup failed', { error: err.message });
     process.exit(1);
   });
 

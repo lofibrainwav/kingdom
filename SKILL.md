@@ -1,4 +1,4 @@
-# Octiv — AI Agent Sandbox (SKILL.md)
+# Kingdom — AI Agent Sandbox (SKILL.md)
 
 ## 🎯 Goal
 Autonomously operate AI bots on a PaperMC 1.21.1 Minecraft server (localhost:25565).

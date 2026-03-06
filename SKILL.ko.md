@@ -1,4 +1,4 @@
-# Octiv — AI Agent Sandbox (SKILL.md)
+# Kingdom — AI Agent Sandbox (SKILL.md)
 
 ## 🎯 최종 목표
 PaperMC 1.21.1 마인크래프트 서버(localhost:25565)에서 AI 봇을 자율 운용한다.

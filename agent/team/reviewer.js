@@ -88,7 +88,7 @@ class ReviewerAgent {
 if (require.main === module) {
   const reviewer = new ReviewerAgent();
   reviewer.init().catch(err => {
-    log.error('Octiv_Reviewer', 'Startup failed', { error: err.message });
+    log.error('Kingdom_Reviewer', 'Startup failed', { error: err.message });
     process.exit(1);
   });
 

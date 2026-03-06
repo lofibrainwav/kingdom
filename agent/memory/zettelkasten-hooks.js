@@ -1,5 +1,5 @@
 /**
- * Octiv Zettelkasten Hooks — Auto-Memory Wiring
+ * Kingdom Zettelkasten Hooks — Auto-Memory Wiring
  *
  * Connects the Zettelkasten system to the agent lifecycle:
  *   - When a skill is deployed → create atomic note

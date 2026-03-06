@@ -3,7 +3,7 @@
 ## Mission Reset
 - `kingdom` is now a real-world agentic operating system.
 - Minecraft remains an origin-story adapter and optional sandbox, not the product boundary.
-- When older sections mention Minecraft- or Octiv-specific runtime details, treat them as legacy implementation context unless a task explicitly targets the Minecraft adapter.
+- When older sections mention Minecraft- or Kingdom-specific runtime details, treat them as legacy implementation context unless a task explicitly targets the Minecraft adapter.
 - Default orientation for new work:
   - `BMAD` is the planning plane
   - `Obsidian + NotebookLM + GoT` are the knowledge plane
@@ -125,9 +125,9 @@ Choose the right pattern for the task at hand:
 | `/learn [topic]` | Extract patterns from session → instincts |
 | `/checkpoint [name]` | Save session state snapshot for recovery |
 
-### Skills (21 Octiv + 5 global + 3 utility — with SKILL.md)
+### Skills (21 Kingdom + 5 global + 3 utility — with SKILL.md)
 
-**Octiv project skills (21 — `.claude/skills/`):**
+**Kingdom project skills (21 — `.claude/skills/`):**
 | Skill | When |
 |-------|------|
 | `cost-aware-llm-pipeline` | LLM model routing, cost optimization |
@@ -152,7 +152,7 @@ Choose the right pattern for the task at hand:
 | `automated-debugging` | Automated debug workflows |
 | `capability-registry` | Agent↔MCP↔Skill mapping reference |
 
-**Octiv global skills (5 — `~/.claude/skills/`):**
+**Kingdom global skills (5 — `~/.claude/skills/`):**
 | Skill | When |
 |-------|------|
 | `/session-memory` | **Session start** (or use `/simplify start`) |
@@ -204,7 +204,7 @@ See `~/.claude/skills/{skill-name}/SKILL.md` for details.
 | `redis` | Redis data access (`redis-mcp`) | local | ⚠️ Requires Redis |
 | `docker` | Container management (`mcp-server-docker`) | local | ⚠️ Requires Docker |
 
-**Project** (`.mcp.json`) — Octiv-specific:
+**Project** (`.mcp.json`) — Kingdom-specific:
 | MCP | Purpose | Access | Status |
 |-----|---------|--------|--------|
 | `serena` | LSP semantic code analysis (`uvx` from git) | local workspace | ⚠️ Requires uvx |
@@ -357,7 +357,7 @@ See `~/.claude/skills/{skill-name}/SKILL.md` for details.
 
 | MCP | Why Unused | Activation Condition |
 |-----|-----------|---------------------|
-| `supabase` | No web frontend/DB provisioned | When Octiv dashboard needs persistent storage |
+| `supabase` | No web frontend/DB provisioned | When Kingdom dashboard needs persistent storage |
 | `sentry` | No production deployment exists | When bots deploy to cloud (not local Docker) |
 | `vercel` | No web frontend built | When dashboard UI ships |
 | `figma` | No design specs created | When UI/UX design phase begins |
@@ -393,7 +393,7 @@ See `~/.claude/skills/{skill-name}/SKILL.md` for details.
 ## NotebookLM Notebooks
 | Name | ID | URL | Role |
 |------|-----|-----|------|
-| **1기** Octiv Project Roadmap | `ae1281fe...` | `notebook/ae1281fe-6370-493f-a1bd-afed03263a88` | Director (총괄 감독) — blueprints, roadmap |
+| **1기** Kingdom Project Roadmap | `ae1281fe...` | `notebook/ae1281fe-6370-493f-a1bd-afed03263a88` | Director (총괄 감독) — blueprints, roadmap |
 | **2기** OpenClaw Phase 2 | `4f8bd626...` | `notebook/4f8bd626-c548-454a-b36b-fb080d335530` | Legacy origin reference |
 
 ### NotebookLM Workflow

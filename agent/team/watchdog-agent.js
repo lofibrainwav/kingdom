@@ -98,7 +98,7 @@ class WatchdogAgent {
 if (require.main === module) {
   const watchdog = new WatchdogAgent();
   watchdog.init().catch(err => {
-    log.error('Octiv_Watchdog', 'Startup failed', { error: err.message });
+    log.error('Kingdom_Watchdog', 'Startup failed', { error: err.message });
     process.exit(1);
   });
 

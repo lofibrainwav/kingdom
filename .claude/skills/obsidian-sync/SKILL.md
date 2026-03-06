@@ -13,7 +13,7 @@ description: Use when syncing the Obsidian vault, updating operational notes, cl
 - When reasoning traces accumulate: cleanup stale files
 
 ## Vault Location
-`/Users/octiv/Octiv_MVP/vault/` (gitignored, local only)
+`/Users/octiv/Kingdom/vault/` (gitignored, local only)
 
 ## Commands
 

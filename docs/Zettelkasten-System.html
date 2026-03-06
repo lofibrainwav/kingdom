@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Octiv Skill Zettelkasten Architecture</title>
+<title>Kingdom Skill Zettelkasten Architecture</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0a0a0f; color: #e0e0e0; overflow-x: hidden; }
@@ -78,7 +78,7 @@
 <body>
 
 <div class="header">
-  <h1>Octiv Skill Zettelkasten</h1>
+  <h1>Kingdom Skill Zettelkasten</h1>
   <p>되새김질 + 곰국 + RPG XP = Craftsman System</p>
 </div>
 
@@ -311,12 +311,12 @@
     <h2>Redis Keys</h2>
     <table class="redis-keys">
       <tr><th>Key</th><th>Type</th><th>Purpose</th></tr>
-      <tr><td><code>octiv:zettelkasten:notes</code></td><td>Hash</td><td>All skill notes (JSON)</td></tr>
-      <tr><td><code>octiv:zettelkasten:links:*</code></td><td>String</td><td>Link strength between pairs</td></tr>
-      <tr><td><code>octiv:zettelkasten:tier-up</code></td><td>Pub/Sub</td><td>Tier-up events</td></tr>
-      <tr><td><code>octiv:zettelkasten:compound-created</code></td><td>Pub/Sub</td><td>New compound events</td></tr>
-      <tr><td><code>octiv:rumination:digested</code></td><td>Pub/Sub</td><td>Digestion completions</td></tr>
-      <tr><td><code>octiv:got:reasoning-complete</code></td><td>Pub/Sub</td><td>GoT cycle results</td></tr>
+      <tr><td><code>kingdom:zettelkasten:notes</code></td><td>Hash</td><td>All skill notes (JSON)</td></tr>
+      <tr><td><code>kingdom:zettelkasten:links:*</code></td><td>String</td><td>Link strength between pairs</td></tr>
+      <tr><td><code>kingdom:zettelkasten:tier-up</code></td><td>Pub/Sub</td><td>Tier-up events</td></tr>
+      <tr><td><code>kingdom:zettelkasten:compound-created</code></td><td>Pub/Sub</td><td>New compound events</td></tr>
+      <tr><td><code>kingdom:rumination:digested</code></td><td>Pub/Sub</td><td>Digestion completions</td></tr>
+      <tr><td><code>kingdom:got:reasoning-complete</code></td><td>Pub/Sub</td><td>GoT cycle results</td></tr>
     </table>
   </div>
 </div>

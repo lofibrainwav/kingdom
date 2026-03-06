@@ -5,7 +5,7 @@ description: Use when agent runtime failures, Redis issues, pathfinding problems
 
 # Automated Debugging Skill
 
-Diagnoses and fixes errors in the Octiv agent system.
+Diagnoses and fixes errors in the Kingdom agent system.
 
 ## When to Use
 - Bot crashes on spawn or during tasks
@@ -18,7 +18,7 @@ Diagnoses and fixes errors in the Octiv agent system.
 
 1. **Identify error source**:
    - Check console output for `[AgentName] error:`
-   - Check Redis: `docker exec octiv-redis redis-cli lrange octiv:reflexion:* 0 -1`
+   - Check Redis: `docker exec kingdom-redis redis-cli lrange kingdom:reflexion:* 0 -1`
    - Check logs: `docker compose logs minecraft --tail 30`
 
 2. **Common fixes**:

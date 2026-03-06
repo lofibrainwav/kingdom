@@ -106,7 +106,7 @@ docker compose ps
 redis-cli -p 6380 ping
 
 # View logs
-docker logs octiv-redis --tail 50
+docker logs kingdom-redis --tail 50
 
 # Graceful shutdown (preserves data)
 docker compose stop redis

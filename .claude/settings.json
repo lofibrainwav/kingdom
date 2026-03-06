@@ -6,11 +6,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "PROJ=/Users/octiv/Octiv_MVP; MEM=/Users/octiv/.claude/projects/-Users-octiv-Octiv-MVP/memory; COMMIT=$(git -C $PROJ log --oneline -1 2>/dev/null); BRANCH=$(git -C $PROJ branch --show-current 2>/dev/null); MOD=$(git -C $PROJ diff --name-only 2>/dev/null | wc -l | tr -d ' '); REDIS=$(redis-cli -p 6380 ping 2>/dev/null || echo 'DOWN'); DOCK=$(docker ps --format '{{.Names}}' 2>/dev/null | wc -l | tr -d ' '); ML=$([ -f $MEM/MEMORY.md ] && wc -l < $MEM/MEMORY.md | tr -d ' ' || echo '0'); SL=$([ -f $MEM/session-log.md ] && wc -l < $MEM/session-log.md | tr -d ' ' || echo '0'); echo \"[Octiv] $BRANCH:${COMMIT} | Δ${MOD} | redis:$REDIS | docker:${DOCK} | mem:${ML}L log:${SL}L\""
+            "command": "PROJ=/Users/octiv/Kingdom; MEM=/Users/octiv/.claude/projects/-Users-octiv-Octiv-MVP/memory; COMMIT=$(git -C $PROJ log --oneline -1 2>/dev/null); BRANCH=$(git -C $PROJ branch --show-current 2>/dev/null); MOD=$(git -C $PROJ diff --name-only 2>/dev/null | wc -l | tr -d ' '); REDIS=$(redis-cli -p 6380 ping 2>/dev/null || echo 'DOWN'); DOCK=$(docker ps --format '{{.Names}}' 2>/dev/null | wc -l | tr -d ' '); ML=$([ -f $MEM/MEMORY.md ] && wc -l < $MEM/MEMORY.md | tr -d ' ' || echo '0'); SL=$([ -f $MEM/session-log.md ] && wc -l < $MEM/session-log.md | tr -d ' ' || echo '0'); echo \"[Kingdom] $BRANCH:${COMMIT} | Δ${MOD} | redis:$REDIS | docker:${DOCK} | mem:${ML}L log:${SL}L\""
           },
           {
             "type": "command",
-            "command": "MEM=/Users/octiv/.claude/projects/-Users-octiv-Octiv-MVP/memory; CF=$MEM/.prompt-counter; C=$(cat $CF 2>/dev/null || echo 0); C=$((C + 1)); echo $C > $CF; if [ $C -ge 5 ]; then echo 0 > $CF; PROJ=/Users/octiv/Octiv_MVP; TS=$(date '+%Y-%m-%d %H:%M'); COMMIT=$(git -C $PROJ log --oneline -1 2>/dev/null); MOD=$(git -C $PROJ diff --name-only 2>/dev/null | tr '\\n' ', '); echo \"- [$TS] auto-memory: $COMMIT | delta: ${MOD:-none}\" >> $MEM/session-log.md; echo '[AutoMemory] 5-prompt checkpoint saved'; fi"
+            "command": "MEM=/Users/octiv/.claude/projects/-Users-octiv-Octiv-MVP/memory; CF=$MEM/.prompt-counter; C=$(cat $CF 2>/dev/null || echo 0); C=$((C + 1)); echo $C > $CF; if [ $C -ge 5 ]; then echo 0 > $CF; PROJ=/Users/octiv/Kingdom; TS=$(date '+%Y-%m-%d %H:%M'); COMMIT=$(git -C $PROJ log --oneline -1 2>/dev/null); MOD=$(git -C $PROJ diff --name-only 2>/dev/null | tr '\\n' ', '); echo \"- [$TS] auto-memory: $COMMIT | delta: ${MOD:-none}\" >> $MEM/session-log.md; echo '[AutoMemory] 5-prompt checkpoint saved'; fi"
           }
         ]
       }
@@ -21,7 +21,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "INPUT=$(cat); echo \"$INPUT\" | grep -q 'git commit' && { PROJ=$(git rev-parse --show-toplevel 2>/dev/null || echo /Users/octiv/Octiv_MVP); cd \"$PROJ\" && echo '[PreCommit] Syntax check...' && for f in agent/*.js agent/roles/*.js; do node -c \"$f\" || exit 1; done && echo '[PreCommit] All syntax checks passed'; } || true"
+            "command": "INPUT=$(cat); echo \"$INPUT\" | grep -q 'git commit' && { PROJ=$(git rev-parse --show-toplevel 2>/dev/null || echo /Users/octiv/Kingdom); cd \"$PROJ\" && echo '[PreCommit] Syntax check...' && for f in agent/*.js agent/roles/*.js; do node -c \"$f\" || exit 1; done && echo '[PreCommit] All syntax checks passed'; } || true"
           },
           {
             "type": "command",
@@ -49,7 +49,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "INPUT=$(cat); echo \"$INPUT\" | grep -q 'git commit' && { MEM=/Users/octiv/.claude/projects/-Users-octiv-Octiv-MVP/memory; COMMIT=$(git -C /Users/octiv/Octiv_MVP log --oneline -1 2>/dev/null); echo \"- [$(date '+%H:%M')] committed: $COMMIT\" >> $MEM/session-log.md && echo '[AutoMemory] Commit logged to session-log'; } || true"
+            "command": "INPUT=$(cat); echo \"$INPUT\" | grep -q 'git commit' && { MEM=/Users/octiv/.claude/projects/-Users-octiv-Octiv-MVP/memory; COMMIT=$(git -C /Users/octiv/Kingdom log --oneline -1 2>/dev/null); echo \"- [$(date '+%H:%M')] committed: $COMMIT\" >> $MEM/session-log.md && echo '[AutoMemory] Commit logged to session-log'; } || true"
           }
         ]
       },
@@ -70,7 +70,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "MEM_DIR=/Users/octiv/.claude/projects/-Users-octiv-Octiv-MVP/memory; TS=$(date '+%Y-%m-%d %H:%M'); echo \"## Auto-save before compaction — $TS\" >> $MEM_DIR/session-log.md && echo \"- Last commit: $(git -C /Users/octiv/Octiv_MVP log --oneline -1 2>/dev/null)\" >> $MEM_DIR/session-log.md && echo \"- Modified: $(git -C /Users/octiv/Octiv_MVP diff --name-only 2>/dev/null | tr '\\n' ', ')\" >> $MEM_DIR/session-log.md && echo \"- AC Status: $(redis-cli -p 6380 hgetall octiv:ac:progress 2>/dev/null | tr '\\n' ' ' || echo 'redis down')\" >> $MEM_DIR/session-log.md && echo '[PreCompact] Memory + AC status auto-saved'"
+            "command": "MEM_DIR=/Users/octiv/.claude/projects/-Users-octiv-Octiv-MVP/memory; TS=$(date '+%Y-%m-%d %H:%M'); echo \"## Auto-save before compaction — $TS\" >> $MEM_DIR/session-log.md && echo \"- Last commit: $(git -C /Users/octiv/Kingdom log --oneline -1 2>/dev/null)\" >> $MEM_DIR/session-log.md && echo \"- Modified: $(git -C /Users/octiv/Kingdom diff --name-only 2>/dev/null | tr '\\n' ', ')\" >> $MEM_DIR/session-log.md && echo \"- AC Status: $(redis-cli -p 6380 hgetall kingdom:ac:progress 2>/dev/null | tr '\\n' ' ' || echo 'redis down')\" >> $MEM_DIR/session-log.md && echo '[PreCompact] Memory + AC status auto-saved'"
           }
         ]
       }

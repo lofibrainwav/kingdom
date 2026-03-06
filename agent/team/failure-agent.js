@@ -88,7 +88,7 @@ class FailureAgent {
 if (require.main === module) {
   const agent = new FailureAgent();
   agent.init().catch(err => {
-    log.error('Octiv_Failure', 'Startup failed', { error: err.message });
+    log.error('Kingdom_Failure', 'Startup failed', { error: err.message });
     process.exit(1);
   });
 
