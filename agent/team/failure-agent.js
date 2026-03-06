@@ -68,6 +68,7 @@ class FailureAgent {
       await this.updateStatus('idle', `Finished classification for ${taskId}`);
     } catch (err) {
       log.error(this.agentId, 'Classification failed', { error: err.message });
+      await this.updateStatus('idle', `Error: ${err.message}`);
     }
   }
 

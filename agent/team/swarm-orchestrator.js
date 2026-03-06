@@ -94,7 +94,10 @@ class SwarmOrchestrator {
   }
 
   async shutdown() {
-    for (const proc of this.children.values()) proc.kill();
+    for (const proc of Array.from(this.children.values())) {
+      try { proc.kill(); } catch {}
+    }
+    this.children.clear();
     if (this.subscriber) await this.subscriber.disconnect();
     await this.board.disconnect();
   }

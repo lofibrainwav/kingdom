@@ -101,6 +101,7 @@ class CoderAgent {
       await this.updateStatus('idle', `Finished all tasks for ${projectId}`);
     } catch (err) {
       log.error(this.agentId, 'Build failed', { error: err.message });
+      await this.updateStatus('idle', `Error: ${err.message}`);
     }
   }
 

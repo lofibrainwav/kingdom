@@ -86,6 +86,7 @@ class DecomposerAgent {
       await this.updateStatus('idle', `Finished decomposition for ${projectId}`);
     } catch (err) {
       log.error(this.agentId, 'Decomposition failed', { error: err.message });
+      await this.updateStatus('idle', `Error: ${err.message}`);
     }
   }
 

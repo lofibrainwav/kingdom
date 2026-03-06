@@ -76,6 +76,7 @@ class PMAgent {
       log.info(this.agentId, `Project ${projectId} initiated`);
     } catch (err) {
       log.error(this.agentId, 'Failed to handle assignment', { error: err.message });
+      await this.updateStatus('idle', `Error: ${err.message}`);
     }
   }
 

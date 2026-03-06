@@ -75,6 +75,7 @@ class ReviewerAgent {
       await this.updateStatus('idle', `Finished review for ${file}`);
     } catch (err) {
       log.error(this.agentId, 'Review failed', { error: err.message });
+      await this.updateStatus('idle', `Error: ${err.message}`);
     }
   }
 

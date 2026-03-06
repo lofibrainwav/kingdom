@@ -77,6 +77,7 @@ class ArchitectAgent {
       await this.updateStatus('idle', `Finished architecture for ${projectId}`);
     } catch (err) {
       log.error(this.agentId, 'Architecture design failed', { error: err.message });
+      await this.updateStatus('idle', `Error: ${err.message}`);
     }
   }
 
