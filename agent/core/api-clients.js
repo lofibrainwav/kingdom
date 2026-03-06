@@ -6,6 +6,7 @@
  * Gracefully degrades when SDK/API key is unavailable.
  */
 const { getLogger } = require('./logger');
+const T = require('../../config/timeouts');
 const log = getLogger();
 
 const LM_STUDIO_BASE_URL = process.env.LM_STUDIO_URL || 'http://localhost:1234';
@@ -22,7 +23,7 @@ function createApiClients() {
         call: async (model, prompt) => {
           const response = await anthropic.messages.create({
             model,
-            max_tokens: 1024,
+            max_tokens: T.LLM_MAX_TOKENS,
             messages: [{ role: 'user', content: prompt }],
           });
           return response.content[0]?.text || '';
@@ -44,7 +45,7 @@ function createApiClients() {
       call: async (model, prompt) => {
         // 2s pre-check: fail fast if LM Studio is not running
         const check = await fetch(`${LM_STUDIO_BASE_URL}/v1/models`, {
-          signal: AbortSignal.timeout(2000),
+          signal: AbortSignal.timeout(T.LM_STUDIO_PRECHECK_TIMEOUT_MS),
         }).catch(() => null);
         if (!check?.ok) throw new Error('LM Studio not reachable');
 
@@ -52,14 +53,14 @@ function createApiClients() {
         const body = JSON.stringify({
           model,
           messages: [{ role: 'user', content: prompt }],
-          max_tokens: 1024,
+          max_tokens: T.LLM_MAX_TOKENS,
           temperature: 0.7,
         });
         const res = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body,
-          signal: AbortSignal.timeout(60000),
+          signal: AbortSignal.timeout(T.LM_STUDIO_REQUEST_TIMEOUT_MS),
         });
         if (!res.ok) throw new Error(`LM Studio ${res.status}: ${await res.text()}`);
         const data = await res.json();

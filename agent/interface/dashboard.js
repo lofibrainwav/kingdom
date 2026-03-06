@@ -186,14 +186,14 @@ class DashboardServer {
         };
 
         this._broadcast({ type: eventType, agentId, data });
-      } catch {}
+      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
     });
 
     this.subscriber.pSubscribe('governance:safety:*', (message, channel) => {
       try {
         const data = typeof message === 'string' ? JSON.parse(message) : message;
         this._broadcast({ type: 'safety', channel, data });
-      } catch {}
+      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
     });
 
     this.subscriber.subscribe('governance:task:completed', (message) => {
@@ -206,7 +206,7 @@ class DashboardServer {
           detail: data.projectId,
         });
         this._broadcast({ type: 'task-closeout', channel: 'governance:task:completed', data });
-      } catch {}
+      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
     });
 
     this.subscriber.subscribe('governance:review:requested', (message) => {
@@ -219,7 +219,7 @@ class DashboardServer {
           detail: data.file,
         });
         this._broadcast({ type: 'task-closeout', channel: 'governance:review:requested', data });
-      } catch {}
+      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
     });
 
     this.subscriber.subscribe('governance:review:approved', (message) => {
@@ -232,7 +232,7 @@ class DashboardServer {
           detail: data.file,
         });
         this._broadcast({ type: 'task-closeout', channel: 'governance:review:approved', data });
-      } catch {}
+      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
     });
 
     this.subscriber.subscribe('governance:review:rejected', (message) => {
@@ -245,7 +245,7 @@ class DashboardServer {
           detail: data.file,
         });
         this._broadcast({ type: 'task-closeout', channel: 'governance:review:rejected', data });
-      } catch {}
+      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
     });
 
     this.subscriber.subscribe('governance:failure:retry-requested', (message) => {
@@ -262,7 +262,7 @@ class DashboardServer {
           detail: data.guardrail,
         });
         this._broadcast({ type: 'task-closeout', channel: 'governance:failure:retry-requested', data });
-      } catch {}
+      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
     });
 
     // Work plane — pipeline progress visibility
@@ -270,25 +270,25 @@ class DashboardServer {
       try {
         const data = typeof message === 'string' ? JSON.parse(message) : message;
         this._broadcast({ type: 'work-intake', channel: 'work:intake', data });
-      } catch {}
+      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
     });
     this.subscriber.subscribe('work:planning:init', (message) => {
       try {
         const data = typeof message === 'string' ? JSON.parse(message) : message;
         this._broadcast({ type: 'work-planning-init', channel: 'work:planning:init', data });
-      } catch {}
+      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
     });
     this.subscriber.subscribe('work:planning:designed', (message) => {
       try {
         const data = typeof message === 'string' ? JSON.parse(message) : message;
         this._broadcast({ type: 'work-planning-designed', channel: 'work:planning:designed', data });
-      } catch {}
+      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
     });
     this.subscriber.subscribe('work:planning:decomposed', (message) => {
       try {
         const data = typeof message === 'string' ? JSON.parse(message) : message;
         this._broadcast({ type: 'work-planning-decomposed', channel: 'work:planning:decomposed', data });
-      } catch {}
+      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
     });
 
     // Execution plane — deployment + watchdog visibility
@@ -296,20 +296,20 @@ class DashboardServer {
       try {
         const data = typeof message === 'string' ? JSON.parse(message) : message;
         this._broadcast({ type: 'deployment-completed', channel: 'execution:deployment:completed', data });
-      } catch {}
+      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
     });
     this.subscriber.subscribe('governance:watchdog:recovery', (message) => {
       try {
         const data = typeof message === 'string' ? JSON.parse(message) : message;
         this._broadcast({ type: 'watchdog-recovery', channel: 'governance:watchdog:recovery', data });
-      } catch {}
+      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
     });
 
     this.subscriber.pSubscribe('knowledge:reflexion:*', (message, channel) => {
       try {
         const data = typeof message === 'string' ? JSON.parse(message) : message;
         this._broadcast({ type: 'leader', channel, data });
-      } catch {}
+      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
     });
 
     this.subscriber.subscribe('knowledge:capture:stored', (message) => {
@@ -335,7 +335,7 @@ class DashboardServer {
           detail: data.improvementNote || data.retryGuardrail || data.projectId,
         });
         this._broadcast({ type: 'knowledge-capture', channel: 'knowledge:capture:stored', data });
-      } catch {}
+      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
     });
 
     this.subscriber.subscribe('knowledge:skill:eval-completed', (message) => {
@@ -350,7 +350,7 @@ class DashboardServer {
           score: data.score,
         });
         this._broadcast({ type: 'skill-eval', channel: 'knowledge:skill:eval-completed', data });
-      } catch {}
+      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
     });
 
     this.subscriber.subscribe('knowledge:promotion:candidate', (message) => {
@@ -363,7 +363,7 @@ class DashboardServer {
           detail: data.retryCategory || data.taskId,
         });
         this._broadcast({ type: 'promotion-candidate', channel: 'knowledge:promotion:candidate', data });
-      } catch {}
+      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
     });
 
     this.subscriber.subscribe('knowledge:promotion:applied', (message) => {
@@ -376,7 +376,7 @@ class DashboardServer {
           detail: data.promotionType,
         });
         this._broadcast({ type: 'promotion-applied', channel: 'knowledge:promotion:applied', data });
-      } catch {}
+      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
     });
 
     this.subscriber.subscribe('knowledge:notebooklm:claimed', (message) => {
@@ -389,7 +389,7 @@ class DashboardServer {
           detail: 'claimed',
         });
         this._broadcast({ type: 'notebooklm-claimed', channel: 'knowledge:notebooklm:claimed', data });
-      } catch {}
+      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
     });
 
     this.subscriber.subscribe('knowledge:notebooklm:prepared', (message) => {
@@ -402,7 +402,7 @@ class DashboardServer {
           detail: 'prepared',
         });
         this._broadcast({ type: 'notebooklm-prepared', channel: 'knowledge:notebooklm:prepared', data });
-      } catch {}
+      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
     });
 
     this.subscriber.subscribe('knowledge:notebooklm:ingested', (message) => {
@@ -415,7 +415,7 @@ class DashboardServer {
           detail: 'ingested',
         });
         this._broadcast({ type: 'notebooklm-ingested', channel: 'knowledge:notebooklm:ingested', data });
-      } catch {}
+      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
     });
   }
 

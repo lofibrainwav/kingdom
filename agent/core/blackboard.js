@@ -403,7 +403,7 @@ class Blackboard {
       throw new Error('[Blackboard] 孝: author field is required — identify yourself');
     }
     const json = JSON.stringify(data);
-    if (json.length > 10240) {
+    if (json.length > T.BLACKBOARD_PAYLOAD_LIMIT_BYTES) {
       throw new Error('[Blackboard] 善: payload too large (max 10KB)');
     }
     if (!/^[a-z0-9:_-]+$/.test(channel)) {

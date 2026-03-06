@@ -7,6 +7,7 @@
  */
 const { Blackboard } = require('../core/blackboard');
 const { getLogger } = require('../core/logger');
+const T = require('../../config/timeouts');
 const { exec } = require('child_process');
 const path = require('path');
 const log = getLogger();
@@ -15,8 +16,8 @@ class WatchdogAgent {
   constructor() {
     this.board = new Blackboard();
     this.agentId = 'Kingdom_Watchdog';
-    this.checkInterval = 30000; // 30s
-    this.unresponsiveThreshold = 60000; // 60s
+    this.checkInterval = T.WATCHDOG_CHECK_INTERVAL_MS;
+    this.unresponsiveThreshold = T.WATCHDOG_UNRESPONSIVE_THRESHOLD_MS;
   }
 
   async init() {

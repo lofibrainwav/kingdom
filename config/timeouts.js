@@ -45,4 +45,41 @@ module.exports = {
 
   /** RC command response timeout */
   RC_RESPONSE_TIMEOUT_MS: 30000,
+
+  // -- Watchdog --
+
+  /** Health check poll interval */
+  WATCHDOG_CHECK_INTERVAL_MS: 30000,
+
+  /** Time before agent marked unresponsive */
+  WATCHDOG_UNRESPONSIVE_THRESHOLD_MS: 60000,
+
+  // -- Team Lifecycle --
+
+  /** Per-agent graceful shutdown timeout */
+  TEAM_SHUTDOWN_TIMEOUT_MS: 5000,
+
+  // -- Discord --
+
+  /** ReAct pulse throttle window */
+  DISCORD_REACT_THROTTLE_MS: 30000,
+
+  /** Max reconnect backoff delay for Discord */
+  DISCORD_RECONNECT_CAP_MS: 30000,
+
+  // -- LLM --
+
+  /** LM Studio availability pre-check timeout */
+  LM_STUDIO_PRECHECK_TIMEOUT_MS: 2000,
+
+  /** LM Studio inference request timeout */
+  LM_STUDIO_REQUEST_TIMEOUT_MS: 60000,
+
+  /** Default max tokens for LLM responses */
+  LLM_MAX_TOKENS: 1024,
+
+  // -- Blackboard --
+
+  /** Max publish payload size (bytes) */
+  BLACKBOARD_PAYLOAD_LIMIT_BYTES: 10240,
 };

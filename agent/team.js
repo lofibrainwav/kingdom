@@ -4,6 +4,7 @@
  * Spawned by start.js — initializes all 9 agents with graceful shutdown.
  */
 const { getLogger } = require('./core/logger');
+const T = require('../config/timeouts');
 const log = getLogger();
 
 const { PMAgent } = require('./team/pm-agent');
@@ -52,7 +53,7 @@ async function main() {
   log.info('team', `${instances.length}/${AGENTS.length} agents running`);
 }
 
-const SHUTDOWN_TIMEOUT_MS = 5000;
+const SHUTDOWN_TIMEOUT_MS = T.TEAM_SHUTDOWN_TIMEOUT_MS;
 
 let shuttingDown = false;
 async function shutdown(signal) {

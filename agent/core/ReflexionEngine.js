@@ -6,6 +6,7 @@
  */
 const { Blackboard } = require('./blackboard');
 const { getLogger } = require('./logger');
+const T = require('../../config/timeouts');
 const log = getLogger();
 
 // Resolve primary model — prefer env override, then LM Studio, then Claude
@@ -16,7 +17,7 @@ const DEFAULT_CONFIG = {
   escalationModel: _primaryModel,     // LM Studio handles all tiers locally
   fallbackModel: 'groq:llama-3.3-70b-versatile', // cloud fallback if LM Studio down
   temperature: 0.7,
-  maxTokens: 1024,
+  maxTokens: T.LLM_MAX_TOKENS,
   costPerAttempt: 0.00,   // local = free
   maxCostPerDay: 0.00,    // no cost limit for local
 };

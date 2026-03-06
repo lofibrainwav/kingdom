@@ -30,7 +30,7 @@ const { getLogger } = require('../core/logger');
 const log = getLogger();
 
 /** Throttle window for ReAct pulse embeds (ms) */
-const REACT_THROTTLE_MS = 30000;
+const REACT_THROTTLE_MS = T.DISCORD_REACT_THROTTLE_MS;
 
 /** Role -> embed color mapping (shared across all embed methods) */
 const ROLE_COLORS = {
@@ -133,7 +133,7 @@ class KingdomDiscordBot {
     this._reconnectAttempts++;
     const delay = Math.min(
       T.BASE_RECONNECT_DELAY_MS * Math.pow(2, this._reconnectAttempts - 1),
-      30000
+      T.DISCORD_RECONNECT_CAP_MS
     );
     log.info('discord', `reconnect attempt ${this._reconnectAttempts}/${T.MAX_RECONNECT_ATTEMPTS} in ${delay}ms`);
     await new Promise(r => setTimeout(r, delay));
