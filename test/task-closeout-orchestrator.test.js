@@ -229,4 +229,78 @@ description: Use when testing the closeout orchestrator skill evaluation flow.
     assert.equal(finalState.retry.handoff.status, 'queued');
     assert.equal(finalState.retry.handoff.channel, 'work:intake');
   });
+
+  it('publishes governance:project:approved when all tasks in a project are approved', async () => {
+    // Add listConfigs to mock board so listTasks can enumerate tasks
+    board.listConfigs = async (prefix) => {
+      const results = [];
+      for (const [key, value] of configs) {
+        if (key.startsWith(prefix)) {
+          results.push({ key, value });
+        }
+      }
+      return results;
+    };
+
+    const runner = new TaskRunner({ board, workspaceRoot });
+    const evaluator = new SkillEvaluator({ board, skillsRoot });
+    const closeout = new TaskCloseoutOrchestrator({ board, skillEvaluator: evaluator, taskRunner: runner });
+
+    await runner.init();
+    await closeout.init();
+    await closeout.start();
+
+    // Create two tasks in the same project
+    await runner.startTask({
+      author: 'codex',
+      projectId: 'proj-deploy',
+      taskId: 'TASK-A',
+      goal: 'First feature',
+    });
+    await runner.startTask({
+      author: 'codex',
+      projectId: 'proj-deploy',
+      taskId: 'TASK-B',
+      goal: 'Second feature',
+    });
+
+    // Complete both tasks
+    await runner.completeTask({
+      author: 'codex',
+      projectId: 'proj-deploy',
+      taskId: 'TASK-A',
+      verification: ['npm test'],
+    });
+    await runner.completeTask({
+      author: 'codex',
+      projectId: 'proj-deploy',
+      taskId: 'TASK-B',
+      verification: ['npm test'],
+    });
+
+    // Approve only the first task — project:approved should NOT fire yet
+    await board.publish('governance:review:approved', {
+      projectId: 'proj-deploy',
+      taskId: 'TASK-A',
+      file: 'a.js',
+      author: 'reviewer',
+    });
+
+    const afterFirst = published.filter((e) => e.channel === 'governance:project:approved');
+    assert.equal(afterFirst.length, 0, 'should NOT publish project:approved after only 1 of 2 tasks approved');
+
+    // Approve the second task — now all tasks are approved
+    await board.publish('governance:review:approved', {
+      projectId: 'proj-deploy',
+      taskId: 'TASK-B',
+      file: 'b.js',
+      author: 'reviewer',
+    });
+
+    const afterSecond = published.filter((e) => e.channel === 'governance:project:approved');
+    assert.equal(afterSecond.length, 1, 'should publish project:approved when all tasks approved');
+    assert.equal(afterSecond[0].data.projectId, 'proj-deploy');
+    assert.ok(afterSecond[0].data.goal);
+    assert.equal(afterSecond[0].data.author, 'reviewer');
+  });
 });

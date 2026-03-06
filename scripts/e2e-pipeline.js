@@ -19,8 +19,9 @@ const PIPELINE_CHANNELS = [
   { ch: 'work:planning:designed',        label: '🏗️  Architect → Decomposer', emoji: '2️⃣' },
   { ch: 'work:planning:decomposed',      label: '📐 Decomposer → Coder', emoji: '3️⃣' },
   { ch: 'governance:review:requested',   label: '💻 Coder → Reviewer', emoji: '4️⃣' },
-  { ch: 'governance:review:approved',    label: '✅ Reviewer → Deployer', emoji: '5️⃣' },
+  { ch: 'governance:review:approved',    label: '✅ Reviewer → Closeout', emoji: '5️⃣' },
   { ch: 'governance:review:rejected',    label: '🔄 Reviewer → FailureAgent', emoji: '↩️' },
+  { ch: 'governance:project:approved',   label: '🎯 Closeout → Deployer', emoji: '5️⃣➡️' },
   { ch: 'execution:deployment:completed', label: '🚀 Deployer → Done', emoji: '6️⃣' },
   { ch: 'governance:failure:retry-requested', label: '🔁 FailureAgent → Retry', emoji: '7️⃣' },
 ];

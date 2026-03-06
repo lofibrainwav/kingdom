@@ -135,9 +135,9 @@ Planning and methodology commands from the BMAD framework. Key ones:
 | `/bmad-bmm-code-review` | Structured code review |
 | `/bmad-bmm-create-epics-and-stories` | Epic/story breakdown |
 
-### Skills (25 Kingdom + 5 global + 3 utility — with SKILL.md)
+### Skills (26 Kingdom + 5 global + 3 utility — with SKILL.md)
 
-**Kingdom project skills (25 — `.claude/skills/`):**
+**Kingdom project skills (26 — `.claude/skills/`):**
 | Skill | When |
 |-------|------|
 | `cost-aware-llm-pipeline` | LLM model routing, cost optimization |
@@ -165,6 +165,7 @@ Planning and methodology commands from the BMAD framework. Key ones:
 | `chrome-browser-control` | DOM-aware Chrome automation via Playwright |
 | `obsidian-sync` | Obsidian vault sync and reasoning trace cleanup |
 | `workflow-recording` | Capture repetitive workflows as reusable skills |
+| `accuracy-verification` | Zero-tolerance accuracy for audits, counts, existence claims |
 
 **Kingdom global skills (5 — `~/.claude/skills/`):**
 | Skill | When |

@@ -85,7 +85,7 @@ describe('ReflexionEngine', () => {
     const calls = [];
     const mockClients = {
       local: { call: async () => { throw new Error('down'); } },
-      groq: { call: async (model, prompt) => { calls.push('groq'); return 'fallback-ok'; } },
+      groq: { call: async (_model, _prompt) => { calls.push('groq'); return 'fallback-ok'; } },
     };
     engine = new ReflexionEngine(mockClients);
     engine.board = board;

@@ -75,7 +75,23 @@ class TaskCloseoutOrchestrator {
 
   async handleReviewApproved(message) {
     const data = typeof message === 'string' ? JSON.parse(message) : message;
-    return this.taskRunner.markReviewApproved(data);
+    const result = await this.taskRunner.markReviewApproved(data);
+
+    // Check if all tasks in the project are now approved
+    if (data.projectId && this.taskRunner.listTasks) {
+      const tasks = await this.taskRunner.listTasks({ projectId: data.projectId });
+      const allApproved = tasks.length > 0 && tasks.every((t) => t.status === 'approved');
+      if (allApproved) {
+        const goal = tasks[0]?.goal || `Project ${data.projectId} completed`;
+        await this.board.publish('governance:project:approved', {
+          projectId: data.projectId,
+          goal,
+          author: data.author || 'task-closeout-orchestrator',
+        });
+      }
+    }
+
+    return result;
   }
 
   async handleReviewRejected(message) {

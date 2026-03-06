@@ -1,7 +1,7 @@
 const { describe, it, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
 
-const { SkillPipeline, DAILY_LIMIT, MIN_SUCCESS_RATE } = require('../agent/memory/skill-pipeline');
+const { SkillPipeline, DAILY_LIMIT } = require('../agent/memory/skill-pipeline');
 
 describe('SkillPipeline', () => {
   let configs;
