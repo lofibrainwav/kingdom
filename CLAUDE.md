@@ -389,21 +389,26 @@ See `~/.claude/skills/{skill-name}/SKILL.md` for details.
 ---
 
 ## Current Operating Focus
-- Phase-3 stabilization: 365 tests green, pipeline bridge wired, all agents have author fields
-- Codebase structure: `agent/core/` (9), `agent/team/` (9), `agent/interface/` (3), `agent/memory/` (7) = 28 files
-- Team launcher: 15 agents (9 team + TaskCloseout + KnowledgeOperator + VaultBridge + RuminationEngine + GoTReasoner + NotebookLMQueue)
+- Phase-4 complete: 433 tests green, all synapses wired, 0 dead events
+- Codebase structure: `agent/core/` (9), `agent/team/` (9), `agent/interface/` (3), `agent/memory/` (8) = 29 files
+- Team launcher: 15 agents (9 team + 6 core/memory)
+- Event map: 0 dead events, 2 phantom listeners (swarm spawn/terminate — architectural)
 - Completed:
   1. ~~skill/control-layer cleanup~~ (Phase-2)
-  2. ~~green test baseline restoration~~ (365/365 green)
+  2. ~~green test baseline restoration~~ (365/365 → 433/433 green)
   3. ~~Blackboard channel refactor~~ (`work:*`, `knowledge:*`, `execution:*`, `governance:*`)
   4. ~~E2E pipeline bridge~~ (review:approved → project:approved → deployer)
   5. ~~Author field enforcement~~ (all team agent publishes)
   6. ~~Dashboard security~~ (_sanitizeParam unit tests)
   7. ~~Metacognitive scan~~ (updateStatus gap, schema validation, shutdown safety, idempotency guards, optimistic locking)
+  8. ~~Phase-4 synapse wiring~~ (VaultBridge + RuminationEngine + GoTReasoner + NotebookLMQueue)
+  9. ~~Dead event elimination~~ (6→0 dead events, dashboard full visibility)
+  10. ~~Test gap closure~~ (vault-bridge.test.js, notebooklm-queue.test.js)
 - Next priorities:
-  1. E2E runtime validation (`npm run e2e` with live agents)
-  2. Production deployment readiness (Sentry, Vercel, Supabase — blocked on infra)
+  1. E2E runtime validation (`npm run e2e` with live agents + Redis)
+  2. Swarm trigger wiring (PMAgent/Architect → execution:swarm:spawn)
   3. Dashboard HTTP/SSE test coverage expansion
+  4. Production deployment readiness (Sentry, Vercel, Supabase — blocked on infra)
 
 ---
 
