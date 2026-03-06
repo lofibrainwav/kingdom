@@ -7,7 +7,7 @@
  * Standalone services are started in the same process.
  * Press Ctrl+C to stop everything gracefully.
  */
-const { DashboardServer } = require('./agent/dashboard');
+const { DashboardServer } = require('./agent/interface/dashboard');
 const { MCPServer } = require('./agent/mcp-server');
 const { spawn } = require('child_process');
 
