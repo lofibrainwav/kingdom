@@ -12,6 +12,7 @@
     "e2e": "node --env-file=.env scripts/e2e-pipeline.js",
     "memory": "node scripts/auto-memory.js",
     "memory:operator": "node --env-file=.env scripts/run-knowledge-operator.js",
+    "memory:notebooklm-queue": "node --env-file=.env scripts/run-notebooklm-promotion-queue.js",
     "skills:eval": "node scripts/run-skill-evals.js",
     "compound": "node --env-file=.env scripts/compound-demo.js",
     "party": "node --env-file=.env scripts/party-mode.js",
