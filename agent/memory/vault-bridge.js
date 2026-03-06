@@ -16,6 +16,7 @@
  *   await bridge.start();
  */
 
+const { Blackboard } = require('../core/blackboard');
 const { getLogger } = require('../core/logger');
 
 const log = getLogger();
@@ -25,20 +26,27 @@ const OBSIDIAN_TOKEN = process.env.OBSIDIAN_API_KEY || '';
 
 class VaultBridge {
   constructor(options = {}) {
-    this.board = options.board;
+    this.board = options.board || new Blackboard();
     this.obsidianBase = options.obsidianBase || OBSIDIAN_BASE;
     this.obsidianToken = options.obsidianToken || OBSIDIAN_TOKEN;
     this.subscriber = null;
+    this.enabled = true;
   }
 
   async init() {
-    if (!this.board) {
-      throw new Error('[VaultBridge] Blackboard instance is required');
+    if (this.board.connect && this.board.client && !this.board.client.isOpen) {
+      await this.board.connect();
+    }
+    this.enabled = !!this.obsidianToken;
+    if (!this.enabled) {
+      log.info('vault-bridge', 'initialized (disabled — OBSIDIAN_API_KEY not set)');
+      return;
     }
     log.info('vault-bridge', 'initialized');
   }
 
   async start() {
+    if (!this.enabled) return;
     this.subscriber = await this.board.createSubscriber();
     this.subscriber.on('error', (err) =>
       log.error('vault-bridge', 'Redis sub error', { error: err.message })
@@ -65,6 +73,9 @@ class VaultBridge {
   async shutdown() {
     if (this.subscriber && this.subscriber.disconnect) {
       await this.subscriber.disconnect();
+    }
+    if (this.board && this.board.disconnect && this.board.client && this.board.client.isOpen) {
+      await this.board.disconnect();
     }
     log.info('vault-bridge', 'shutdown complete');
   }

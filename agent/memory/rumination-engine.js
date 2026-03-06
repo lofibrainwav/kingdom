@@ -43,6 +43,35 @@ class RuminationEngine {
     log.info('rumination', `initialized, cycle: ${RUMINATION_INTERVAL / 1000}s`);
   }
 
+  /**
+   * Start listening to Blackboard events for automatic feeding.
+   * Subscribes to knowledge:capture:stored and converts captures into experiences.
+   */
+  async startEventFeed() {
+    this.eventSubscriber = await this.board.createSubscriber();
+    this.eventSubscriber.on('error', (err) =>
+      log.error('rumination', 'event subscriber error', { error: err.message })
+    );
+
+    await this.eventSubscriber.subscribe('knowledge:capture:stored', (message) => {
+      try {
+        const data = typeof message === 'string' ? JSON.parse(message) : (message || {});
+        this.feed({
+          skillUsed: data.title || 'unknown',
+          errorType: data.retryCategory || null,
+          succeeded: data.outcome === 'passed',
+          projectId: data.projectId,
+          taskId: data.taskId,
+          source: 'knowledge-capture',
+        });
+      } catch (err) {
+        log.error('rumination', 'event feed parse error', { error: err.message });
+      }
+    });
+
+    log.info('rumination', 'event feed subscribed to knowledge:capture:stored');
+  }
+
   // ── Stomach 1: 반추위 (Rumen) — Raw Experience Intake ─────
 
   /**
@@ -344,6 +373,9 @@ class RuminationEngine {
 
   async shutdown() {
     if (this.digestTimer) clearInterval(this.digestTimer);
+    if (this.eventSubscriber && this.eventSubscriber.disconnect) {
+      await this.eventSubscriber.disconnect();
+    }
     await this.board.disconnect();
   }
 }

@@ -473,6 +473,9 @@ ${JSON.stringify(data, null, 2)}
   }
 
   async shutdown() {
+    if (this._eventSubscriber && this._eventSubscriber.disconnect) {
+      await this._eventSubscriber.disconnect();
+    }
     await this.board.disconnect();
   }
 }

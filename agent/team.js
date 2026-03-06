@@ -18,6 +18,13 @@ const { SwarmOrchestrator } = require('./team/swarm-orchestrator');
 const { WatchdogAgent } = require('./team/watchdog-agent');
 const { TaskCloseoutOrchestrator } = require('./core/task-closeout-orchestrator');
 const { KnowledgeOperator } = require('./memory/knowledge-operator');
+const { VaultBridge } = require('./memory/vault-bridge');
+const { RuminationEngine } = require('./memory/rumination-engine');
+const { GoTReasoner } = require('./memory/got-reasoner');
+const { SkillZettelkasten } = require('./memory/skill-zettelkasten');
+
+// Shared SkillZettelkasten for RuminationEngine and GoTReasoner
+const sharedZK = new SkillZettelkasten();
 
 const AGENTS = [
   { name: 'PMAgent', factory: () => new PMAgent() },
@@ -30,7 +37,33 @@ const AGENTS = [
   { name: 'Swarm', factory: () => new SwarmOrchestrator() },
   { name: 'Watchdog', factory: () => new WatchdogAgent() },
   { name: 'TaskCloseout', factory: () => new TaskCloseoutOrchestrator(), postInit: (inst) => inst.start() },
-  { name: 'KnowledgeOperator', factory: () => new KnowledgeOperator(), postInit: (inst) => inst.start() },
+  { name: 'KnowledgeOperator', factory: () => new KnowledgeOperator({ zettelkasten: sharedZK }), postInit: (inst) => inst.start() },
+  { name: 'VaultBridge', factory: () => new VaultBridge(), postInit: (inst) => inst.start() },
+  {
+    name: 'RuminationEngine',
+    factory: () => new RuminationEngine(sharedZK),
+    postInit: (inst) => inst.startEventFeed(),
+  },
+  {
+    name: 'GoTReasoner',
+    factory: () => new GoTReasoner(sharedZK),
+    postInit: async (inst) => {
+      const sub = await inst.board.createSubscriber();
+      sub.on('error', (err) => log.error('team', 'GoT subscriber error', { error: err.message }));
+      await sub.subscribe('knowledge:rumination:digested', async (message) => {
+        try {
+          const data = typeof message === 'string' ? JSON.parse(message) : (message || {});
+          if (data.insightCount > 0) {
+            await inst.fullReasoningCycle();
+          }
+        } catch (err) {
+          log.error('team', 'GoT trigger error', { error: err.message });
+        }
+      });
+      inst._eventSubscriber = sub;
+      log.info('team', 'GoTReasoner subscribed to knowledge:rumination:digested');
+    },
+  },
 ];
 
 const instances = [];
