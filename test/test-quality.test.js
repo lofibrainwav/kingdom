@@ -158,6 +158,7 @@ describe('Test Quality — Agent Coverage Map', () => {
   // Only list files that genuinely cannot be unit-tested (external deps, entry points)
   const EXEMPT = [
     'interface/discord-bot.js', // requires Discord.js client — external API
+    'memory/vault-bridge.js', // Obsidian REST bridge — requires external Obsidian API
   ];
 
   it('every non-exempt agent/*.js should be imported by at least one test', () => {
