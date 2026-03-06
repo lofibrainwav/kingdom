@@ -10,6 +10,16 @@ const { getLogger } = require('../core/logger');
 const { ReflexionEngine } = require('../core/ReflexionEngine');
 const log = getLogger();
 
+/** Extract JSON object from LLM response (raw string or pre-parsed object) */
+function parseLLMJson(response) {
+  if (typeof response === 'object' && response !== null) return response;
+  try {
+    const match = String(response).match(/\{[\s\S]*\}/);
+    if (match) return JSON.parse(match[0]);
+  } catch {}
+  return null;
+}
+
 class FailureAgent {
   constructor() {
     this.board = new Blackboard();
@@ -37,7 +47,7 @@ class FailureAgent {
       await this.updateStatus('classifying', `Classifying ${taskId}`);
 
       // 1. Categorize Failure via LLM (3-pillar logic)
-      const classification = await this.llm.callLLM(
+      const rawClassification = await this.llm.callLLM(
         `Classify this failure for project ${projectId}, task ${taskId} in file ${file}.\n` +
         `Feedback: ${feedback}\n` +
         'Categorize into: \n' +
@@ -47,6 +57,7 @@ class FailureAgent {
         'Return JSON: { category, reason, mustNotGuardrail }',
         'critical'
       );
+      const classification = parseLLMJson(rawClassification) || { category: 'unknown', reason: 'LLM response parse failed', mustNotGuardrail: null };
 
       // 2. Save Classification and Guardrail to Blackboard
       await this.board.setConfig(`${projectId}:failure:${taskId}`, {

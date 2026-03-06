@@ -128,6 +128,32 @@ describe('DecomposerAgent', () => {
     assert.equal(published[0].data.retryGuardrail, 'no-regex');
   });
 
+  it('handleDesignComplete parses JSON from raw LLM string response', async () => {
+    llm.callLLM = async () => 'Here are the tasks:\n{ "tasks": [{ "id": "T1", "description": "Init project", "dependencyId": null }] }\nDone.';
+
+    await agent.handleDesignComplete({
+      projectId: 'project:raw-01',
+      goal: 'Build something',
+      architecture: 'Node.js',
+    });
+
+    assert.equal(published[0].channel, 'work:planning:decomposed');
+    assert.deepEqual(published[0].data.tasks.tasks[0].id, 'T1');
+  });
+
+  it('handleDesignComplete defaults to empty task list when LLM returns unparseable response', async () => {
+    llm.callLLM = async () => 'I need more information to break this down';
+
+    await agent.handleDesignComplete({
+      projectId: 'project:raw-02',
+      goal: 'Vague goal',
+      architecture: 'Unknown',
+    });
+
+    assert.equal(published[0].channel, 'work:planning:decomposed');
+    assert.deepEqual(published[0].data.tasks.tasks, []);
+  });
+
   it('shutdown disconnects subscriber, board, and LLM', async () => {
     let subDisconnected = false;
     let boardDisconnected = false;

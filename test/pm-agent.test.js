@@ -59,6 +59,19 @@ describe('PMAgent', () => {
     assert.equal(statuses.at(-1).status.state, 'processing');
   });
 
+  it('shutdown disconnects subscriber and board', async () => {
+    let subDisconnected = false;
+    let boardDisconnected = false;
+
+    agent.subscriber = { disconnect: async () => { subDisconnected = true; } };
+    board.disconnect = async () => { boardDisconnected = true; };
+
+    await agent.shutdown();
+
+    assert.ok(subDisconnected);
+    assert.ok(boardDisconnected);
+  });
+
   it('treats retry intake as continuation of the existing task', async () => {
     configs.set('tasks:kingdom:TASK-501', {
       projectId: 'kingdom',

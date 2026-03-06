@@ -102,6 +102,33 @@ describe('FailureAgent', () => {
     assert.equal(statuses.at(-1).status.state, 'idle');
   });
 
+  it('handleTaskRejection parses JSON from raw LLM string response', async () => {
+    llm.callLLM = async () => 'Analysis: { "category": "Environment Failure", "reason": "Docker not running", "mustNotGuardrail": "check-docker-first" }';
+
+    await agent.handleTaskRejection({
+      projectId: 'project:env-01',
+      taskId: 'T8',
+      file: 'deploy.js',
+      feedback: 'Cannot connect to Docker daemon',
+    });
+
+    assert.equal(published[0].data.category, 'Environment Failure');
+    assert.equal(published[0].data.guardrail, 'check-docker-first');
+  });
+
+  it('handleTaskRejection defaults gracefully when LLM returns unparseable response', async () => {
+    llm.callLLM = async () => 'I am not sure what happened';
+
+    await agent.handleTaskRejection({
+      projectId: 'project:env-02',
+      taskId: 'T9',
+      file: 'broken.js',
+      feedback: 'Unknown error occurred',
+    });
+
+    assert.equal(published[0].data.category, 'unknown');
+  });
+
   it('shutdown disconnects subscriber, board, and LLM', async () => {
     let subDisconnected = false;
     let boardDisconnected = false;

@@ -122,6 +122,34 @@ describe('ReviewerAgent', () => {
     assert.equal(published[0].data.taskId, 'T7');
   });
 
+  it('handleTaskComplete parses JSON from raw LLM string response', async () => {
+    llm.callLLM = async () => 'Here is my review:\n{ "approved": true, "feedback": "Well structured", "suggestedFix": null }\nEnd.';
+
+    await agent.handleTaskComplete({
+      projectId: 'project:parse-01',
+      taskId: 'T9',
+      file: 'index.js',
+      content: 'module.exports = {};',
+    });
+
+    assert.equal(published[0].channel, 'governance:review:approved');
+    assert.equal(published[0].data.taskId, 'T9');
+  });
+
+  it('handleTaskComplete defaults to rejection when LLM returns unparseable response', async () => {
+    llm.callLLM = async () => 'I cannot review this code properly';
+
+    await agent.handleTaskComplete({
+      projectId: 'project:parse-02',
+      taskId: 'T10',
+      file: 'bad.js',
+      content: '???',
+    });
+
+    assert.equal(published[0].channel, 'governance:review:rejected');
+    assert.equal(published[0].data.feedback, 'LLM response parse failed');
+  });
+
   it('shutdown disconnects subscriber, board, and LLM', async () => {
     let subDisconnected = false;
     let boardDisconnected = false;
