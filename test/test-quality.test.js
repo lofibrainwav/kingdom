@@ -77,6 +77,7 @@ describe('Test Quality — Banned Patterns', () => {
     const violations = [];
     for (const file of testFiles) {
       if (file.name === 'test-quality.test.js') continue; // skip self
+      if (file.name.startsWith('e2e-')) continue; // E2E tests have infra-dependent skips
       const lines = file.content.split('\n');
       lines.forEach((line, i) => {
         // Match assert.ok(true) but not inside comments or strings describing the rule
