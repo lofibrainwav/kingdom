@@ -14,6 +14,7 @@ const SCHEMAS = {
   'knowledge:skills:deployed': ['author', 'newSkill'],
   'knowledge:capture:stored': ['author', 'projectId', 'title', 'notePath', 'outcome'],
   'knowledge:promotion:candidate': ['author', 'projectId', 'taskId', 'title', 'notePath', 'promotionType'],
+  'knowledge:promotion:applied': ['author', 'projectId', 'taskId', 'promotionType', 'promotedTo'],
   'knowledge:skill:eval-completed': ['author', 'skillName', 'score', 'findingCount', 'passed'],
   'knowledge:rumination:digested': ['author', 'digestionNumber', 'experienceCount', 'insightCount', 'actionCount'],
   'knowledge:zettelkasten:tier-up': ['author', 'skill', 'oldTier', 'newTier', 'xp'],

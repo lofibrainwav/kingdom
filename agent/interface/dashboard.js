@@ -120,6 +120,7 @@ class DashboardServer {
       skillEvals: 0,
       lastSkillEval: null,
       recentKnowledge: [],
+      recentPromotions: [],
       recentTasks: [],
       retryByCategory: {},
       retryByGuardrail: {},
@@ -305,6 +306,32 @@ class DashboardServer {
         this._broadcast({ type: 'skill-eval', channel: 'knowledge:skill:eval-completed', data });
       } catch {}
     });
+
+    this.subscriber.subscribe('knowledge:promotion:candidate', (message) => {
+      try {
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
+        this._rememberPromotionEvent({
+          type: 'candidate',
+          title: data.title,
+          outcome: data.promotionType,
+          detail: data.retryCategory || data.taskId,
+        });
+        this._broadcast({ type: 'promotion-candidate', channel: 'knowledge:promotion:candidate', data });
+      } catch {}
+    });
+
+    this.subscriber.subscribe('knowledge:promotion:applied', (message) => {
+      try {
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
+        this._rememberPromotionEvent({
+          type: 'applied',
+          title: data.taskId,
+          outcome: data.promotedTo,
+          detail: data.promotionType,
+        });
+        this._broadcast({ type: 'promotion-applied', channel: 'knowledge:promotion:applied', data });
+      } catch {}
+    });
   }
 
   _rememberKnowledgeEvent(event) {
@@ -321,6 +348,14 @@ class DashboardServer {
       timestamp: Date.now(),
     });
     this.metrics.recentTasks = this.metrics.recentTasks.slice(0, 6);
+  }
+
+  _rememberPromotionEvent(event) {
+    this.metrics.recentPromotions.unshift({
+      ...event,
+      timestamp: Date.now(),
+    });
+    this.metrics.recentPromotions = this.metrics.recentPromotions.slice(0, 6);
   }
 
   _incrementMetricBucket(bucket, key) {
@@ -399,6 +434,27 @@ class DashboardServer {
     return index;
   }
 
+  async _loadPromotionCandidates({ projectId, taskId } = {}) {
+    if (!this.board.listConfigs) {
+      return [];
+    }
+
+    const prefix = projectId
+      ? `knowledge:promotion:${projectId}:`
+      : 'knowledge:promotion:';
+    const entries = await this.board.listConfigs(prefix);
+
+    return entries
+      .map(({ value }) => value)
+      .filter((value) => value?.projectId && value?.taskId)
+      .filter((value) => !taskId || value.taskId === taskId)
+      .sort((a, b) => {
+        const aTime = Date.parse(a.capturedAt || a.promotedAt || 0);
+        const bTime = Date.parse(b.capturedAt || b.promotedAt || 0);
+        return bTime - aTime || a.taskId.localeCompare(b.taskId);
+      });
+  }
+
   async _handleAPIState(req, res, requestUrl) {
     const filters = {
       projectId: requestUrl.searchParams.get('projectId') || undefined,
@@ -410,6 +466,7 @@ class DashboardServer {
     const tasks = await this.taskRunner.listTasks(filters);
     this.taskRunnerCachedTasks = tasks;
     const taskKnowledge = await this._loadTaskKnowledgeIndex(filters);
+    const promotionCandidates = await this._loadPromotionCandidates(filters);
     const hydratedTasks = tasks.map((task) => ({
       ...task,
       latestKnowledge: taskKnowledge.get(`${task.projectId}:${task.taskId}`) || null,
@@ -424,6 +481,9 @@ class DashboardServer {
       metrics: {
         ...this.metrics,
         ...derivedMetrics,
+        promotionCandidates,
+        promotionQueueCounts: this._derivePromotionQueueCounts(promotionCandidates),
+        promotionAppliedCount: promotionCandidates.filter((entry) => entry.status === 'promoted').length,
       },
       timestamp: Date.now(),
     }));
@@ -438,6 +498,14 @@ class DashboardServer {
       projectDryRunRecoveryComparison: this._deriveDryRunRecoveryComparison(this.taskRunnerCachedTasks || []),
       dryRunSummaryWinRates: this._deriveDryRunSummaryWinRates(this.taskRunnerCachedTasks || []),
     };
+  }
+
+  _derivePromotionQueueCounts(candidates = []) {
+    return candidates.reduce((acc, candidate) => {
+      const status = candidate.status || 'queued';
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    }, {});
   }
 
   _deriveRateList(retryBucket = {}, resolvedBucket = {}) {
@@ -929,6 +997,13 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
         </div>
         <div id="task-feed" class="feed-list"></div>
       </div>
+      <div class="task-feed">
+        <div class="section-header">
+          <h2 class="section-title">Promotion Feed</h2>
+          <div class="section-note">Queued and applied promotion candidates from recovery wins</div>
+        </div>
+        <div id="promotion-feed" class="feed-list"></div>
+      </div>
       <div class="pressure-grid">
         <div class="section-header">
           <h2 class="section-title">Retry Pressure</h2>
@@ -977,6 +1052,14 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
         <div class="pressure-card">
           <div class="feed-title">Winning Dry-Run Plays</div>
           <div id="dry-run-summary-wins" class="feed-list"></div>
+        </div>
+        <div class="pressure-card">
+          <div class="feed-title">Promotion Queue</div>
+          <div id="promotion-queue" class="feed-list"></div>
+        </div>
+        <div class="pressure-card">
+          <div class="feed-title">Applied Promotions</div>
+          <div id="promotion-applied" class="feed-list"></div>
         </div>
       </div>
     </aside>
@@ -1036,6 +1119,7 @@ const statCaptures = document.getElementById('stat-captures');
 const statSkillEvals = document.getElementById('stat-skill-evals');
 const knowledgeFeedDiv = document.getElementById('knowledge-feed');
 const taskFeedDiv = document.getElementById('task-feed');
+const promotionFeedDiv = document.getElementById('promotion-feed');
 const retryCategoryDiv = document.getElementById('retry-category');
 const retryGuardrailDiv = document.getElementById('retry-guardrail');
 const resolvedGuardrailDiv = document.getElementById('resolved-guardrail');
@@ -1047,12 +1131,15 @@ const projectDryRunCoverageDiv = document.getElementById('project-dry-run-covera
 const projectDryRunSuccessDiv = document.getElementById('project-dry-run-success');
 const projectDryRunRecoveryGapDiv = document.getElementById('project-dry-run-recovery-gap');
 const dryRunSummaryWinsDiv = document.getElementById('dry-run-summary-wins');
+const promotionQueueDiv = document.getElementById('promotion-queue');
+const promotionAppliedDiv = document.getElementById('promotion-applied');
 const state = {};
 const tasks = {};
 const metrics = {
   knowledgeCaptures: 0,
   skillEvals: 0,
   recentKnowledge: [],
+  recentPromotions: [],
   recentTasks: [],
   retryByCategory: {},
   retryByGuardrail: {},
@@ -1067,6 +1154,9 @@ const metrics = {
   projectDryRunSuccessRates: [],
   projectDryRunRecoveryComparison: [],
   dryRunSummaryWinRates: [],
+  promotionCandidates: [],
+  promotionQueueCounts: {},
+  promotionAppliedCount: 0,
 };
 let totalEvents = 0;
 let totalHealthSignals = 0;
@@ -1164,6 +1254,7 @@ function renderStats() {
   statSkillEvals.textContent = metrics.skillEvals;
   renderKnowledgeFeed();
   renderTaskFeed();
+  renderPromotionFeed();
   renderRetryPressure();
 }
 
@@ -1398,6 +1489,20 @@ function renderTaskFeed() {
   }).join('');
 }
 
+function renderPromotionFeed() {
+  if (metrics.recentPromotions.length === 0) {
+    promotionFeedDiv.innerHTML = '<div class="feed-item"><div class="feed-title">No promotion signals yet</div><div class="feed-meta">Queued and applied promotion candidates will appear here.</div></div>';
+    return;
+  }
+
+  promotionFeedDiv.innerHTML = metrics.recentPromotions.map((entry) => {
+    return '<div class="feed-item">'
+      + '<div class="feed-title">' + escapeHtml(entry.title || entry.type) + '</div>'
+      + '<div class="feed-meta">' + escapeHtml((entry.type || 'promotion') + ' • ' + (entry.outcome || 'n/a') + ' • ' + (entry.detail || '') + ' • ' + timeAgo(entry.timestamp)) + '</div>'
+      + '</div>';
+  }).join('');
+}
+
 function renderRetryPressure() {
   renderBucket(retryCategoryDiv, metrics.retryByCategory, 'No retry categories yet', 'category');
   renderBucket(retryGuardrailDiv, metrics.retryByGuardrail, 'No guardrail pressure yet', 'guardrail');
@@ -1410,6 +1515,25 @@ function renderRetryPressure() {
   renderSummaryRateBucket(projectDryRunSuccessDiv, metrics.projectDryRunSuccessRates, 'No dry-run success rates yet', 'successRate', (entry) => entry.successfulTasks + '/' + entry.dryRunTasks + ' dry-run tasks landed');
   renderRecoveryComparisonBucket(projectDryRunRecoveryGapDiv, metrics.projectDryRunRecoveryComparison, 'No dry-run recovery comparison yet');
   renderDryRunSummaryWins(dryRunSummaryWinsDiv, metrics.dryRunSummaryWinRates, 'No dry-run plays ranked yet');
+  renderPromotionQueueBucket(promotionQueueDiv, metrics.promotionQueueCounts, 'No promotion queue yet');
+  renderPromotionAppliedBucket(promotionAppliedDiv, metrics.promotionAppliedCount);
+}
+
+function renderPromotionQueueBucket(container, counts, emptyLabel) {
+  const entries = Object.entries(counts || {});
+  if (entries.length === 0) {
+    container.innerHTML = '<div class="feed-meta">' + escapeHtml(emptyLabel) + '</div>';
+    return;
+  }
+
+  container.innerHTML = entries
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([status, count]) => '<div class="feed-item"><div class="feed-title">' + escapeHtml(status) + '</div><div class="feed-meta">' + escapeHtml(String(count) + ' candidates') + '</div></div>')
+    .join('');
+}
+
+function renderPromotionAppliedBucket(container, count) {
+  container.innerHTML = '<div class="feed-item"><div class="feed-title">Promoted</div><div class="feed-meta">' + escapeHtml(String(count || 0) + ' applied promotions') + '</div></div>';
 }
 
 function renderBucket(container, bucket, emptyLabel, drilldownType) {

@@ -172,12 +172,48 @@ class KnowledgeOperator {
       title: bundle.title,
       notePath,
       promotionType: 'dry-run-recovery-play',
+      status: 'queued',
       retryCategory: bundle.retryCategory,
       retryGuardrail: bundle.retryGuardrail,
       dryRunSummary: bundle.dryRunSummary,
       improvementNote: bundle.improvementNote || null,
       capturedAt: bundle.capturedAt || new Date().toISOString(),
     };
+  }
+
+  async markPromotionApplied({ author, projectId, taskId, promotedTo }) {
+    if (!author || !projectId || !taskId || !promotedTo) {
+      throw new Error('[KnowledgeOperator] author, projectId, taskId, and promotedTo are required');
+    }
+
+    if (!this.board.getConfig || !this.board.setConfig) {
+      throw new Error('[KnowledgeOperator] board config support is required');
+    }
+
+    const key = `knowledge:promotion:${projectId}:${taskId}:candidate`;
+    const existing = await this.board.getConfig(key);
+    if (!existing) {
+      throw new Error(`[KnowledgeOperator] promotion candidate not found for ${projectId}/${taskId}`);
+    }
+
+    const updated = {
+      ...existing,
+      author,
+      status: 'promoted',
+      promotedTo,
+      promotedAt: new Date().toISOString(),
+    };
+
+    await this.board.setConfig(key, updated);
+    await this.board.publish('knowledge:promotion:applied', {
+      author,
+      projectId,
+      taskId,
+      promotionType: updated.promotionType,
+      promotedTo,
+    });
+
+    return updated;
   }
 
   async handleReviewApproved(message) {

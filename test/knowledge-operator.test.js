@@ -371,9 +371,43 @@ describe('KnowledgeOperator', () => {
     assert.ok(candidate);
     assert.equal(candidate.projectId, 'kingdom');
     assert.equal(candidate.taskId, 'TASK-22');
+    assert.equal(candidate.status, 'queued');
     assert.equal(candidate.promotionType, 'dry-run-recovery-play');
     assert.equal(candidate.retryCategory, 'review');
     assert.equal(candidate.dryRunSummary, 'Rehearse review evidence checklist');
+  });
+
+  it('marks queued promotion candidates as applied and publishes an applied event', async () => {
+    const operator = new KnowledgeOperator({
+      board,
+      zettelkasten: zk,
+      vaultDir: tmpDir,
+      writePattern: async (name) => `/vault/patterns/${name}.md`,
+      addDashboardLink: async () => {},
+    });
+
+    configs.set('knowledge:promotion:kingdom:TASK-30:candidate', {
+      author: 'knowledge-operator',
+      projectId: 'kingdom',
+      taskId: 'TASK-30',
+      title: 'Completed TASK-30',
+      notePath: '/tmp/completed-task-30.md',
+      promotionType: 'dry-run-recovery-play',
+      status: 'queued',
+    });
+
+    const result = await operator.markPromotionApplied({
+      author: 'codex',
+      projectId: 'kingdom',
+      taskId: 'TASK-30',
+      promotedTo: 'obsidian-pattern',
+    });
+
+    assert.equal(result.status, 'promoted');
+    assert.equal(result.promotedTo, 'obsidian-pattern');
+    assert.equal(configs.get('knowledge:promotion:kingdom:TASK-30:candidate').status, 'promoted');
+    assert.equal(published.at(-1).channel, 'knowledge:promotion:applied');
+    assert.equal(published.at(-1).data.promotedTo, 'obsidian-pattern');
   });
 
   it('captures skill evaluation events into durable knowledge notes', async () => {

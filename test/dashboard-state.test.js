@@ -26,6 +26,9 @@ describe('DashboardServer state API', () => {
     };
     dashboard.board = {
       listConfigs: async (prefix) => {
+        if (prefix === 'knowledge:promotion:') {
+          return [];
+        }
         assert.equal(prefix, 'knowledge:task:');
         return [
           {
@@ -388,5 +391,64 @@ describe('DashboardServer state API', () => {
         winRate: 0.5,
       },
     ]);
+  });
+
+  it('includes promotion queue metrics and candidates from stored configs', async () => {
+    const dashboard = new DashboardServer(0);
+    dashboard.taskRunner = {
+      listTasks: async () => [],
+    };
+    dashboard.board = {
+      listConfigs: async (prefix) => {
+        if (prefix === 'knowledge:task:') return [];
+        if (prefix === 'knowledge:promotion:') {
+          return [
+            {
+              key: 'knowledge:promotion:kingdom:TASK-22:candidate',
+              value: {
+                projectId: 'kingdom',
+                taskId: 'TASK-22',
+                title: 'Completed TASK-22',
+                promotionType: 'dry-run-recovery-play',
+                status: 'queued',
+                retryCategory: 'review',
+                dryRunSummary: 'Rehearse review evidence checklist',
+              },
+            },
+            {
+              key: 'knowledge:promotion:kingdom:TASK-30:candidate',
+              value: {
+                projectId: 'kingdom',
+                taskId: 'TASK-30',
+                title: 'Completed TASK-30',
+                promotionType: 'dry-run-recovery-play',
+                status: 'promoted',
+                promotedTo: 'obsidian-pattern',
+                retryCategory: 'implementation',
+                dryRunSummary: 'Replay implementation proof before handoff',
+              },
+            },
+          ];
+        }
+        return [];
+      },
+    };
+
+    let payload = '';
+    const res = {
+      writeHead: () => {},
+      end: (body) => {
+        payload = body;
+      },
+    };
+
+    await dashboard._handleAPIState({}, res, new URL('http://localhost/api/state'));
+
+    const data = JSON.parse(payload);
+    assert.equal(data.metrics.promotionQueueCounts.queued, 1);
+    assert.equal(data.metrics.promotionQueueCounts.promoted, 1);
+    assert.equal(data.metrics.promotionAppliedCount, 1);
+    assert.equal(data.metrics.promotionCandidates[0].taskId, 'TASK-22');
+    assert.equal(data.metrics.promotionCandidates[1].status, 'promoted');
   });
 });
