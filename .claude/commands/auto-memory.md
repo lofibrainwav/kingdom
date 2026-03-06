@@ -74,8 +74,8 @@ Export full memory state to a single JSON for backup.
 
 The enhanced hook adds context-aware status:
 ```bash
-MEM=~/.claude/projects/-Users-octiv-Octiv-MVP/memory
-PROJ=/Users/octiv/Octiv_MVP
+MEM=~/.claude/projects/-Users-brnestrm-bb/memory
+PROJ=/Users/brnestrm/bb/kingdom
 
 # Core status
 COMMIT=$(git -C $PROJ log --oneline -1 2>/dev/null)
@@ -88,5 +88,5 @@ DOCKER=$(docker ps --format '{{.Names}}' 2>/dev/null | wc -l | tr -d ' ')
 MEM_LINES=$([ -f $MEM/MEMORY.md ] && wc -l < $MEM/MEMORY.md || echo '0')
 LOG_LINES=$([ -f $MEM/session-log.md ] && wc -l < $MEM/session-log.md || echo '0')
 
-echo "[Octiv] $BRANCH:${COMMIT:0:7} | Δ${MODIFIED} files | redis:$REDIS | docker:${DOCKER} containers | mem:${MEM_LINES}L log:${LOG_LINES}L"
+echo "[Kingdom] $BRANCH:${COMMIT:0:7} | Δ${MODIFIED} files | redis:$REDIS | docker:${DOCKER} containers | mem:${MEM_LINES}L log:${LOG_LINES}L"
 ```
