@@ -66,7 +66,7 @@ Read: existing utility files (agent/*.js, config/*.js)
 ## Kingdom-Specific Search Locations
 | What | Where to look |
 |------|---------------|
-| Bot utilities | `agent/OctivBot.js`, `agent/team.js` |
+| Bot utilities | `agent/OctivBot.js` (legacy adapter), `agent/team.js` |
 | Redis operations | `agent/blackboard.js` |
 | Logging | `agent/logger.js` |
 | Timeout constants | `config/timeouts.js` |

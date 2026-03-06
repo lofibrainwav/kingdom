@@ -86,12 +86,12 @@ Choose the right pattern for the task at hand:
 
 ## Quick Tool Directory — use `/tool-index` for full reference
 
-### When unsure → `octiv-orchestrator`
+### When unsure → `kingdom-orchestrator`
 
 ### Agents (13 logical modules, 24 core + 3 role files)
 | Agent | One-liner |
 |-------|-----------|
-| `octiv-orchestrator` | **START HERE** for complex tasks |
+| `kingdom-orchestrator` | **START HERE** for complex tasks |
 | `pm-agent` | AC status, requirements, priorities, strategy |
 | `planner` | Implementation step breakdown |
 | `architect` | System design decisions |
@@ -125,9 +125,9 @@ Choose the right pattern for the task at hand:
 | `/learn [topic]` | Extract patterns from session → instincts |
 | `/checkpoint [name]` | Save session state snapshot for recovery |
 
-### Skills (21 Kingdom + 5 global + 3 utility — with SKILL.md)
+### Skills (25 Kingdom + 5 global + 3 utility — with SKILL.md)
 
-**Kingdom project skills (21 — `.claude/skills/`):**
+**Kingdom project skills (25 — `.claude/skills/`):**
 | Skill | When |
 |-------|------|
 | `cost-aware-llm-pipeline` | LLM model routing, cost optimization |
@@ -151,6 +151,10 @@ Choose the right pattern for the task at hand:
 | `browser-recovery` | Playwright MCP + Patchright failure recovery |
 | `automated-debugging` | Automated debug workflows |
 | `capability-registry` | Agent↔MCP↔Skill mapping reference |
+| `agent-teams` | Multi-agent parallel orchestration |
+| `chrome-browser-control` | DOM-aware Chrome automation via Playwright |
+| `obsidian-sync` | Obsidian vault sync and reasoning trace cleanup |
+| `workflow-recording` | Capture repetitive workflows as reusable skills |
 
 **Kingdom global skills (5 — `~/.claude/skills/`):**
 | Skill | When |

@@ -19,7 +19,7 @@ Which MCP tools each agent can leverage:
 
 | Agent | MCP Tools | Notes |
 |-------|-----------|-------|
-| `octiv-orchestrator` | sequentialthinking, memory | Delegates others to specialized agents |
+| `kingdom-orchestrator` | sequentialthinking, memory | Delegates others to specialized agents |
 | `pm-agent` | github, memory | Issues, project tracking |
 | `planner` | sequentialthinking, serena, context7 | Task decomposition + plan generation |
 | `architect` | serena, context7, sequentialthinking, memory | Design decisions with system context |
@@ -44,7 +44,7 @@ Which agent is responsible for executing each skill category:
 | `verify-tests` | tdd-guide | After test modifications |
 | `verify-dependencies` | security-reviewer | Before PR, after npm install |
 | `verify-mcp` | skill-agent | After MCP config changes |
-| `verify-implementation` | octiv-orchestrator | Before PR — orchestrates all verify-* |
+| `verify-implementation` | kingdom-orchestrator | Before PR — orchestrates all verify-* |
 | `search-first` | dev-agent, planner | Before writing new code |
 | `cost-aware-llm-pipeline` | dev-agent, architect | LLM API integration |
 | `docker-patterns` | dev-agent, architect | Container architecture |
@@ -84,7 +84,7 @@ Which agent is responsible for executing each skill category:
 | Plan a feature | planner | sequentialthinking, serena | — |
 | Review code | code-reviewer | github, serena | verification-loop |
 | Check security | security-reviewer | github | verify-dependencies |
-| Run all verifications | octiv-orchestrator | — | verify-implementation |
+| Run all verifications | kingdom-orchestrator | — | verify-implementation |
 | Query grounded project docs | notebooklm-agent | notebooklm | — |
 | Commit and push | github-agent | github | dev-tool-belt |
 | Create/update skills | skill-agent | filesystem, memory | manage-skills |

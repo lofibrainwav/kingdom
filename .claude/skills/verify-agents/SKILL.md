@@ -7,7 +7,7 @@ description: Use when agent runtime files change and you need to verify base-cla
 
 ## Purpose
 
-1. **OctivBot patterns** — all bots extend OctivBot with proper constructor usage
+1. **KingdomBot patterns** — all bots extend KingdomBot with proper constructor usage
 2. **Heartbeat** — bots must have active heartbeat for health monitoring
 3. **Reconnection** — exponential backoff reconnect must be implemented
 4. **AC task coverage** — verify each implemented AC has the expected function
@@ -23,7 +23,7 @@ description: Use when agent runtime files change and you need to verify base-cla
 
 | File | Purpose |
 |------|---------|
-| `agent/OctivBot.js` | Base bot class (spawn, health, heartbeat, reconnect) |
+| `agent/KingdomBot.js` | Base bot class (spawn, health, heartbeat, reconnect) |
 | `agent/bot.js` | Single bot entry point |
 | `agent/team.js` | Multi-agent orchestrator |
 | `agent/leader.js` | Strategy, Training/Creative mode, voting |
@@ -33,19 +33,19 @@ description: Use when agent runtime files change and you need to verify base-cla
 
 ## Workflow
 
-### Step 1: Verify OctivBot Base Class Exists
+### Step 1: Verify KingdomBot Base Class Exists
 
 ```bash
-grep -n "class OctivBot\|module.exports" agent/OctivBot.js
+grep -n "class KingdomBot\|module.exports" agent/KingdomBot.js
 ```
 
-**PASS:** `class OctivBot` and `module.exports = { OctivBot }` found.
+**PASS:** `class KingdomBot` and `module.exports = { KingdomBot }` found.
 **FAIL:** Class missing or not exported.
 
 ### Step 2: Verify Heartbeat Implementation
 
 ```bash
-grep -n "heartbeat\|setInterval\|health" agent/OctivBot.js
+grep -n "heartbeat\|setInterval\|health" agent/KingdomBot.js
 ```
 
 **PASS:** `setInterval` used for heartbeat with interval value.
@@ -55,7 +55,7 @@ grep -n "heartbeat\|setInterval\|health" agent/OctivBot.js
 ### Step 3: Verify Reconnection Logic
 
 ```bash
-grep -n "reconnect\|backoff\|retry\|setTimeout" agent/OctivBot.js
+grep -n "reconnect\|backoff\|retry\|setTimeout" agent/KingdomBot.js
 ```
 
 **PASS:** Exponential backoff pattern found (reconnect delay doubles on each attempt).
@@ -114,9 +114,9 @@ grep -n "require.*blackboard\|Blackboard" agent/team.js agent/leader.js agent/bu
 ```markdown
 | Check | File | Status | Detail |
 |-------|------|--------|--------|
-| OctivBot class exported | agent/OctivBot.js | ✅ PASS | |
-| Heartbeat present | agent/OctivBot.js | ✅ PASS | setInterval 5000ms |
-| Exponential backoff | agent/OctivBot.js | ✅ PASS | |
+| KingdomBot class exported | agent/KingdomBot.js | ✅ PASS | |
+| Heartbeat present | agent/KingdomBot.js | ✅ PASS | setInterval 5000ms |
+| Exponential backoff | agent/KingdomBot.js | ✅ PASS | |
 | AC-1 collectWood | agent/builder.js | ✅ PASS | |
 | AC-3 craftBasicTools | agent/builder.js | ✅ PASS | |
 | AC-8 detectThreat | agent/safety.js | ✅ PASS | |
@@ -127,7 +127,7 @@ grep -n "require.*blackboard\|Blackboard" agent/team.js agent/leader.js agent/bu
 
 ## Exceptions
 
-1. **bot.js** — entry point, may not extend OctivBot directly
+1. **bot.js** — entry point, may not extend KingdomBot directly
 2. **AC tasks marked ❌ in ROADMAP** — not implemented yet, skip their checks
-3. **team.js** — orchestrator, doesn't need to extend OctivBot
+3. **team.js** — orchestrator, doesn't need to extend KingdomBot
 4. **Test files** — `test/` may mock agent internals; skip for these checks

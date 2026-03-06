@@ -30,7 +30,7 @@ Verify that the Kingdom test suite is healthy and all agent files have coverage.
 
 | Agent File | Expected Test File |
 |---|---|
-| agent/OctivBot.js | test/bot.test.js |
+| agent/OctivBot.js | test/bot.test.js | (legacy adapter) |
 | agent/blackboard.js | test/blackboard.test.js |
 | agent/team.js | test/team.test.js |
 | agent/leader.js | test/orchestrator.test.js |

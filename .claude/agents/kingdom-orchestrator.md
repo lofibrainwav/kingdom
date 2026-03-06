@@ -1,5 +1,5 @@
 ---
-name: octiv-orchestrator
+name: kingdom-orchestrator
 description: Master orchestrator for Kingdom. Coordinates agents, tools, workflows, and verification across the planning, knowledge, execution, and governance planes.
 tools: ["Read", "Grep", "Glob", "Bash"]
 model: opus

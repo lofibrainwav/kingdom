@@ -25,7 +25,7 @@ Orchestrates all registered verify skills to produce a comprehensive validation 
 | # | Skill | Description |
 |---|-------|-------------|
 | 1 | `verify-redis` | Redis port, channels, error handling |
-| 2 | `verify-agents` | OctivBot patterns, heartbeat, reconnect |
+| 2 | `verify-agents` | Agent patterns, heartbeat, reconnect |
 | 3 | `verify-tests` | Test count, coverage, stale assertions |
 | 4 | `verify-dependencies` | npm audit, outdated packages |
 | 5 | `verify-mcp` | MCP server config vs actual status |
@@ -51,7 +51,7 @@ For each skill in order:
 |-------|------|--------|--------|
 | Redis port is 6380 | agent/blackboard.js | ✅ PASS | port: 6380 found |
 | kingdom: prefix on channels | agent/blackboard.js | ✅ PASS | |
-| heartbeat interval set | agent/OctivBot.js | ❌ FAIL | setInterval not found |
+| heartbeat interval set | agent/team/*.js | ❌ FAIL | setInterval not found |
 ```
 
 ### Step 3: Integrated Report
@@ -77,7 +77,7 @@ After all skills run:
 ---
 
 ### Issues Summary
-1. `agent/OctivBot.js` — heartbeat interval not found → add `setInterval(() => ..., 5000)` in constructor
+1. `agent/team/*.js` — heartbeat interval not found → add `setInterval(() => ..., 5000)` in constructor
 ```
 
 ### Step 4: User Action

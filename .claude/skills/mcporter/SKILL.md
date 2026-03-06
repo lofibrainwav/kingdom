@@ -29,7 +29,7 @@ It is preserved as:
 
 ## Instructions
 
-1. **Create bot** using OctivBot class:
+1. **Create bot** using legacy OctivBot class (Minecraft adapter only):
    ```javascript
    const { OctivBot } = require('./agent/OctivBot');
    const bot = new OctivBot({ username: 'MyBot' });

@@ -21,7 +21,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "INPUT=$(cat); echo \"$INPUT\" | grep -q 'git commit' && { PROJ=$(git rev-parse --show-toplevel 2>/dev/null || echo /Users/brnestrm/bb/kingdom); cd \"$PROJ\" && echo '[PreCommit] Syntax check...' && for f in agent/*.js agent/roles/*.js; do node -c \"$f\" || exit 1; done && echo '[PreCommit] All syntax checks passed'; } || true"
+            "command": "INPUT=$(cat); echo \"$INPUT\" | grep -q 'git commit' && { PROJ=$(git rev-parse --show-toplevel 2>/dev/null || echo /Users/brnestrm/bb/kingdom); cd \"$PROJ\" && echo '[PreCommit] Syntax check...' && for f in agent/core/*.js agent/team/*.js agent/interface/*.js agent/memory/*.js; do [ -f \"$f\" ] && node -c \"$f\" || exit 1; done && echo '[PreCommit] All syntax checks passed'; } || true"
           },
           {
             "type": "command",

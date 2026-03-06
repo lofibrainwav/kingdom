@@ -108,7 +108,7 @@ Commit immediately after:
 | `github` | Cross-repo search, PR management, CI status | Prefer `gh` CLI for single-repo ops; MCP for cross-repo search |
 
 ### CLI vs MCP Decision
-- **Single repo** (`octivofficial/mvp`): Use `gh` CLI directly
+- **Single repo** (`lofibrainwav/kingdom`): Use `gh` CLI directly
 - **Cross-repo search**: Use `github` MCP (`search_code`, `search_repositories`)
 - **Bulk operations** (list all PRs, issues): Use `gh` CLI with `--json`
 

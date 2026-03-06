@@ -19,7 +19,7 @@ description: Use when you need to decide which Kingdom agent, skill, MCP server,
 ### Orchestration
 | Agent | When | Model |
 |-------|------|-------|
-| `octiv-orchestrator` | Complex multi-step tasks, unsure where to start | opus |
+| `kingdom-orchestrator` | Complex multi-step tasks, unsure where to start | opus |
 
 ### Planning & Requirements
 | Agent | When | Output |
@@ -231,6 +231,6 @@ What do I need?
 - Treat this file as the top-level inventory of Kingdom execution tools.
 - Update it when an agent, skill, MCP server, or high-value command changes ownership or default usage.
 ├── Session end → /save-memory
-├── Don't know → octiv-orchestrator (+sequentialthinking MCP)
+├── Don't know → kingdom-orchestrator (+sequentialthinking MCP)
 └── Look up docs → context7 MCP or notebooklm-agent (+notebooklm MCP)
 ```
