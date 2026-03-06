@@ -285,4 +285,36 @@ describe('TaskRunner', () => {
     // Should not throw
     await runner.shutdown();
   });
+
+  it('_patchTaskState increments _version on each mutation', async () => {
+    const runner = new TaskRunner({ board, workspaceRoot: tmpDir });
+    await runner.init();
+    await runner.startTask({
+      author: 'codex',
+      projectId: 'kingdom',
+      taskId: 'TASK-VER',
+      goal: 'Version tracking',
+    });
+
+    const afterStart = configs.get('tasks:kingdom:TASK-VER');
+    assert.equal(afterStart._version, 0);
+
+    await runner.markReviewRequested({
+      projectId: 'kingdom',
+      taskId: 'TASK-VER',
+      file: 'docs/ver.md',
+    });
+
+    const afterReview = configs.get('tasks:kingdom:TASK-VER');
+    assert.equal(afterReview._version, 1);
+
+    await runner.markReviewApproved({
+      projectId: 'kingdom',
+      taskId: 'TASK-VER',
+      file: 'docs/ver.md',
+    });
+
+    const afterApprove = configs.get('tasks:kingdom:TASK-VER');
+    assert.equal(afterApprove._version, 2);
+  });
 });

@@ -41,6 +41,7 @@ class TaskRunner {
       reviewArtifacts,
       startedAt: Date.now(),
       updatedAt: Date.now(),
+      _version: 0,
     };
 
     await this.board.setConfig(this._taskConfigKey(projectId, taskId), state);
@@ -72,6 +73,7 @@ class TaskRunner {
       verification,
       completedAt: Date.now(),
       updatedAt: Date.now(),
+      _version: (current._version || 0) + 1,
     };
 
     await this.board.setConfig(key, updated);
@@ -101,6 +103,7 @@ class TaskRunner {
       status: 'failed',
       failure: { category, guardrail, failedAt: Date.now() },
       updatedAt: Date.now(),
+      _version: (current._version || 0) + 1,
     };
 
     await this.board.setConfig(key, updated);
@@ -314,12 +317,35 @@ class TaskRunner {
 
   async _patchTaskState(projectId, taskId, updater) {
     const key = this._taskConfigKey(projectId, taskId);
+    const maxRetries = 3;
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      const current = await this.board.getConfig(key);
+      if (!current) {
+        throw new Error(`[TaskRunner] task state not found for ${projectId}/${taskId}`);
+      }
+
+      const version = current._version || 0;
+      const updated = updater(current);
+      updated._version = version + 1;
+
+      // Optimistic lock: re-read and verify version hasn't changed
+      const recheck = await this.board.getConfig(key);
+      if (recheck && (recheck._version || 0) !== version) {
+        continue; // Version changed — retry
+      }
+
+      await this.board.setConfig(key, updated);
+      return updated;
+    }
+
+    // Final attempt without version check (fallback)
     const current = await this.board.getConfig(key);
     if (!current) {
       throw new Error(`[TaskRunner] task state not found for ${projectId}/${taskId}`);
     }
-
     const updated = updater(current);
+    updated._version = (current._version || 0) + 1;
     await this.board.setConfig(key, updated);
     return updated;
   }

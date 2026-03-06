@@ -389,16 +389,17 @@ See `~/.claude/skills/{skill-name}/SKILL.md` for details.
 ---
 
 ## Current Operating Focus
-- Phase-3 stabilization: 322 tests green, pipeline bridge wired, all agents have author fields
+- Phase-3 stabilization: 333 tests green, pipeline bridge wired, all agents have author fields
 - Codebase structure: `agent/core/` (9), `agent/team/` (9), `agent/interface/` (3), `agent/memory/` (7) = 28 files
 - Team launcher: 11 services (9 agents + TaskCloseoutOrchestrator + KnowledgeOperator)
 - Completed:
   1. ~~skill/control-layer cleanup~~ (Phase-2)
-  2. ~~green test baseline restoration~~ (322/322 green)
+  2. ~~green test baseline restoration~~ (333/333 green)
   3. ~~Blackboard channel refactor~~ (`work:*`, `knowledge:*`, `execution:*`, `governance:*`)
   4. ~~E2E pipeline bridge~~ (review:approved → project:approved → deployer)
   5. ~~Author field enforcement~~ (all team agent publishes)
   6. ~~Dashboard security~~ (_sanitizeParam unit tests)
+  7. ~~Metacognitive scan~~ (updateStatus gap, schema validation, shutdown safety, idempotency guards, optimistic locking)
 - Next priorities:
   1. E2E runtime validation (`npm run e2e` with live agents)
   2. Production deployment readiness (Sentry, Vercel, Supabase — blocked on infra)

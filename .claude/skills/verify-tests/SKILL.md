@@ -22,7 +22,7 @@ Verify that the Kingdom test suite is healthy and all agent files have coverage.
    - Flag any test files that had failures
 
 2. Validate thresholds:
-   - Total tests ≥ 324
+   - Total tests ≥ 333
    - Failed = 0
    - Test files ≥ 32
 
