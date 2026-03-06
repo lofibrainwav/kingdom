@@ -9,13 +9,14 @@ const { Blackboard } = require('../core/blackboard');
 const { getLogger } = require('../core/logger');
 const { ReflexionEngine, parseLLMJson } = require('../core/ReflexionEngine');
 const { GoTReasoner } = require('../memory/got-reasoner');
+const { SkillZettelkasten } = require('../memory/skill-zettelkasten');
 const log = getLogger();
 
 class DecomposerAgent {
-  constructor() {
+  constructor(options = {}) {
     this.board = new Blackboard();
     this.llm = new ReflexionEngine();
-    this.got = new GoTReasoner();
+    this.got = new GoTReasoner(options.zettelkasten || new SkillZettelkasten());
     this.agentId = 'Kingdom_Decomposer';
   }
 

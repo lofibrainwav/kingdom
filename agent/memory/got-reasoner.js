@@ -39,6 +39,7 @@ class GoTReasoner {
 
   async init() {
     await this.board.connect();
+    if (this.zk && this.zk.init) await this.zk.init();
     await fsp.mkdir(this.vaultDir, { recursive: true });
     log.info('got', 'initialized');
   }

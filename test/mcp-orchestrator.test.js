@@ -59,29 +59,23 @@ describe('MCPOrchestrator — Vibe Coding Agent Registry', () => {
         assert.equal(res.status, 'broadcast');
     });
 
-    it('Should mirror assigned tasks into canonical execution channels', async () => {
+    it('Should publish assigned tasks to canonical execution channel', async () => {
         await orch.registerAgent('canonical-agent', 'coder');
         await orch.assignTask('canonical-agent', { action: 'implement_footer' });
 
-        const legacyRaw = await redisClient.get('kingdom:command:canonical-agent:task:latest');
         const canonicalRaw = await redisClient.get('kingdom:execution:dispatch:canonical-agent:latest');
 
-        assert.ok(legacyRaw);
         assert.ok(canonicalRaw);
-        assert.equal(JSON.parse(legacyRaw).action, 'implement_footer');
         assert.equal(JSON.parse(canonicalRaw).action, 'implement_footer');
     });
 
-    it('Should mirror broadcasts into canonical execution channels', async () => {
+    it('Should publish broadcasts to canonical execution channel', async () => {
         await orch.registerAgent('broadcast-agent', 'test');
         await orch.broadcastCommand({ action: 'sync_context' });
 
-        const legacyRaw = await redisClient.get('kingdom:command:broadcast-agent:broadcast:latest');
         const canonicalRaw = await redisClient.get('kingdom:execution:broadcast:broadcast-agent:latest');
 
-        assert.ok(legacyRaw);
         assert.ok(canonicalRaw);
-        assert.equal(JSON.parse(legacyRaw).action, 'sync_context');
         assert.equal(JSON.parse(canonicalRaw).action, 'sync_context');
     });
 

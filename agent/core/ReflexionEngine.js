@@ -23,10 +23,11 @@ const DEFAULT_CONFIG = {
 };
 
 class ReflexionEngine {
-  constructor(apiClients = {}) {
+  constructor(apiClients) {
     this.board = new Blackboard();
     this.config = { ...DEFAULT_CONFIG };
-    this.apiClients = apiClients; // { anthropic, groq } — injected
+    // Auto-create API clients if none injected
+    this.apiClients = apiClients || require('./api-clients').createApiClients();
     this.dailyCost = 0;
     this.totalCalls = 0;
     this.modelUsage = {};
@@ -67,8 +68,8 @@ class ReflexionEngine {
 
   // 4.6: Multi-LLM router with escalation and fallback
   async callLLM(prompt, severity = 'normal') {
-    // Cost guardrail
-    if (this.dailyCost >= this.config.maxCostPerDay) {
+    // Cost guardrail (0 = unlimited, for local/free models)
+    if (this.config.maxCostPerDay > 0 && this.dailyCost >= this.config.maxCostPerDay) {
       log.warn('reflexion', 'daily cost limit reached');
       return null;
     }

@@ -212,14 +212,13 @@ class Blackboard {
    */
   async publish(channel, data) {
     this._validate(channel, data);
-    const family = this._getChannelFamily(channel);
+    const canonical = this._getChannelFamily(channel)[0];
     const payload = JSON.stringify({ ts: Date.now(), ...data });
     const multi = this.client.multi();
 
-    for (const entry of family) {
-      multi.publish(PREFIX + entry, payload);
-      multi.set(PREFIX + entry + ':latest', payload, { EX: T.REDIS_KEY_EXPIRY_SECONDS });
-    }
+    // Publish to canonical channel only (subscribers listen on all aliases)
+    multi.publish(PREFIX + canonical, payload);
+    multi.set(PREFIX + canonical + ':latest', payload, { EX: T.REDIS_KEY_EXPIRY_SECONDS });
 
     await multi.exec();
   }
@@ -300,12 +299,11 @@ class Blackboard {
     let operations = 0;
 
     for (const { channel, data } of entries) {
+      const canonical = this._getChannelFamily(channel)[0];
       const payload = JSON.stringify({ ts: now, ...data });
-      for (const entry of this._getChannelFamily(channel)) {
-        multi.publish(PREFIX + entry, payload);
-        multi.set(PREFIX + entry + ':latest', payload, { EX: T.REDIS_KEY_EXPIRY_SECONDS });
-        operations += 2;
-      }
+      multi.publish(PREFIX + canonical, payload);
+      multi.set(PREFIX + canonical + ':latest', payload, { EX: T.REDIS_KEY_EXPIRY_SECONDS });
+      operations += 2;
     }
 
     const results = await multi.exec();

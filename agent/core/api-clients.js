@@ -9,9 +9,8 @@ const { getLogger } = require('./logger');
 const T = require('../../config/timeouts');
 const log = getLogger();
 
-const LM_STUDIO_BASE_URL = process.env.LM_STUDIO_URL || 'http://localhost:1234';
-
 function createApiClients() {
+  const LM_STUDIO_BASE_URL = process.env.LM_STUDIO_URL || 'http://localhost:1234';
   const clients = {};
 
   // Anthropic client (primary)
