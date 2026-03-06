@@ -15,6 +15,8 @@ const { DeployerAgent } = require('./team/deployer');
 const { FailureAgent } = require('./team/failure-agent');
 const { SwarmOrchestrator } = require('./team/swarm-orchestrator');
 const { WatchdogAgent } = require('./team/watchdog-agent');
+const { TaskCloseoutOrchestrator } = require('./core/task-closeout-orchestrator');
+const { KnowledgeOperator } = require('./memory/knowledge-operator');
 
 const AGENTS = [
   { name: 'PMAgent', factory: () => new PMAgent() },
@@ -26,6 +28,8 @@ const AGENTS = [
   { name: 'Failure', factory: () => new FailureAgent() },
   { name: 'Swarm', factory: () => new SwarmOrchestrator() },
   { name: 'Watchdog', factory: () => new WatchdogAgent() },
+  { name: 'TaskCloseout', factory: () => new TaskCloseoutOrchestrator(), postInit: (inst) => inst.start() },
+  { name: 'KnowledgeOperator', factory: () => new KnowledgeOperator(), postInit: (inst) => inst.start() },
 ];
 
 const instances = [];
@@ -37,6 +41,7 @@ async function main() {
     try {
       const instance = agent.factory();
       await instance.init();
+      if (agent.postInit) await agent.postInit(instance);
       instances.push({ name: agent.name, instance });
       log.info('team', `${agent.name} initialized`);
     } catch (err) {
