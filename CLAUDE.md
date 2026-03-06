@@ -389,12 +389,12 @@ See `~/.claude/skills/{skill-name}/SKILL.md` for details.
 ---
 
 ## Current Operating Focus
-- Phase-3 stabilization: 341 tests green, pipeline bridge wired, all agents have author fields
+- Phase-3 stabilization: 365 tests green, pipeline bridge wired, all agents have author fields
 - Codebase structure: `agent/core/` (9), `agent/team/` (9), `agent/interface/` (3), `agent/memory/` (7) = 28 files
 - Team launcher: 11 services (9 agents + TaskCloseoutOrchestrator + KnowledgeOperator)
 - Completed:
   1. ~~skill/control-layer cleanup~~ (Phase-2)
-  2. ~~green test baseline restoration~~ (341/341 green)
+  2. ~~green test baseline restoration~~ (365/365 green)
   3. ~~Blackboard channel refactor~~ (`work:*`, `knowledge:*`, `execution:*`, `governance:*`)
   4. ~~E2E pipeline bridge~~ (review:approved → project:approved → deployer)
   5. ~~Author field enforcement~~ (all team agent publishes)

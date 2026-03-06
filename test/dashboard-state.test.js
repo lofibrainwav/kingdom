@@ -544,3 +544,265 @@ describe('_sanitizeParam — input validation', () => {
     assert.equal(_sanitizeParam('with spaces'), 'with spaces');
   });
 });
+
+// ── Internal methods unit tests ────────────────────────────────────
+
+describe('DashboardServer — _incrementMetricBucket', () => {
+  it('increments a new key from 0 to 1', () => {
+    const dashboard = new DashboardServer(0);
+    dashboard._incrementMetricBucket('retryByCategory', 'review');
+    assert.equal(dashboard.metrics.retryByCategory.review, 1);
+  });
+
+  it('increments an existing key', () => {
+    const dashboard = new DashboardServer(0);
+    dashboard.metrics.retryByCategory.review = 5;
+    dashboard._incrementMetricBucket('retryByCategory', 'review');
+    assert.equal(dashboard.metrics.retryByCategory.review, 6);
+  });
+
+  it('prunes to 100 entries when exceeding limit', () => {
+    const dashboard = new DashboardServer(0);
+    // Fill with 100 entries (counts 1..100)
+    for (let i = 0; i < 100; i++) {
+      dashboard.metrics.retryByCategory[`key-${i}`] = i + 1;
+    }
+    // Adding 101st triggers pruning — lowest count entry removed
+    dashboard._incrementMetricBucket('retryByCategory', 'overflow');
+    const keys = Object.keys(dashboard.metrics.retryByCategory);
+    assert.equal(keys.length, 100);
+    // key-0 had count 1 (lowest) — should be pruned
+    assert.equal(dashboard.metrics.retryByCategory['key-0'], undefined);
+    // overflow was just added with count 1, but key-0 was pruned first
+    assert.equal(dashboard.metrics.retryByCategory.overflow, 1);
+  });
+});
+
+describe('DashboardServer — _remember* event memory', () => {
+  it('_rememberKnowledgeEvent stores up to 6 events (FIFO)', () => {
+    const dashboard = new DashboardServer(0);
+    for (let i = 0; i < 8; i++) {
+      dashboard._rememberKnowledgeEvent({ type: 'capture', title: `event-${i}` });
+    }
+    assert.equal(dashboard.metrics.recentKnowledge.length, 6);
+    assert.equal(dashboard.metrics.recentKnowledge[0].title, 'event-7');
+    assert.equal(dashboard.metrics.recentKnowledge[5].title, 'event-2');
+  });
+
+  it('_rememberTaskEvent stores up to 6 events with timestamps', () => {
+    const dashboard = new DashboardServer(0);
+    dashboard._rememberTaskEvent({ type: 'task-completed', title: 'TASK-1' });
+    assert.equal(dashboard.metrics.recentTasks.length, 1);
+    assert.ok(dashboard.metrics.recentTasks[0].timestamp > 0);
+    assert.equal(dashboard.metrics.recentTasks[0].title, 'TASK-1');
+  });
+
+  it('_rememberPromotionEvent stores up to 6 events', () => {
+    const dashboard = new DashboardServer(0);
+    for (let i = 0; i < 7; i++) {
+      dashboard._rememberPromotionEvent({ type: 'candidate', title: `promo-${i}` });
+    }
+    assert.equal(dashboard.metrics.recentPromotions.length, 6);
+    assert.equal(dashboard.metrics.recentPromotions[0].title, 'promo-6');
+  });
+});
+
+describe('DashboardServer — _broadcast', () => {
+  it('writes SSE payload to connected clients', () => {
+    const dashboard = new DashboardServer(0);
+    const written = [];
+    const mockClient = { write: (data) => { written.push(data); return true; } };
+    dashboard.sseClients.push(mockClient);
+    dashboard._broadcast({ type: 'test', data: 'hello' });
+    assert.equal(written.length, 1);
+    assert.match(written[0], /^data: /);
+    const parsed = JSON.parse(written[0].replace('data: ', '').trim());
+    assert.equal(parsed.type, 'test');
+  });
+
+  it('removes clients that throw on write', () => {
+    const dashboard = new DashboardServer(0);
+    const goodWrites = [];
+    const goodClient = { write: (data) => { goodWrites.push(data); return true; } };
+    const badClient = { write: () => { throw new Error('closed'); } };
+    dashboard.sseClients.push(badClient, goodClient);
+    dashboard._broadcast({ type: 'test' });
+    assert.equal(dashboard.sseClients.length, 1);
+    assert.equal(goodWrites.length, 1);
+  });
+});
+
+describe('DashboardServer — _taskMetricKey', () => {
+  it('returns projectId/taskId format', () => {
+    const dashboard = new DashboardServer(0);
+    assert.equal(dashboard._taskMetricKey({ projectId: 'kingdom', taskId: 'TASK-1' }), 'kingdom/TASK-1');
+  });
+
+  it('handles missing fields with defaults', () => {
+    const dashboard = new DashboardServer(0);
+    assert.equal(dashboard._taskMetricKey({}), 'unknown-project/unknown-task');
+    assert.equal(dashboard._taskMetricKey(null), 'unknown-project/unknown-task');
+    assert.equal(dashboard._taskMetricKey(undefined), 'unknown-project/unknown-task');
+  });
+});
+
+describe('DashboardServer — _deriveDryRunImpact', () => {
+  it('returns "dry-run helped recovery" for retry+dryRun+resolved', () => {
+    const dashboard = new DashboardServer(0);
+    const result = dashboard._deriveDryRunImpact({
+      retry: { guardrail: 'test' },
+      dryRuns: [{ summary: 'rehearsed' }],
+      status: 'approved',
+    });
+    assert.equal(result, 'dry-run helped recovery');
+  });
+
+  it('returns "dry-run rehearsed, recovery pending" for retry+dryRun but not resolved', () => {
+    const dashboard = new DashboardServer(0);
+    const result = dashboard._deriveDryRunImpact({
+      retry: { guardrail: 'test' },
+      dryRuns: [{ summary: 'rehearsed' }],
+      status: 'retry_requested',
+    });
+    assert.equal(result, 'dry-run rehearsed, recovery pending');
+  });
+
+  it('returns "recovered without dry-run" for retry+resolved but no dryRun', () => {
+    const dashboard = new DashboardServer(0);
+    const result = dashboard._deriveDryRunImpact({
+      retry: { guardrail: 'test' },
+      dryRuns: [],
+      status: 'completed',
+    });
+    assert.equal(result, 'recovered without dry-run');
+  });
+
+  it('returns "no dry-run signal" for plain task', () => {
+    const dashboard = new DashboardServer(0);
+    assert.equal(dashboard._deriveDryRunImpact({}), 'no dry-run signal');
+    assert.equal(dashboard._deriveDryRunImpact(), 'no dry-run signal');
+  });
+});
+
+describe('DashboardServer — _derivePromotionSignal', () => {
+  it('returns "ready to promote" when dry-run helped and knowledge exists', () => {
+    const dashboard = new DashboardServer(0);
+    const task = { retry: { guardrail: 'g' }, dryRuns: [{ summary: 's' }], status: 'approved' };
+    const knowledge = { title: 'Completed task' };
+    assert.equal(dashboard._derivePromotionSignal(task, knowledge), 'ready to promote');
+  });
+
+  it('returns "knowledge captured" when knowledge exists but no dry-run recovery', () => {
+    const dashboard = new DashboardServer(0);
+    assert.equal(dashboard._derivePromotionSignal({}, { title: 'Captured' }), 'knowledge captured');
+  });
+
+  it('returns "awaiting capture" when no knowledge', () => {
+    const dashboard = new DashboardServer(0);
+    assert.equal(dashboard._derivePromotionSignal({}, null), 'awaiting capture');
+  });
+});
+
+describe('DashboardServer — getState', () => {
+  it('returns a copy of agentState', () => {
+    const dashboard = new DashboardServer(0);
+    dashboard.agentState.Kingdom_PM = { status: { state: 'idle' } };
+    const state = dashboard.getState();
+    assert.deepEqual(state, { Kingdom_PM: { status: { state: 'idle' } } });
+    // Verify it is a copy
+    state.Kingdom_PM = null;
+    assert.ok(dashboard.agentState.Kingdom_PM !== null);
+  });
+});
+
+describe('DashboardServer — HTTP routing', () => {
+  it('returns 404 for unknown paths', async () => {
+    const dashboard = new DashboardServer(0);
+    let statusCode = 0;
+    let body = '';
+    const res = {
+      writeHead: (code) => { statusCode = code; },
+      end: (data) => { body = data; },
+    };
+    await dashboard._handleRequest(
+      { url: '/unknown', headers: {} },
+      res
+    );
+    assert.equal(statusCode, 404);
+    assert.equal(body, 'Not found');
+  });
+
+  it('serves HTML for / path', async () => {
+    const dashboard = new DashboardServer(0);
+    let statusCode = 0;
+    let headers = {};
+    let body = '';
+    const res = {
+      writeHead: (code, h) => { statusCode = code; headers = h; },
+      end: (data) => { body = data; },
+    };
+    await dashboard._handleRequest(
+      { url: '/', headers: {} },
+      res
+    );
+    assert.equal(statusCode, 200);
+    assert.equal(headers['Content-Type'], 'text/html');
+    assert.match(body, /Kingdom Operating Console/);
+  });
+
+  it('sets up SSE for /events path', async () => {
+    const dashboard = new DashboardServer(0);
+    let statusCode = 0;
+    let headers = {};
+    const written = [];
+    const listeners = {};
+    const res = {
+      writeHead: (code, h) => { statusCode = code; headers = h; },
+      write: (data) => { written.push(data); },
+    };
+    const req = {
+      url: '/events',
+      headers: {},
+      on: (event, cb) => { listeners[event] = cb; },
+    };
+    await dashboard._handleRequest(req, res);
+    assert.equal(statusCode, 200);
+    assert.equal(headers['Content-Type'], 'text/event-stream');
+    assert.equal(dashboard.sseClients.length, 1);
+    assert.match(written[0], /connected/);
+    // Simulate client disconnect
+    listeners.close();
+    assert.equal(dashboard.sseClients.length, 0);
+  });
+});
+
+describe('DashboardServer — _derivePromotionQueueCounts', () => {
+  it('counts candidates by status', () => {
+    const dashboard = new DashboardServer(0);
+    const candidates = [
+      { status: 'queued' },
+      { status: 'queued' },
+      { status: 'promoted' },
+    ];
+    assert.deepEqual(dashboard._derivePromotionQueueCounts(candidates), { queued: 2, promoted: 1 });
+  });
+
+  it('defaults missing status to "queued"', () => {
+    const dashboard = new DashboardServer(0);
+    assert.deepEqual(dashboard._derivePromotionQueueCounts([{}]), { queued: 1 });
+  });
+});
+
+describe('DashboardServer — _derivePromotionConversionCounts', () => {
+  it('counts only promoted candidates by promotedTo type', () => {
+    const dashboard = new DashboardServer(0);
+    const candidates = [
+      { status: 'promoted', promotedTo: 'obsidian-pattern' },
+      { status: 'promoted', promotedTo: 'obsidian-pattern' },
+      { status: 'promoted', promotedTo: 'skill-upgrade' },
+      { status: 'queued' },
+    ];
+    const result = dashboard._derivePromotionConversionCounts(candidates);
+    assert.deepEqual(result, { 'obsidian-pattern': 2, 'skill-upgrade': 1 });
+  });
+});
