@@ -136,5 +136,58 @@ description: Use when testing the closeout orchestrator skill evaluation flow.
     assert.ok(notes.includes('approved-task-77.md'));
     assert.ok(notes.includes('completed-task-77.md'));
     assert.ok(notes.includes('skill-eval-demo-skill.md'));
+
+    const finalState = configs.get('tasks:kingdom:TASK-77');
+    assert.equal(finalState.review.status, 'approved');
+    assert.equal(finalState.status, 'approved');
+    assert.equal(finalState.review.file, 'docs/loop.md');
+  });
+
+  it('tracks rejected reviews and retry requests back into task state', async () => {
+    const runner = new TaskRunner({ board, workspaceRoot });
+    const evaluator = new SkillEvaluator({ board, skillsRoot });
+    const closeout = new TaskCloseoutOrchestrator({ board, skillEvaluator: evaluator, taskRunner: runner });
+
+    await runner.init();
+    await closeout.init();
+    await closeout.start();
+
+    await runner.startTask({
+      author: 'codex',
+      projectId: 'kingdom',
+      taskId: 'TASK-88',
+      goal: 'Handle rejected closeout',
+      skillsToEvaluate: ['demo-skill'],
+      reviewArtifacts: [{ file: 'docs/reject.md', summary: 'Reject summary' }],
+    });
+
+    await runner.completeTask({
+      author: 'codex',
+      projectId: 'kingdom',
+      taskId: 'TASK-88',
+      verification: ['npm test'],
+    });
+
+    await board.publish('governance:review:rejected', {
+      projectId: 'kingdom',
+      taskId: 'TASK-88',
+      file: 'docs/reject.md',
+      feedback: 'needs stronger test evidence',
+    });
+
+    await board.publish('governance:failure:retry-requested', {
+      author: 'failure-agent',
+      projectId: 'kingdom',
+      taskId: 'TASK-88',
+      category: 'review',
+      guardrail: 'verification-gap',
+    });
+
+    const finalState = configs.get('tasks:kingdom:TASK-88');
+    assert.equal(finalState.review.status, 'rejected');
+    assert.equal(finalState.review.feedback, 'needs stronger test evidence');
+    assert.equal(finalState.status, 'retry_requested');
+    assert.equal(finalState.retry.guardrail, 'verification-gap');
+    assert.equal(finalState.retry.count, 1);
   });
 });

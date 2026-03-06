@@ -115,6 +115,62 @@ class TaskRunner {
     return updated;
   }
 
+  async markReviewRequested({ projectId, taskId, file }) {
+    return this._patchTaskState(projectId, taskId, (current) => ({
+      ...current,
+      review: {
+        ...(current.review || {}),
+        status: 'requested',
+        file,
+        requestedAt: Date.now(),
+      },
+      updatedAt: Date.now(),
+    }));
+  }
+
+  async markReviewApproved({ projectId, taskId, file }) {
+    return this._patchTaskState(projectId, taskId, (current) => ({
+      ...current,
+      status: 'approved',
+      review: {
+        ...(current.review || {}),
+        status: 'approved',
+        file,
+        approvedAt: Date.now(),
+      },
+      updatedAt: Date.now(),
+    }));
+  }
+
+  async markReviewRejected({ projectId, taskId, file, feedback }) {
+    return this._patchTaskState(projectId, taskId, (current) => ({
+      ...current,
+      status: 'changes_requested',
+      review: {
+        ...(current.review || {}),
+        status: 'rejected',
+        file,
+        feedback,
+        rejectedAt: Date.now(),
+      },
+      updatedAt: Date.now(),
+    }));
+  }
+
+  async markRetryRequested({ projectId, taskId, category, guardrail }) {
+    return this._patchTaskState(projectId, taskId, (current) => ({
+      ...current,
+      status: 'retry_requested',
+      retry: {
+        category,
+        guardrail,
+        requestedAt: Date.now(),
+        count: (current.retry?.count || 0) + 1,
+      },
+      updatedAt: Date.now(),
+    }));
+  }
+
   _taskConfigKey(projectId, taskId) {
     return `tasks:${projectId}:${taskId}`;
   }
@@ -137,6 +193,18 @@ class TaskRunner {
     if (!Array.isArray(verification) || verification.length === 0) {
       throw new Error('[TaskRunner] verification evidence is required before completion');
     }
+  }
+
+  async _patchTaskState(projectId, taskId, updater) {
+    const key = this._taskConfigKey(projectId, taskId);
+    const current = await this.board.getConfig(key);
+    if (!current) {
+      throw new Error(`[TaskRunner] task state not found for ${projectId}/${taskId}`);
+    }
+
+    const updated = updater(current);
+    await this.board.setConfig(key, updated);
+    return updated;
   }
 }
 

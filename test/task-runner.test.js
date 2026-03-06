@@ -116,4 +116,48 @@ describe('TaskRunner', () => {
     assert.equal(published.at(-1).channel, 'governance:failure:retry-requested');
     assert.equal(published.at(-1).data.guardrail, 'keep-green');
   });
+
+  it('tracks review and retry lifecycle state on an existing task', async () => {
+    const runner = new TaskRunner({ board, workspaceRoot: tmpDir });
+    await runner.init();
+    await runner.startTask({
+      author: 'codex',
+      projectId: 'kingdom',
+      taskId: 'TASK-12',
+      goal: 'Track lifecycle state',
+    });
+
+    const requested = await runner.markReviewRequested({
+      projectId: 'kingdom',
+      taskId: 'TASK-12',
+      file: 'docs/lifecycle.md',
+    });
+    assert.equal(requested.review.status, 'requested');
+
+    const rejected = await runner.markReviewRejected({
+      projectId: 'kingdom',
+      taskId: 'TASK-12',
+      file: 'docs/lifecycle.md',
+      feedback: 'needs stronger verification',
+    });
+    assert.equal(rejected.status, 'changes_requested');
+    assert.equal(rejected.review.feedback, 'needs stronger verification');
+
+    const retried = await runner.markRetryRequested({
+      projectId: 'kingdom',
+      taskId: 'TASK-12',
+      category: 'review',
+      guardrail: 'verification-gap',
+    });
+    assert.equal(retried.status, 'retry_requested');
+    assert.equal(retried.retry.count, 1);
+
+    const approved = await runner.markReviewApproved({
+      projectId: 'kingdom',
+      taskId: 'TASK-12',
+      file: 'docs/lifecycle.md',
+    });
+    assert.equal(approved.status, 'approved');
+    assert.equal(approved.review.status, 'approved');
+  });
 });

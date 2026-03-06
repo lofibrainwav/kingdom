@@ -1,10 +1,12 @@
 const { Blackboard } = require('./blackboard');
 const { SkillEvaluator } = require('./skill-evaluator');
+const { TaskRunner } = require('./task-runner');
 
 class TaskCloseoutOrchestrator {
   constructor(options = {}) {
     this.board = options.board || new Blackboard();
     this.skillEvaluator = options.skillEvaluator || new SkillEvaluator({ board: this.board });
+    this.taskRunner = options.taskRunner || new TaskRunner({ board: this.board });
     this.subscriber = null;
   }
 
@@ -23,6 +25,18 @@ class TaskCloseoutOrchestrator {
     await this.subscriber.subscribe('governance:task:completed', async (message) => {
       await this.handleTaskCompleted(message);
     });
+
+    await this.subscriber.subscribe('governance:review:approved', async (message) => {
+      await this.handleReviewApproved(message);
+    });
+
+    await this.subscriber.subscribe('governance:review:rejected', async (message) => {
+      await this.handleReviewRejected(message);
+    });
+
+    await this.subscriber.subscribe('governance:failure:retry-requested', async (message) => {
+      await this.handleRetryRequested(message);
+    });
   }
 
   async shutdown() {
@@ -40,8 +54,9 @@ class TaskCloseoutOrchestrator {
     const taskState = this.board.getConfig
       ? await this.board.getConfig(`tasks:${data.projectId}:${data.taskId}`)
       : null;
-
-    await this.board.publish('governance:review:requested', this._buildReviewPayload(data, taskState));
+    const reviewPayload = this._buildReviewPayload(data, taskState);
+    await this.taskRunner.markReviewRequested(reviewPayload);
+    await this.board.publish('governance:review:requested', reviewPayload);
 
     const skillsToEvaluate = Array.isArray(taskState?.skillsToEvaluate)
       ? taskState.skillsToEvaluate
@@ -56,6 +71,21 @@ class TaskCloseoutOrchestrator {
       reviewRequested: true,
       evaluatedSkills: evaluations,
     };
+  }
+
+  async handleReviewApproved(message) {
+    const data = typeof message === 'string' ? JSON.parse(message) : message;
+    return this.taskRunner.markReviewApproved(data);
+  }
+
+  async handleReviewRejected(message) {
+    const data = typeof message === 'string' ? JSON.parse(message) : message;
+    return this.taskRunner.markReviewRejected(data);
+  }
+
+  async handleRetryRequested(message) {
+    const data = typeof message === 'string' ? JSON.parse(message) : message;
+    return this.taskRunner.markRetryRequested(data);
   }
 
   _buildReviewPayload(eventData, taskState) {

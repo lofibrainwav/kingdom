@@ -23,6 +23,7 @@ class DashboardServer {
       skillEvals: 0,
       lastSkillEval: null,
       recentKnowledge: [],
+      recentTasks: [],
     };
   }
 
@@ -82,6 +83,71 @@ class DashboardServer {
       } catch {}
     });
 
+    this.subscriber.subscribe('governance:task:completed', (message) => {
+      try {
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
+        this._rememberTaskEvent({
+          type: 'task-completed',
+          title: data.taskId,
+          outcome: 'completed',
+          detail: data.projectId,
+        });
+        this._broadcast({ type: 'task-closeout', channel: 'governance:task:completed', data });
+      } catch {}
+    });
+
+    this.subscriber.subscribe('governance:review:requested', (message) => {
+      try {
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
+        this._rememberTaskEvent({
+          type: 'review-requested',
+          title: data.taskId,
+          outcome: 'requested',
+          detail: data.file,
+        });
+        this._broadcast({ type: 'task-closeout', channel: 'governance:review:requested', data });
+      } catch {}
+    });
+
+    this.subscriber.subscribe('governance:review:approved', (message) => {
+      try {
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
+        this._rememberTaskEvent({
+          type: 'review-approved',
+          title: data.taskId,
+          outcome: 'approved',
+          detail: data.file,
+        });
+        this._broadcast({ type: 'task-closeout', channel: 'governance:review:approved', data });
+      } catch {}
+    });
+
+    this.subscriber.subscribe('governance:review:rejected', (message) => {
+      try {
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
+        this._rememberTaskEvent({
+          type: 'review-rejected',
+          title: data.taskId,
+          outcome: 'rejected',
+          detail: data.file,
+        });
+        this._broadcast({ type: 'task-closeout', channel: 'governance:review:rejected', data });
+      } catch {}
+    });
+
+    this.subscriber.subscribe('governance:failure:retry-requested', (message) => {
+      try {
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
+        this._rememberTaskEvent({
+          type: 'retry-requested',
+          title: data.taskId,
+          outcome: 'retry',
+          detail: data.guardrail,
+        });
+        this._broadcast({ type: 'task-closeout', channel: 'governance:failure:retry-requested', data });
+      } catch {}
+    });
+
     this.subscriber.pSubscribe('knowledge:reflexion:*', (message, channel) => {
       try {
         const data = typeof message === 'string' ? JSON.parse(message) : message;
@@ -125,6 +191,14 @@ class DashboardServer {
       timestamp: Date.now(),
     });
     this.metrics.recentKnowledge = this.metrics.recentKnowledge.slice(0, 6);
+  }
+
+  _rememberTaskEvent(event) {
+    this.metrics.recentTasks.unshift({
+      ...event,
+      timestamp: Date.now(),
+    });
+    this.metrics.recentTasks = this.metrics.recentTasks.slice(0, 6);
   }
 
   _broadcast(event) {
@@ -340,6 +414,11 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
     padding-top: 18px;
     border-top: 1px solid var(--line);
   }
+  .task-feed {
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+  }
   .feed-list {
     display: grid;
     gap: 10px;
@@ -401,6 +480,13 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
         </div>
         <div id="knowledge-feed" class="feed-list"></div>
       </div>
+      <div class="task-feed">
+        <div class="section-header">
+          <h2 class="section-title">Task Closeout Feed</h2>
+          <div class="section-note">Recent completion, review, and retry outcomes</div>
+        </div>
+        <div id="task-feed" class="feed-list"></div>
+      </div>
     </aside>
   </section>
 
@@ -438,8 +524,9 @@ const statAlerts = document.getElementById('stat-alerts');
 const statCaptures = document.getElementById('stat-captures');
 const statSkillEvals = document.getElementById('stat-skill-evals');
 const knowledgeFeedDiv = document.getElementById('knowledge-feed');
+const taskFeedDiv = document.getElementById('task-feed');
 const state = {};
-const metrics = { knowledgeCaptures: 0, skillEvals: 0, recentKnowledge: [] };
+const metrics = { knowledgeCaptures: 0, skillEvals: 0, recentKnowledge: [], recentTasks: [] };
 let totalEvents = 0;
 let totalHealthSignals = 0;
 let totalAlerts = 0;
@@ -475,6 +562,14 @@ es.onmessage = (e) => {
       detail: 'score ' + (evt.data?.score ?? '?'),
     });
   }
+  if (evt.type === 'task-closeout') {
+    pushTaskFeed({
+      type: evt.channel?.split(':').slice(1).join('-') || 'task',
+      title: evt.data?.taskId || 'task',
+      outcome: evt.data?.feedback ? 'rejected' : (evt.data?.guardrail ? 'retry' : evt.channel?.split(':').at(-1) || 'updated'),
+      detail: evt.data?.file || evt.data?.guardrail || evt.data?.projectId || '',
+    });
+  }
   addEvent(evt);
   renderStats();
 };
@@ -487,6 +582,7 @@ function renderStats() {
   statCaptures.textContent = metrics.knowledgeCaptures;
   statSkillEvals.textContent = metrics.skillEvals;
   renderKnowledgeFeed();
+  renderTaskFeed();
 }
 
 function renderAgents() {
@@ -548,6 +644,25 @@ function renderKnowledgeFeed() {
     return '<div class="feed-item">'
       + '<div class="feed-title">' + escapeHtml(entry.title || entry.type) + '</div>'
       + '<div class="feed-meta">' + escapeHtml((entry.type || 'knowledge') + ' • ' + (entry.outcome || 'n/a') + ' • ' + (entry.detail || entry.projectId || '') + ' • ' + timeAgo(entry.timestamp)) + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+function pushTaskFeed(entry) {
+  metrics.recentTasks.unshift({ ...entry, timestamp: Date.now() });
+  metrics.recentTasks = metrics.recentTasks.slice(0, 6);
+}
+
+function renderTaskFeed() {
+  if (metrics.recentTasks.length === 0) {
+    taskFeedDiv.innerHTML = '<div class="feed-item"><div class="feed-title">No closeout signals yet</div><div class="feed-meta">Task completion, review, and retry events will appear here.</div></div>';
+    return;
+  }
+
+  taskFeedDiv.innerHTML = metrics.recentTasks.map((entry) => {
+    return '<div class="feed-item">'
+      + '<div class="feed-title">' + escapeHtml(entry.title || entry.type) + '</div>'
+      + '<div class="feed-meta">' + escapeHtml((entry.type || 'task') + ' • ' + (entry.outcome || 'n/a') + ' • ' + (entry.detail || '') + ' • ' + timeAgo(entry.timestamp)) + '</div>'
       + '</div>';
   }).join('');
 }
