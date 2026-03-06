@@ -695,7 +695,10 @@ function renderTasks() {
 
 function matchesTaskFilter(task) {
   if (activeTaskFilter === 'retry') {
-    return task.status === 'retry_requested' || task.retry?.handoff?.status === 'queued';
+    return task.status === 'retry_requested'
+      || task.status === 'replanning'
+      || task.retry?.handoff?.status === 'queued'
+      || task.retry?.handoff?.status === 'claimed';
   }
 
   if (activeTaskFilter === 'blocked') {

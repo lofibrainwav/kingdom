@@ -8,12 +8,14 @@
  */
 const { Blackboard } = require('../core/blackboard');
 const { getLogger } = require('../core/logger');
+const { TaskRunner } = require('../core/task-runner');
 const log = getLogger();
 
 class PMAgent {
   constructor() {
     this.board = new Blackboard();
     this.agentId = 'Octiv_PM';
+    this.taskRunner = new TaskRunner({ board: this.board });
   }
 
   async init() {
@@ -32,24 +34,42 @@ class PMAgent {
     try {
       const data = typeof message === 'string' ? JSON.parse(message) : message;
       const { task, author } = data;
-      
+
       log.info(this.agentId, `Received task from ${author}: ${task}`);
       await this.updateStatus('processing', `Decomposing: ${task.slice(0, 30)}...`);
 
-      // 1. Post to Blackboard for the team
-      const projectId = `project:${Date.now()}`;
+      const projectId = data.retry && data.projectId ? data.projectId : `project:${Date.now()}`;
+      const goal = data.goal || task;
+
       await this.board.setConfig(projectId, {
-        goal: task,
-        status: 'init',
+        goal,
+        status: data.retry ? 'retry_intake' : 'init',
         createdAt: Date.now(),
-        author: author
+        updatedAt: Date.now(),
+        author,
+        retry: data.retry ? {
+          taskId: data.taskId,
+          category: data.retryCategory,
+          guardrail: data.retryGuardrail,
+        } : undefined,
       });
 
-      // 2. Trigger Architect to define context
+      if (data.retry && data.projectId && data.taskId) {
+        await this.taskRunner.markRetryClaimed({
+          projectId: data.projectId,
+          taskId: data.taskId,
+          agentId: this.agentId,
+        });
+      }
+
       await this.board.publish('work:planning:init', {
         projectId,
-        goal: task,
-        agentId: this.agentId
+        goal,
+        agentId: this.agentId,
+        taskId: data.taskId,
+        retry: Boolean(data.retry),
+        retryCategory: data.retryCategory,
+        retryGuardrail: data.retryGuardrail,
       });
 
       log.info(this.agentId, `Project ${projectId} initiated`);

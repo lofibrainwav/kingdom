@@ -215,6 +215,23 @@ class TaskRunner {
     }));
   }
 
+  async markRetryClaimed({ projectId, taskId, agentId }) {
+    return this._patchTaskState(projectId, taskId, (current) => ({
+      ...current,
+      status: 'replanning',
+      retry: {
+        ...(current.retry || {}),
+        handoff: {
+          ...(current.retry?.handoff || {}),
+          status: 'claimed',
+          claimedBy: agentId,
+          claimedAt: Date.now(),
+        },
+      },
+      updatedAt: Date.now(),
+    }));
+  }
+
   _taskConfigKey(projectId, taskId) {
     return `tasks:${projectId}:${taskId}`;
   }
