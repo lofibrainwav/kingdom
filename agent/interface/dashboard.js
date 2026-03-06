@@ -4,13 +4,88 @@
  * Usage: node agent/dashboard.js (port 3000)
  */
 const http = require('http');
-const { URL } = require('url');
+const { URL, URLSearchParams } = require('url');
 const { Blackboard } = require('../core/blackboard');
 const { getLogger } = require('../core/logger');
 const { TaskRunner } = require('../core/task-runner');
 const log = getLogger();
 
 const PORT = process.env.DASHBOARD_PORT || 3000;
+
+function parseDashboardQuery(searchParams) {
+  const filter = searchParams.get('filter') || 'all';
+
+  if (searchParams.get('taskId')) {
+    return {
+      filter,
+      drilldown: { type: 'task', value: searchParams.get('taskId') },
+      apiQuery: {
+        ...(searchParams.get('projectId') ? { projectId: searchParams.get('projectId') } : {}),
+        taskId: searchParams.get('taskId'),
+      },
+    };
+  }
+
+  if (searchParams.get('retryGuardrail')) {
+    return {
+      filter,
+      drilldown: { type: 'guardrail', value: searchParams.get('retryGuardrail') },
+      apiQuery: {
+        ...(searchParams.get('projectId') ? { projectId: searchParams.get('projectId') } : {}),
+        retryGuardrail: searchParams.get('retryGuardrail'),
+      },
+    };
+  }
+
+  if (searchParams.get('retryCategory')) {
+    return {
+      filter,
+      drilldown: { type: 'category', value: searchParams.get('retryCategory') },
+      apiQuery: {
+        ...(searchParams.get('projectId') ? { projectId: searchParams.get('projectId') } : {}),
+        retryCategory: searchParams.get('retryCategory'),
+      },
+    };
+  }
+
+  if (searchParams.get('projectId')) {
+    return {
+      filter,
+      drilldown: { type: 'project', value: searchParams.get('projectId') },
+      apiQuery: { projectId: searchParams.get('projectId') },
+    };
+  }
+
+  return {
+    filter,
+    drilldown: null,
+    apiQuery: {},
+  };
+}
+
+function buildDashboardStateUrl(basePath, { filter = 'all', drilldown = null } = {}) {
+  const params = new URLSearchParams();
+
+  if (filter && filter !== 'all') {
+    params.set('filter', filter);
+  }
+
+  if (drilldown?.type === 'project') {
+    params.set('projectId', drilldown.value);
+  }
+  if (drilldown?.type === 'task') {
+    params.set('taskId', drilldown.value);
+  }
+  if (drilldown?.type === 'guardrail') {
+    params.set('retryGuardrail', drilldown.value);
+  }
+  if (drilldown?.type === 'category') {
+    params.set('retryCategory', drilldown.value);
+  }
+
+  const query = params.toString();
+  return query ? `${basePath}?${query}` : basePath;
+}
 
 class DashboardServer {
   constructor(port = PORT) {
@@ -781,8 +856,13 @@ const metrics = {
 let totalEvents = 0;
 let totalHealthSignals = 0;
 let totalAlerts = 0;
-let activeTaskFilter = 'all';
-let activeDrilldown = null;
+const initialQuery = parseDashboardQueryClient(new URLSearchParams(window.location.search));
+let activeTaskFilter = initialQuery.filter;
+let activeDrilldown = initialQuery.drilldown;
+
+taskFilters.forEach((item) => {
+  item.classList.toggle('active', item.dataset.filter === activeTaskFilter);
+});
 
 for (const button of taskFilters) {
   button.addEventListener('click', () => {
@@ -799,6 +879,7 @@ for (const button of taskFilters) {
     if (nextFilter === 'clear-focus') {
       taskFilters.forEach((item) => item.classList.toggle('active', item.dataset.filter === 'all'));
     }
+    syncBrowserState();
     renderTasks();
   });
 }
@@ -1109,6 +1190,7 @@ function renderBucket(container, bucket, emptyLabel, drilldownType) {
         type: button.dataset.drilldownType,
         value: button.dataset.drilldownValue,
       };
+      syncBrowserState();
       renderTasks();
     });
   });
@@ -1116,6 +1198,52 @@ function renderBucket(container, bucket, emptyLabel, drilldownType) {
 
 function buildTaskMetricKey(projectId, taskId) {
   return (projectId || 'unknown-project') + '/' + (taskId || 'unknown-task');
+}
+
+function parseDashboardQueryClient(searchParams) {
+  const filter = searchParams.get('filter') || 'all';
+
+  if (searchParams.get('taskId')) {
+    return { filter, drilldown: { type: 'task', value: searchParams.get('taskId') } };
+  }
+  if (searchParams.get('retryGuardrail')) {
+    return { filter, drilldown: { type: 'guardrail', value: searchParams.get('retryGuardrail') } };
+  }
+  if (searchParams.get('retryCategory')) {
+    return { filter, drilldown: { type: 'category', value: searchParams.get('retryCategory') } };
+  }
+  if (searchParams.get('projectId')) {
+    return { filter, drilldown: { type: 'project', value: searchParams.get('projectId') } };
+  }
+
+  return { filter, drilldown: null };
+}
+
+function buildDashboardStateUrlClient(basePath, filter, drilldown) {
+  const params = new URLSearchParams();
+  if (filter && filter !== 'all') {
+    params.set('filter', filter);
+  }
+  if (drilldown?.type === 'project') {
+    params.set('projectId', drilldown.value);
+  }
+  if (drilldown?.type === 'task') {
+    params.set('taskId', drilldown.value);
+  }
+  if (drilldown?.type === 'guardrail') {
+    params.set('retryGuardrail', drilldown.value);
+  }
+  if (drilldown?.type === 'category') {
+    params.set('retryCategory', drilldown.value);
+  }
+
+  const query = params.toString();
+  return query ? basePath + '?' + query : basePath;
+}
+
+function syncBrowserState() {
+  const nextUrl = buildDashboardStateUrlClient('/', activeTaskFilter, activeDrilldown);
+  history.replaceState({}, '', nextUrl);
 }
 
 function deriveRateList(retryBucket, resolvedBucket) {
@@ -1162,7 +1290,7 @@ function escapeHtml(value) {
     .replaceAll('>', '&gt;');
 }
 
-fetch('/api/state').then(r => r.json()).then(d => {
+fetch(buildDashboardStateUrlClient('/api/state', activeTaskFilter, activeDrilldown)).then(r => r.json()).then(d => {
   Object.assign(state, d.agents);
   for (const task of (d.tasks || [])) {
     tasks[task.projectId + ':' + task.taskId] = task;
@@ -1176,7 +1304,12 @@ fetch('/api/state').then(r => r.json()).then(d => {
 </body>
 </html>`;
 
-module.exports = { DashboardServer, DASHBOARD_HTML };
+module.exports = {
+  DashboardServer,
+  DASHBOARD_HTML,
+  parseDashboardQuery,
+  buildDashboardStateUrl,
+};
 
 // Run standalone
 if (require.main === module) {

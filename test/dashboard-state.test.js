@@ -1,7 +1,12 @@
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
+const { URL, URLSearchParams } = require('node:url');
 
-const { DashboardServer } = require('../agent/interface/dashboard');
+const {
+  DashboardServer,
+  parseDashboardQuery,
+  buildDashboardStateUrl,
+} = require('../agent/interface/dashboard');
 
 describe('DashboardServer state API', () => {
   it('joins latest task knowledge summaries onto task payloads', async () => {
@@ -134,5 +139,37 @@ describe('DashboardServer state API', () => {
       { key: 'kingdom/TASK-2', retries: 1, resolved: 1, rate: 1 },
       { key: 'kingdom/TASK-1', retries: 3, resolved: 2, rate: 0.67 },
     ]);
+  });
+
+  it('parses dashboard query state into task filter and drilldown', () => {
+    const parsed = parseDashboardQuery(new URLSearchParams(
+      'projectId=kingdom&retryGuardrail=missing-evidence&filter=retry'
+    ));
+
+    assert.deepEqual(parsed, {
+      filter: 'retry',
+      drilldown: {
+        type: 'guardrail',
+        value: 'missing-evidence',
+      },
+      apiQuery: {
+        projectId: 'kingdom',
+        retryGuardrail: 'missing-evidence',
+      },
+    });
+  });
+
+  it('builds dashboard URLs and clears query state on reset', () => {
+    const focused = buildDashboardStateUrl('/', {
+      filter: 'blocked',
+      drilldown: { type: 'task', value: 'kingdom/TASK-9' },
+    });
+    assert.equal(focused, '/?filter=blocked&taskId=kingdom%2FTASK-9');
+
+    const reset = buildDashboardStateUrl('/', {
+      filter: 'all',
+      drilldown: null,
+    });
+    assert.equal(reset, '/');
   });
 });
