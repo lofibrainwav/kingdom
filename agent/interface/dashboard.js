@@ -389,6 +389,7 @@ class DashboardServer {
       retryCategory: requestUrl.searchParams.get('retryCategory') || undefined,
     };
     const tasks = await this.taskRunner.listTasks(filters);
+    this.taskRunnerCachedTasks = tasks;
     const taskKnowledge = await this._loadTaskKnowledgeIndex(filters);
     const hydratedTasks = tasks.map((task) => ({
       ...task,
@@ -411,6 +412,8 @@ class DashboardServer {
     return {
       projectRecoveryRates: this._deriveRateList(this.metrics.retryByProject, this.metrics.resolvedByProject),
       taskRecoveryRates: this._deriveRateList(this.metrics.retryByTask, this.metrics.resolvedByTask),
+      projectDryRunCoverage: this._deriveDryRunCoverageList(this.taskRunnerCachedTasks || []),
+      projectDryRunSuccessRates: this._deriveDryRunSuccessList(this.taskRunnerCachedTasks || []),
     };
   }
 
@@ -430,6 +433,49 @@ class DashboardServer {
         }
         return a.key.localeCompare(b.key);
       });
+  }
+
+  _deriveDryRunCoverageList(tasks = []) {
+    const byProject = new Map();
+    for (const task of tasks) {
+      const key = task.projectId || 'unknown';
+      const current = byProject.get(key) || { key, totalTasks: 0, dryRunTasks: 0 };
+      current.totalTasks += 1;
+      if ((task.dryRuns || []).length > 0) {
+        current.dryRunTasks += 1;
+      }
+      byProject.set(key, current);
+    }
+
+    return [...byProject.values()]
+      .map((entry) => ({
+        ...entry,
+        coverage: entry.totalTasks > 0 ? Number((entry.dryRunTasks / entry.totalTasks).toFixed(2)) : 0,
+      }))
+      .sort((a, b) => b.coverage - a.coverage || b.dryRunTasks - a.dryRunTasks || a.key.localeCompare(b.key));
+  }
+
+  _deriveDryRunSuccessList(tasks = []) {
+    const byProject = new Map();
+    for (const task of tasks) {
+      if ((task.dryRuns || []).length === 0) {
+        continue;
+      }
+      const key = task.projectId || 'unknown';
+      const current = byProject.get(key) || { key, dryRunTasks: 0, successfulTasks: 0 };
+      current.dryRunTasks += 1;
+      if (task.status === 'completed' || task.status === 'approved') {
+        current.successfulTasks += 1;
+      }
+      byProject.set(key, current);
+    }
+
+    return [...byProject.values()]
+      .map((entry) => ({
+        ...entry,
+        successRate: entry.dryRunTasks > 0 ? Number((entry.successfulTasks / entry.dryRunTasks).toFixed(2)) : 0,
+      }))
+      .sort((a, b) => b.successRate - a.successRate || b.successfulTasks - a.successfulTasks || a.key.localeCompare(b.key));
   }
 
   _serveDashboard(req, res) {
@@ -773,6 +819,14 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
           <div class="feed-title">Task Recovery Rate</div>
           <div id="task-recovery-rate" class="feed-list"></div>
         </div>
+        <div class="pressure-card">
+          <div class="feed-title">Project Dry-Run Coverage</div>
+          <div id="project-dry-run-coverage" class="feed-list"></div>
+        </div>
+        <div class="pressure-card">
+          <div class="feed-title">Dry-Run Assisted Wins</div>
+          <div id="project-dry-run-success" class="feed-list"></div>
+        </div>
       </div>
     </aside>
   </section>
@@ -836,6 +890,8 @@ const retryProjectDiv = document.getElementById('retry-project');
 const retryTaskDiv = document.getElementById('retry-task');
 const projectRecoveryRateDiv = document.getElementById('project-recovery-rate');
 const taskRecoveryRateDiv = document.getElementById('task-recovery-rate');
+const projectDryRunCoverageDiv = document.getElementById('project-dry-run-coverage');
+const projectDryRunSuccessDiv = document.getElementById('project-dry-run-success');
 const state = {};
 const tasks = {};
 const metrics = {
@@ -852,6 +908,8 @@ const metrics = {
   resolvedByTask: {},
   projectRecoveryRates: [],
   taskRecoveryRates: [],
+  projectDryRunCoverage: [],
+  projectDryRunSuccessRates: [],
 };
 let totalEvents = 0;
 let totalHealthSignals = 0;
@@ -1170,6 +1228,8 @@ function renderRetryPressure() {
   renderBucket(retryTaskDiv, metrics.retryByTask, 'No task hotspots yet', 'task');
   renderRateBucket(projectRecoveryRateDiv, deriveRateList(metrics.retryByProject, metrics.resolvedByProject), 'No project recovery rates yet');
   renderRateBucket(taskRecoveryRateDiv, deriveRateList(metrics.retryByTask, metrics.resolvedByTask), 'No task recovery rates yet');
+  renderSummaryRateBucket(projectDryRunCoverageDiv, metrics.projectDryRunCoverage, 'No dry-run coverage yet', 'coverage', (entry) => entry.dryRunTasks + '/' + entry.totalTasks + ' tasks rehearsed');
+  renderSummaryRateBucket(projectDryRunSuccessDiv, metrics.projectDryRunSuccessRates, 'No dry-run success rates yet', 'successRate', (entry) => entry.successfulTasks + '/' + entry.dryRunTasks + ' dry-run tasks landed');
 }
 
 function renderBucket(container, bucket, emptyLabel, drilldownType) {
@@ -1273,6 +1333,20 @@ function renderRateBucket(container, entries, emptyLabel) {
     return '<div class="feed-item">'
       + '<div class="feed-title">' + escapeHtml(entry.key) + '</div>'
       + '<div class="feed-meta">' + escapeHtml((entry.resolved + '/' + entry.retries + ' resolved • ' + Math.round(entry.rate * 100) + '%')) + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+function renderSummaryRateBucket(container, entries, emptyLabel, rateField, detailBuilder) {
+  if (!entries || entries.length === 0) {
+    container.innerHTML = '<div class="feed-meta">' + escapeHtml(emptyLabel) + '</div>';
+    return;
+  }
+
+  container.innerHTML = entries.map((entry) => {
+    return '<div class="feed-item">'
+      + '<div class="feed-title">' + escapeHtml(entry.key) + '</div>'
+      + '<div class="feed-meta">' + escapeHtml(detailBuilder(entry) + ' • ' + Math.round(entry[rateField] * 100) + '%') + '</div>'
       + '</div>';
   }).join('');
 }

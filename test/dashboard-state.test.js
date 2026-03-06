@@ -172,4 +172,52 @@ describe('DashboardServer state API', () => {
     });
     assert.equal(reset, '/');
   });
+
+  it('derives dry-run coverage and success rates from task state', async () => {
+    const dashboard = new DashboardServer(0);
+    dashboard.taskRunner = {
+      listTasks: async () => ([
+        {
+          projectId: 'kingdom',
+          taskId: 'TASK-1',
+          status: 'approved',
+          dryRuns: [{ summary: 'rehearsed recovery path' }],
+        },
+        {
+          projectId: 'kingdom',
+          taskId: 'TASK-2',
+          status: 'retry_requested',
+          dryRuns: [{ summary: 'rehearsed guardrail handling' }],
+        },
+        {
+          projectId: 'sandbox',
+          taskId: 'TASK-3',
+          status: 'completed',
+          dryRuns: [],
+        },
+      ]),
+    };
+    dashboard.board = {
+      listConfigs: async () => [],
+    };
+
+    let payload = '';
+    const res = {
+      writeHead: () => {},
+      end: (body) => {
+        payload = body;
+      },
+    };
+
+    await dashboard._handleAPIState({}, res, new URL('http://localhost/api/state'));
+
+    const data = JSON.parse(payload);
+    assert.deepEqual(data.metrics.projectDryRunCoverage, [
+      { key: 'kingdom', totalTasks: 2, dryRunTasks: 2, coverage: 1 },
+      { key: 'sandbox', totalTasks: 1, dryRunTasks: 0, coverage: 0 },
+    ]);
+    assert.deepEqual(data.metrics.projectDryRunSuccessRates, [
+      { key: 'kingdom', dryRunTasks: 2, successfulTasks: 1, successRate: 0.5 },
+    ]);
+  });
 });

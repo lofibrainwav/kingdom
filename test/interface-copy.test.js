@@ -34,6 +34,8 @@ describe('Interface Copy', () => {
     assert.match(DASHBOARD_HTML, /Latest Dry Run/);
     assert.match(DASHBOARD_HTML, /Project Recovery Rate/);
     assert.match(DASHBOARD_HTML, /Task Recovery Rate/);
+    assert.match(DASHBOARD_HTML, /Project Dry-Run Coverage/);
+    assert.match(DASHBOARD_HTML, /Dry-Run Assisted Wins/);
     assert.match(DASHBOARD_HTML, /history\.replaceState/);
     assert.match(DASHBOARD_HTML, /URLSearchParams/);
   });
