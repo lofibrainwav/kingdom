@@ -30,6 +30,7 @@ This document defines the canonical event vocabulary for Kingdom's Redis blackbo
 ### Knowledge
 
 - `knowledge:capture:stored`: a validated milestone or lesson bundle was stored in the vault
+- `knowledge:skill:eval-completed`: a skill evaluation run produced a quality score
 - `knowledge:skills:deployed`: skill pipeline deployed a new skill
 - `knowledge:rumination:digested`: rumination cycle completed with insights
 - `knowledge:zettelkasten:tier-up`: a skill advanced to a new tier

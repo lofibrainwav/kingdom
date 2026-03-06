@@ -31,6 +31,10 @@ class KnowledgeOperator {
     this.subscriber = await this.board.createSubscriber();
     this.subscriber.on('error', (err) => log.error('knowledge-operator', 'Redis sub error', { error: err.message }));
 
+    await this.subscriber.subscribe('governance:task:completed', async (message) => {
+      await this.handleTaskCompleted(message);
+    });
+
     await this.subscriber.subscribe('governance:review:approved', async (message) => {
       await this.handleReviewApproved(message);
     });
@@ -132,6 +136,31 @@ class KnowledgeOperator {
       verification: [`failure retry requested with guardrail ${data.guardrail}`],
       lesson: `Guardrail ${data.guardrail} needs reinforcement before the next retry.`,
       tags: ['governance', 'failure', 'auto-capture'],
+    });
+  }
+
+  async handleTaskCompleted(message) {
+    const data = this._parseMessage(message);
+    const taskState = this.board.getConfig
+      ? await this.board.getConfig(`tasks:${data.projectId}:${data.taskId}`)
+      : null;
+
+    const summary = taskState
+      ? `Task ${data.taskId} completed for goal: ${taskState.goal}. Workspace: ${taskState.workspacePath}.`
+      : `Task ${data.taskId} completed with ${data.verificationCount} verification checks.`;
+    const verification = Array.isArray(taskState?.verification) && taskState.verification.length > 0
+      ? taskState.verification
+      : [`${data.verificationCount} verification checks recorded`];
+
+    return this.capture({
+      author: 'knowledge-operator',
+      projectId: data.projectId,
+      title: `Completed ${data.taskId}`,
+      summary,
+      outcome: 'passed',
+      verification,
+      lesson: 'Completed tasks should become durable project memory with verification attached.',
+      tags: ['governance', 'task-complete', 'auto-capture'],
     });
   }
 

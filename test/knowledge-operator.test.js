@@ -146,6 +146,7 @@ describe('KnowledgeOperator', () => {
 
     assert.equal(typeof subscriptions['governance:review:approved'], 'function');
     assert.equal(typeof subscriptions['governance:failure:retry-requested'], 'function');
+    assert.equal(typeof subscriptions['governance:task:completed'], 'function');
 
     await subscriptions['governance:review:approved']({
       projectId: 'kingdom',
@@ -164,5 +165,44 @@ describe('KnowledgeOperator', () => {
     assert.equal(published[1].data.outcome, 'failed');
     assert.equal(dashboardLinks[0].section, 'Recent Achievements');
     assert.equal(dashboardLinks[1].section, 'Learning Wall');
+  });
+
+  it('captures completed task events using stored task state when available', async () => {
+    const subscriptions = {};
+    board.getConfig = async () => ({
+      goal: 'Close the loop',
+      workspacePath: '/tmp/kingdom/TASK-3',
+      verification: ['npm test', 'npm run lint'],
+    });
+    board.createSubscriber = async () => ({
+      on: () => {},
+      subscribe: async (channel, handler) => {
+        subscriptions[channel] = handler;
+      },
+    });
+
+    const operator = new KnowledgeOperator({
+      board,
+      zettelkasten: zk,
+      vaultDir: tmpDir,
+      writePattern: async (name) => `/vault/patterns/${name}.md`,
+      addDashboardLink: async (section, link) => {
+        dashboardLinks.push({ section, link });
+      },
+    });
+
+    await operator.init();
+    await operator.start();
+    await subscriptions['governance:task:completed']({
+      author: 'codex',
+      projectId: 'kingdom',
+      taskId: 'TASK-3',
+      verificationCount: 2,
+    });
+
+    assert.equal(published.length, 1);
+    assert.equal(published[0].channel, 'knowledge:capture:stored');
+    assert.equal(published[0].data.title, 'Completed TASK-3');
+    assert.equal(dashboardLinks[0].section, 'Recent Achievements');
   });
 });

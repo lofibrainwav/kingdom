@@ -126,3 +126,4 @@ Use it as the operating agreement for:
 - workspace preparation
 - verification before closeout
 - knowledge capture after validated work
+- skill evaluation before broad reuse

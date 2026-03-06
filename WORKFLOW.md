@@ -11,6 +11,7 @@ This repository uses a task-first workflow. Agents and humans coordinate around 
 5. Review and governance
 6. Knowledge capture
 7. Closeout
+8. Skill evaluation for reusable process assets
 
 ## Required Inputs
 
@@ -64,6 +65,16 @@ Minimum bundle:
 - one durable note
 - one verification artifact or explicit verification record
 - one reusable lesson or pattern
+
+## Skill Rule
+
+When a process becomes repeatable enough to be stored as a skill, evaluate it explicitly.
+
+Current baseline:
+
+- run `npm run skills:eval`
+- record structural quality findings
+- improve before depending on the skill broadly
 
 ## Serial Vs Parallel
 
