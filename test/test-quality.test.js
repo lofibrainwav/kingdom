@@ -154,32 +154,10 @@ describe('Test Quality — Agent Coverage Map', () => {
   const allTestContent = testFiles.map(f => f.content).join('\n');
   const agentFiles = getAgentFiles();
 
-  // Files that are legitimately exempt from direct test imports
+  // Files legitimately exempt from direct test imports
+  // Only list files that genuinely cannot be unit-tested (external deps, entry points)
   const EXEMPT = [
-    'bot.js',           // entry-point script, wraps OctivBot
-    'core/logger.js',        // tested via logger.test.js (getLogger import)
-    'core/memory-logger.js', // circular dep prevention, tested via memory.test.js
-    'core/ReflexionEngine.js',
-    'core/api-clients.js',
-    'core/blackboard.js',
-    'interface/dashboard.js',
-    'interface/discord-bot.js',
-    'interface/mcp-orchestrator.js',
-    'memory/got-reasoner.js',
-    'memory/rumination-engine.js',
-    'memory/skill-pipeline.js',
-    'memory/skill-zettelkasten.js',
-    'memory/vault-sync.js',
-    'memory/zettelkasten-hooks.js',
-    'team/architect.js',
-    'team/coder.js',
-    'team/decomposer.js',
-    'team/deployer.js',
-    'team/failure-agent.js',
-    'team/pm-agent.js',
-    'team/reviewer.js',
-    'team/swarm-orchestrator.js',
-    'team/watchdog-agent.js',
+    'interface/discord-bot.js', // requires Discord.js client — external API
   ];
 
   it('every non-exempt agent/*.js should be imported by at least one test', () => {
