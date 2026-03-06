@@ -305,6 +305,38 @@ class DashboardServer {
       } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
     });
 
+    // Phase-4: formerly dead events — now visible on dashboard
+    this.subscriber.subscribe('work:dry-run:recorded', (message) => {
+      try {
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
+        this._broadcast({ type: 'dry-run-recorded', channel: 'work:dry-run:recorded', data });
+      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
+    });
+    this.subscriber.subscribe('team:celebration', (message) => {
+      try {
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
+        this._broadcast({ type: 'team-celebration', channel: 'team:celebration', data });
+      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
+    });
+    this.subscriber.subscribe('orchestrator:registered', (message) => {
+      try {
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
+        this._broadcast({ type: 'orchestrator-registered', channel: 'orchestrator:registered', data });
+      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
+    });
+    this.subscriber.subscribe('orchestrator:deregistered', (message) => {
+      try {
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
+        this._broadcast({ type: 'orchestrator-deregistered', channel: 'orchestrator:deregistered', data });
+      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
+    });
+    this.subscriber.subscribe('config:llm:updated', (message) => {
+      try {
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
+        this._broadcast({ type: 'llm-config-updated', channel: 'config:llm:updated', data });
+      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
+    });
+
     this.subscriber.pSubscribe('knowledge:reflexion:*', (message, channel) => {
       try {
         const data = typeof message === 'string' ? JSON.parse(message) : message;

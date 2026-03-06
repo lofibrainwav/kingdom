@@ -157,10 +157,9 @@ describe('RuminationEngine — startEventFeed', () => {
     };
   }
 
-  it('should subscribe to knowledge:capture:stored and feed experiences', async () => {
+  it('should subscribe to knowledge:capture:stored and work:dry-run:recorded', async () => {
     const engine = new RuminationEngine(createMockZK());
-    let subscribedChannel = null;
-    let subscribedCb = null;
+    const subscriptions = {};
 
     engine.board = {
       connect: async () => {},
@@ -168,14 +167,16 @@ describe('RuminationEngine — startEventFeed', () => {
       publish: async () => {},
       createSubscriber: async () => ({
         on: () => {},
-        subscribe: async (ch, cb) => { subscribedChannel = ch; subscribedCb = cb; },
+        subscribe: async (ch, cb) => { subscriptions[ch] = cb; },
         disconnect: async () => {},
       }),
     };
 
     await engine.startEventFeed();
 
-    assert.equal(subscribedChannel, 'knowledge:capture:stored');
+    assert.ok(subscriptions['knowledge:capture:stored']);
+    assert.ok(subscriptions['work:dry-run:recorded']);
+    const subscribedCb = subscriptions['knowledge:capture:stored'];
 
     // Simulate a capture event
     subscribedCb(JSON.stringify({
@@ -193,7 +194,7 @@ describe('RuminationEngine — startEventFeed', () => {
 
   it('should handle malformed messages gracefully', async () => {
     const engine = new RuminationEngine(createMockZK());
-    let subscribedCb = null;
+    const subs = {};
 
     engine.board = {
       connect: async () => {},
@@ -201,7 +202,7 @@ describe('RuminationEngine — startEventFeed', () => {
       publish: async () => {},
       createSubscriber: async () => ({
         on: () => {},
-        subscribe: async (ch, cb) => { subscribedCb = cb; },
+        subscribe: async (ch, cb) => { subs[ch] = cb; },
         disconnect: async () => {},
       }),
     };
@@ -209,13 +210,13 @@ describe('RuminationEngine — startEventFeed', () => {
     await engine.startEventFeed();
 
     // Invalid JSON should not throw
-    subscribedCb('not-json{{{');
+    subs['knowledge:capture:stored']('not-json{{{');
     assert.equal(engine.rawBuffer.length, 0);
   });
 
   it('should handle object messages directly', async () => {
     const engine = new RuminationEngine(createMockZK());
-    let subscribedCb = null;
+    const subs = {};
 
     engine.board = {
       connect: async () => {},
@@ -223,16 +224,45 @@ describe('RuminationEngine — startEventFeed', () => {
       publish: async () => {},
       createSubscriber: async () => ({
         on: () => {},
-        subscribe: async (ch, cb) => { subscribedCb = cb; },
+        subscribe: async (ch, cb) => { subs[ch] = cb; },
         disconnect: async () => {},
       }),
     };
 
     await engine.startEventFeed();
 
-    subscribedCb({ title: 'Test', outcome: 'failed', projectId: 'p' });
+    subs['knowledge:capture:stored']({ title: 'Test', outcome: 'failed', projectId: 'p' });
     assert.equal(engine.rawBuffer.length, 1);
     assert.equal(engine.rawBuffer[0].succeeded, false);
+  });
+
+  it('should feed dry-run results as experiences', async () => {
+    const engine = new RuminationEngine(createMockZK());
+    const subs = {};
+
+    engine.board = {
+      connect: async () => {},
+      disconnect: async () => {},
+      publish: async () => {},
+      createSubscriber: async () => ({
+        on: () => {},
+        subscribe: async (ch, cb) => { subs[ch] = cb; },
+        disconnect: async () => {},
+      }),
+    };
+
+    await engine.startEventFeed();
+
+    subs['work:dry-run:recorded'](JSON.stringify({
+      summary: 'Test dry run',
+      outcome: 'passed',
+      projectId: 'p1',
+      taskId: 't1',
+    }));
+
+    assert.equal(engine.rawBuffer.length, 1);
+    assert.equal(engine.rawBuffer[0].source, 'dry-run');
+    assert.equal(engine.rawBuffer[0].succeeded, true);
   });
 
   it('should disconnect event subscriber on shutdown', async () => {

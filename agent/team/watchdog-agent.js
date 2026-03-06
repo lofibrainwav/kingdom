@@ -41,6 +41,13 @@ class WatchdogAgent {
 
         if (diff > this.unresponsiveThreshold) {
           log.warn(this.agentId, `Agent ${id} is unresponsive (${Math.round(diff/1000)}s). Attempting recovery...`);
+          await this.board.publish('governance:safety:threat', {
+            author: this.agentId,
+            threatType: 'agent-unresponsive',
+            agentId: id,
+            downtime: diff,
+            action: 'recovery-initiated',
+          });
           await this.recoverAgent(id);
         }
       }

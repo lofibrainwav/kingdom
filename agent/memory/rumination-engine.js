@@ -69,7 +69,23 @@ class RuminationEngine {
       }
     });
 
-    log.info('rumination', 'event feed subscribed to knowledge:capture:stored');
+    await this.eventSubscriber.subscribe('work:dry-run:recorded', (message) => {
+      try {
+        const data = typeof message === 'string' ? JSON.parse(message) : (message || {});
+        this.feed({
+          skillUsed: data.summary || 'dry-run',
+          errorType: null,
+          succeeded: data.outcome === 'passed',
+          projectId: data.projectId,
+          taskId: data.taskId,
+          source: 'dry-run',
+        });
+      } catch (err) {
+        log.error('rumination', 'dry-run feed parse error', { error: err.message });
+      }
+    });
+
+    log.info('rumination', 'event feed subscribed to knowledge:capture:stored + work:dry-run:recorded');
   }
 
   // ── Stomach 1: 반추위 (Rumen) — Raw Experience Intake ─────
