@@ -391,7 +391,7 @@ See `~/.claude/skills/{skill-name}/SKILL.md` for details.
 ## Current Operating Focus
 - Phase-3 stabilization: 365 tests green, pipeline bridge wired, all agents have author fields
 - Codebase structure: `agent/core/` (9), `agent/team/` (9), `agent/interface/` (3), `agent/memory/` (7) = 28 files
-- Team launcher: 14 agents (9 team + TaskCloseout + KnowledgeOperator + VaultBridge + RuminationEngine + GoTReasoner)
+- Team launcher: 15 agents (9 team + TaskCloseout + KnowledgeOperator + VaultBridge + RuminationEngine + GoTReasoner + NotebookLMQueue)
 - Completed:
   1. ~~skill/control-layer cleanup~~ (Phase-2)
   2. ~~green test baseline restoration~~ (365/365 green)

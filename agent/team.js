@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Kingdom Team Launcher
- * Spawned by start.js — initializes all 14 agents with graceful shutdown.
+ * Spawned by start.js — initializes all 15 agents with graceful shutdown.
  */
 const { getLogger } = require('./core/logger');
 const T = require('../config/timeouts');
@@ -22,6 +22,7 @@ const { VaultBridge } = require('./memory/vault-bridge');
 const { RuminationEngine } = require('./memory/rumination-engine');
 const { GoTReasoner } = require('./memory/got-reasoner');
 const { SkillZettelkasten } = require('./memory/skill-zettelkasten');
+const { NotebookLMQueue } = require('./memory/notebooklm-queue');
 
 // Shared SkillZettelkasten for RuminationEngine and GoTReasoner
 const sharedZK = new SkillZettelkasten();
@@ -44,6 +45,7 @@ const AGENTS = [
     factory: () => new RuminationEngine(sharedZK),
     postInit: (inst) => inst.startEventFeed(),
   },
+  { name: 'NotebookLMQueue', factory: () => new NotebookLMQueue(), postInit: (inst) => inst.start() },
   {
     name: 'GoTReasoner',
     factory: () => new GoTReasoner(sharedZK),
