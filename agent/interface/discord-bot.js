@@ -54,7 +54,7 @@ function _roleColor(agentId, explicitRole) {
 // Load channel config
 function loadConfig() {
   try {
-    const raw = readFileSync(join(__dirname, '..', 'config', 'discord.json'), 'utf8');
+    const raw = readFileSync(join(__dirname, '..', '..', 'config', 'discord.json'), 'utf8');
     return JSON.parse(raw);
   } catch {
     return {
