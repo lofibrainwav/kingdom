@@ -389,10 +389,10 @@ See `~/.claude/skills/{skill-name}/SKILL.md` for details.
 ---
 
 ## Current Operating Focus
-- Phase-4 complete: 433 tests green, all synapses wired, 0 dead events
+- Phase-4 complete: 453 tests green, all synapses wired, 0 dead events, 0 phantom listeners
 - Codebase structure: `agent/core/` (9), `agent/team/` (9), `agent/interface/` (3), `agent/memory/` (8) = 29 files
 - Team launcher: 15 agents (9 team + 6 core/memory)
-- Event map: 0 dead events, 2 phantom listeners (swarm spawn/terminate — architectural)
+- Event map: 0 dead events, 0 phantom listeners
 - Completed:
   1. ~~skill/control-layer cleanup~~ (Phase-2)
   2. ~~green test baseline restoration~~ (365/365 → 433/433 green)
@@ -406,7 +406,7 @@ See `~/.claude/skills/{skill-name}/SKILL.md` for details.
   10. ~~Test gap closure~~ (vault-bridge.test.js, notebooklm-queue.test.js)
 - Next priorities:
   1. E2E runtime validation (`npm run e2e` with live agents + Redis)
-  2. Swarm trigger wiring (PMAgent/Architect → execution:swarm:spawn)
+  2. ~~Swarm trigger wiring~~ (Decomposer → spawn, Deployer → terminate)
   3. Dashboard HTTP/SSE test coverage expansion
   4. Production deployment readiness (Sentry, Vercel, Supabase — blocked on infra)
 
