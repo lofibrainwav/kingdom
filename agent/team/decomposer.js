@@ -79,6 +79,7 @@ class DecomposerAgent {
         retry,
         retryCategory,
         retryGuardrail,
+        author: this.agentId,
       });
 
       log.info(this.agentId, `Decomposition for ${projectId} completed`);

@@ -66,6 +66,7 @@ class PMAgent {
         projectId,
         goal,
         agentId: this.agentId,
+        author: this.agentId,
         taskId: data.taskId,
         retry: Boolean(data.retry),
         retryCategory: data.retryCategory,

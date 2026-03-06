@@ -75,7 +75,8 @@ class WatchdogAgent {
       await this.board.publish('governance:watchdog:recovery', {
         agentId,
         timestamp: Date.now(),
-        action: 'restart'
+        action: 'restart',
+        author: this.agentId,
       });
     }
   }

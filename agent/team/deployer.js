@@ -50,7 +50,8 @@ class DeployerAgent {
       await this.board.publish('execution:deployment:completed', {
         projectId,
         status: 'success',
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        author: this.agentId,
       });
 
       log.info(this.agentId, `Successfully deployed ${projectId}`);

@@ -60,7 +60,8 @@ class FailureAgent {
         projectId,
         taskId,
         category: classification.category,
-        guardrail: classification.mustNotGuardrail
+        guardrail: classification.mustNotGuardrail,
+        author: this.agentId,
       });
 
       await this.updateStatus('idle', `Finished classification for ${taskId}`);

@@ -89,6 +89,7 @@ class CoderAgent {
           retry,
           retryCategory,
           retryGuardrail,
+          author: this.agentId,
         });
       }
 

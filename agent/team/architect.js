@@ -70,6 +70,7 @@ class ArchitectAgent {
         retry,
         retryCategory,
         retryGuardrail,
+        author: this.agentId,
       });
 
       log.info(this.agentId, `Architecture for ${projectId} completed`);

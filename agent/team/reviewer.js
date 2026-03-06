@@ -57,10 +57,10 @@ class ReviewerAgent {
       // 3. Publish result
       if (reviewResult.approved) {
         log.info(this.agentId, `Task ${taskId} APPROVED in ${file}`);
-        await this.board.publish('governance:review:approved', { projectId, taskId, file });
+        await this.board.publish('governance:review:approved', { projectId, taskId, file, author: this.agentId });
       } else {
         log.warn(this.agentId, `Task ${taskId} REJECTED: ${reviewResult.feedback}`);
-        await this.board.publish('governance:review:rejected', { projectId, taskId, file, feedback: reviewResult.feedback });
+        await this.board.publish('governance:review:rejected', { projectId, taskId, file, feedback: reviewResult.feedback, author: this.agentId });
       }
 
       await this.updateStatus('idle', `Finished review for ${file}`);
