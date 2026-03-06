@@ -14,6 +14,7 @@ describe('KnowledgeOperator', () => {
   let createdSkills;
   let board;
   let zk;
+  let configs;
 
   beforeEach(async () => {
     tmpDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'knowledge-operator-'));
@@ -21,12 +22,17 @@ describe('KnowledgeOperator', () => {
     dashboardLinks = [];
     patterns = [];
     createdSkills = [];
+    configs = new Map();
 
     board = {
       client: { isOpen: true },
       publish: async (channel, data) => {
         published.push({ channel, data });
       },
+      setConfig: async (key, value) => {
+        configs.set(key, value);
+      },
+      getConfig: async (key) => configs.get(key) || null,
       createSubscriber: async () => ({
         on: () => {},
         subscribe: async () => {},
@@ -254,6 +260,50 @@ describe('KnowledgeOperator', () => {
     const note = await fsp.readFile(notePath, 'utf-8');
     assert.match(note, /## Improvement/);
     assert.match(note, /Resolved guardrail missing-evidence/);
+  });
+
+  it('stores the latest task capture summary as indexed config for dashboard joins', async () => {
+    const subscriptions = {};
+    board.getConfig = async () => ({
+      goal: 'Link task knowledge',
+      workspacePath: '/tmp/kingdom/TASK-14',
+      verification: ['npm test'],
+      retry: {
+        category: 'review',
+        guardrail: 'missing-lesson',
+        count: 1,
+      },
+    });
+    board.createSubscriber = async () => ({
+      on: () => {},
+      subscribe: async (channel, handler) => {
+        subscriptions[channel] = handler;
+      },
+    });
+
+    const operator = new KnowledgeOperator({
+      board,
+      zettelkasten: zk,
+      vaultDir: tmpDir,
+      writePattern: async (name) => `/vault/patterns/${name}.md`,
+      addDashboardLink: async () => {},
+    });
+
+    await operator.init();
+    await operator.start();
+    await subscriptions['governance:task:completed']({
+      author: 'codex',
+      projectId: 'kingdom',
+      taskId: 'TASK-14',
+      verificationCount: 1,
+    });
+
+    const latest = configs.get('knowledge:task:kingdom:TASK-14:latest');
+    assert.ok(latest);
+    assert.equal(latest.projectId, 'kingdom');
+    assert.equal(latest.taskId, 'TASK-14');
+    assert.equal(latest.outcome, 'passed');
+    assert.match(latest.improvementNote, /Resolved guardrail missing-lesson/);
   });
 
   it('captures skill evaluation events into durable knowledge notes', async () => {

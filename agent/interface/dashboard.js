@@ -273,16 +273,46 @@ class DashboardServer {
     return `${projectId}/${taskId}`;
   }
 
+  async _loadTaskKnowledgeIndex({ projectId, taskId } = {}) {
+    if (!this.board.listConfigs) {
+      return new Map();
+    }
+
+    const prefix = projectId
+      ? `knowledge:task:${projectId}:`
+      : 'knowledge:task:';
+    const entries = await this.board.listConfigs(prefix);
+    const index = new Map();
+
+    for (const { value } of entries) {
+      if (!value?.projectId || !value?.taskId) {
+        continue;
+      }
+      if (taskId && value.taskId !== taskId) {
+        continue;
+      }
+      index.set(`${value.projectId}:${value.taskId}`, value);
+    }
+
+    return index;
+  }
+
   async _handleAPIState(req, res, requestUrl) {
-    const tasks = await this.taskRunner.listTasks({
+    const filters = {
       projectId: requestUrl.searchParams.get('projectId') || undefined,
       taskId: requestUrl.searchParams.get('taskId') || undefined,
       status: requestUrl.searchParams.get('status') || undefined,
       retryGuardrail: requestUrl.searchParams.get('retryGuardrail') || undefined,
       retryCategory: requestUrl.searchParams.get('retryCategory') || undefined,
-    });
+    };
+    const tasks = await this.taskRunner.listTasks(filters);
+    const taskKnowledge = await this._loadTaskKnowledgeIndex(filters);
+    const hydratedTasks = tasks.map((task) => ({
+      ...task,
+      latestKnowledge: taskKnowledge.get(`${task.projectId}:${task.taskId}`) || null,
+    }));
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ agents: this.agentState, tasks, metrics: this.metrics, timestamp: Date.now() }));
+    res.end(JSON.stringify({ agents: this.agentState, tasks: hydratedTasks, metrics: this.metrics, timestamp: Date.now() }));
   }
 
   _serveDashboard(req, res) {
@@ -822,6 +852,9 @@ function renderTasks() {
         + field('Goal', escapeHtml(task.goal || 'n/a'))
         + field('Review', escapeHtml(task.review?.status || '-'))
         + field('Retry', escapeHtml(task.retry?.handoff?.status || task.retry?.guardrail || '-'))
+        + field('Latest Lesson', escapeHtml(task.latestKnowledge?.lesson || '-'))
+        + field('Latest Improvement', escapeHtml(task.latestKnowledge?.improvementNote || '-'))
+        + field('Knowledge Updated', timeAgo(Date.parse(task.latestKnowledge?.capturedAt || 0)))
         + field('Updated', timeAgo(task.updatedAt))
         + '</article>';
     }).join('');

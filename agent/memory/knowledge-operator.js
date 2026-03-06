@@ -60,58 +60,81 @@ class KnowledgeOperator {
 
   async capture(bundle) {
     this._validateBundle(bundle);
+    const capturedAt = new Date().toISOString();
+    const enrichedBundle = { ...bundle, capturedAt };
 
-    const fileName = this._buildFileName(bundle.title);
+    const fileName = this._buildFileName(enrichedBundle.title);
     const notePath = path.join(this.vaultDir, fileName);
-    const noteContent = this._renderNote(bundle);
+    const noteContent = this._renderNote(enrichedBundle);
     await fsp.writeFile(notePath, noteContent, 'utf-8');
 
     let patternPath = null;
-    if (bundle.pattern) {
+    if (enrichedBundle.pattern) {
       patternPath = await this.writePattern(
-        bundle.pattern.name || bundle.title,
-        this._renderPattern(bundle)
+        enrichedBundle.pattern.name || enrichedBundle.title,
+        this._renderPattern(enrichedBundle)
       );
     }
 
     let skillNoteId = null;
-    if (bundle.skill && this.zk) {
-      const skillName = bundle.skill.name || bundle.title;
+    if (enrichedBundle.skill && this.zk) {
+      const skillName = enrichedBundle.skill.name || enrichedBundle.title;
       skillNoteId = this._slugify(skillName);
       const existing = this.zk.getNote ? await this.zk.getNote(skillNoteId) : null;
 
       if (!existing && this.zk.createNote) {
         await this.zk.createNote({
           name: skillName,
-          code: bundle.skill.code || '',
-          description: bundle.skill.description || bundle.lesson,
-          errorType: bundle.skill.errorType || 'workflow:knowledge-capture',
-          agentId: bundle.author,
+          code: enrichedBundle.skill.code || '',
+          description: enrichedBundle.skill.description || enrichedBundle.lesson,
+          errorType: enrichedBundle.skill.errorType || 'workflow:knowledge-capture',
+          agentId: enrichedBundle.author,
         });
       }
     }
 
-    const section = bundle.outcome === 'failed' ? 'Learning Wall' : 'Recent Achievements';
-    await this.addDashboardLink(section, `[[${path.basename(notePath, '.md')}]] - ${bundle.title}`);
+    const section = enrichedBundle.outcome === 'failed' ? 'Learning Wall' : 'Recent Achievements';
+    await this.addDashboardLink(section, `[[${path.basename(notePath, '.md')}]] - ${enrichedBundle.title}`);
+
+    if (enrichedBundle.taskId && this.board.setConfig) {
+      await this.board.setConfig(
+        `knowledge:task:${enrichedBundle.projectId}:${enrichedBundle.taskId}:latest`,
+        {
+          projectId: enrichedBundle.projectId,
+          taskId: enrichedBundle.taskId,
+          title: enrichedBundle.title,
+          summary: enrichedBundle.summary,
+          lesson: enrichedBundle.lesson,
+          outcome: enrichedBundle.outcome,
+          notePath,
+          retryCategory: enrichedBundle.retryCategory || null,
+          retryGuardrail: enrichedBundle.retryGuardrail || null,
+          improvementNote: enrichedBundle.improvementNote || null,
+          capturedAt,
+        }
+      );
+    }
 
     await this.board.publish('knowledge:capture:stored', {
-      author: bundle.author,
-      projectId: bundle.projectId,
-      title: bundle.title,
+      author: enrichedBundle.author,
+      projectId: enrichedBundle.projectId,
+      taskId: enrichedBundle.taskId || null,
+      title: enrichedBundle.title,
       notePath,
-      outcome: bundle.outcome,
-      retryCategory: bundle.retryCategory || null,
-      retryGuardrail: bundle.retryGuardrail || null,
-      continuationTaskId: bundle.continuationTaskId || null,
-      improvementNote: bundle.improvementNote || null,
+      outcome: enrichedBundle.outcome,
+      retryCategory: enrichedBundle.retryCategory || null,
+      retryGuardrail: enrichedBundle.retryGuardrail || null,
+      continuationTaskId: enrichedBundle.continuationTaskId || null,
+      improvementNote: enrichedBundle.improvementNote || null,
+      capturedAt,
     });
 
     if (this.logger) {
       await this.logger.logEvent('knowledge-operator', {
         type: 'capture_stored',
-        projectId: bundle.projectId,
-        title: bundle.title,
-        outcome: bundle.outcome,
+        projectId: enrichedBundle.projectId,
+        title: enrichedBundle.title,
+        outcome: enrichedBundle.outcome,
         notePath,
       });
     }
@@ -125,6 +148,7 @@ class KnowledgeOperator {
       author: 'knowledge-operator',
       projectId: data.projectId,
       title: `Approved ${data.taskId}`,
+      taskId: data.taskId,
       summary: `Task ${data.taskId} was approved in ${data.file}.`,
       outcome: 'passed',
       verification: [`review approval event for ${data.file}`],
@@ -139,6 +163,7 @@ class KnowledgeOperator {
       author: 'knowledge-operator',
       projectId: data.projectId,
       title: `Retry ${data.taskId}`,
+      taskId: data.taskId,
       summary: `Failure category ${data.category} triggered a retry request.`,
       outcome: 'failed',
       verification: [`failure retry requested with guardrail ${data.guardrail}`],
@@ -172,6 +197,7 @@ class KnowledgeOperator {
       author: 'knowledge-operator',
       projectId: data.projectId,
       title: `Completed ${data.taskId}`,
+      taskId: data.taskId,
       summary,
       outcome: 'passed',
       verification,
@@ -223,6 +249,7 @@ class KnowledgeOperator {
   }
 
   _renderNote(bundle) {
+    const capturedAt = bundle.capturedAt || new Date().toISOString();
     const tags = [...(bundle.tags || []), 'knowledge-capture', bundle.outcome]
       .filter(Boolean)
       .map((tag) => `"${tag}"`)
@@ -231,11 +258,12 @@ class KnowledgeOperator {
 
     return `---
 project: "${bundle.projectId}"
+task_id: "${bundle.taskId || ''}"
 title: "${bundle.title}"
 outcome: "${bundle.outcome}"
 author: "${bundle.author}"
 tags: [${tags}]
-captured_at: "${new Date().toISOString()}"
+captured_at: "${capturedAt}"
 ---
 
 # ${bundle.title}
