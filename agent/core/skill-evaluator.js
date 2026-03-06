@@ -11,7 +11,12 @@ class SkillEvaluator {
 
   async evaluateSkill(skillName) {
     const skillPath = path.join(this.skillsRoot, skillName, 'SKILL.md');
-    const content = await fsp.readFile(skillPath, 'utf-8');
+    let content;
+    try {
+      content = await fsp.readFile(skillPath, 'utf-8');
+    } catch {
+      return { skillName, skillPath, score: 0, findings: ['missing SKILL.md'], lineCount: 0, frontmatter: {}, passed: false };
+    }
     const lines = content.split('\n');
     const frontmatter = this._parseFrontmatter(content);
     const findings = [];
@@ -85,21 +90,7 @@ class SkillEvaluator {
 
     const results = [];
     for (const skillName of skills) {
-      const skillPath = path.join(this.skillsRoot, skillName, 'SKILL.md');
-      try {
-        await fsp.access(skillPath);
-        results.push(await this.evaluateSkill(skillName));
-      } catch {
-        results.push({
-          skillName,
-          skillPath,
-          score: 0,
-          findings: ['missing SKILL.md'],
-          lineCount: 0,
-          frontmatter: {},
-          passed: false,
-        });
-      }
+      results.push(await this.evaluateSkill(skillName));
     }
 
     return results;

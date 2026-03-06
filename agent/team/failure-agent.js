@@ -35,7 +35,7 @@ class FailureAgent {
   async handleTaskRejection(message) {
     try {
       const { projectId, taskId, file, feedback } = typeof message === 'string' ? JSON.parse(message) : message;
-      log.info(this.agentId, `Classifying failure for task ${taskId} in ${file}: ${feedback.slice(0, 30)}...`);
+      log.info(this.agentId, `Classifying failure for task ${taskId} in ${file}: ${(feedback ?? '').slice(0, 30)}...`);
       await this.updateStatus('classifying', `Classifying ${taskId}`);
 
       // 1. Categorize Failure via LLM (3-pillar logic)

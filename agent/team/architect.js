@@ -52,6 +52,12 @@ class ArchitectAgent {
         'normal'
       );
 
+      if (!context) {
+        log.error(this.agentId, `LLM returned null for project ${projectId}, aborting design`);
+        await this.updateStatus('idle', `LLM failure for ${projectId}`);
+        return;
+      }
+
       // 2. Save Architecture to Blackboard
       await this.board.setConfig(`${projectId}:architecture`, {
         design: context,

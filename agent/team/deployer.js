@@ -48,7 +48,7 @@ class DeployerAgent {
 
       // 1. Git Commit & Push (using execFileSync to prevent shell injection)
       const msg = `🚀 Deploy: ${projectId} - ${goal}`;
-      cp.execFileSync('git', ['add', '.'], { cwd: this.projectRoot, stdio: 'inherit' });
+      cp.execFileSync('git', ['add', 'workspace/'], { cwd: this.projectRoot, stdio: 'inherit' });
       cp.execFileSync('git', ['commit', '-m', msg], { cwd: this.projectRoot, stdio: 'inherit' });
       cp.execFileSync('git', ['push', 'origin', 'main'], { cwd: this.projectRoot, stdio: 'inherit' });
 

@@ -66,9 +66,14 @@ class CoderAgent {
           'normal'
         );
 
+        if (!codeResponse) {
+          log.warn(this.agentId, `LLM returned null for task ${String(task.id ?? 'unknown')}, skipping`);
+          continue;
+        }
+
         // 2. Write to Workspace
         // (Simplified: assuming single file for now, or parsing delimiters)
-        const fileName = `task_${task.id.replace(/\s+/g, '_')}.js`;
+        const fileName = `task_${String(task.id ?? 'unknown').replace(/\s+/g, '_')}.js`;
         await fsp.writeFile(path.join(projectPath, fileName), codeResponse);
 
         // 3. Mark Task as Done in Blackboard (uses tasks: prefix for TaskRunner compatibility)

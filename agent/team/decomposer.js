@@ -54,7 +54,8 @@ class DecomposerAgent {
       
       // 2. Format into Task List for Coder
       const rawTasks = await this.llm.callLLM(
-        `Based on this architecture and GoT synergy: ${JSON.stringify(graph)},\n` +
+        `Architecture design:\n${typeof architecture === 'string' ? architecture : JSON.stringify(architecture)}\n\n` +
+        `GoT synergy graph: ${JSON.stringify(graph)}\n\n` +
         `Break down the goal "${goal}" into a flat list of 5-8 actionable tasks.\n` +
         'Return JSON: { tasks: [{id, description, dependencyId}] }',
         'normal'
