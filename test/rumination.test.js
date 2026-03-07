@@ -184,6 +184,33 @@ describe('RuminationEngine — _extractInsights (Stomach 3)', () => {
     assert.ok(failure.failureRate > 0.7);
   });
 
+  it('should find cross-domain skills effective across multiple errorTypes', () => {
+    const patterns = {
+      'nav:stuck': {
+        errorType: 'nav:stuck',
+        experiences: [{}, {}, {}],
+        successCount: 2,
+        failureCount: 1,
+        skillsInvolved: ['pathfind', 'debug_agent'],
+      },
+      'build:fail': {
+        errorType: 'build:fail',
+        experiences: [{}, {}, {}],
+        successCount: 3,
+        failureCount: 0,
+        skillsInvolved: ['debug_agent', 'place'],
+      },
+    };
+
+    const insights = engine._extractInsights(patterns);
+
+    const crossDomain = insights.find(i => i.type === 'cross_domain' && i.skill === 'debug_agent');
+    assert.ok(crossDomain, 'Should detect debug_agent as cross-domain skill');
+    assert.equal(crossDomain.breadth, 2);
+    assert.ok(crossDomain.domains.includes('nav:stuck'));
+    assert.ok(crossDomain.domains.includes('build:fail'));
+  });
+
   it('should skip patterns with fewer than MIN_EXPERIENCES', () => {
     const patterns = {
       'rare:event': {

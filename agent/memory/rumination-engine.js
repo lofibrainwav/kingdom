@@ -203,6 +203,28 @@ class RuminationEngine {
       }
     }
 
+    // Cross-domain connect: find skills effective across different errorTypes
+    const skillDomains = {}; // skillId → Set of errorTypes where it succeeded
+    for (const [errorType, pattern] of Object.entries(patterns)) {
+      if (pattern.successCount === 0) continue;
+      for (const skill of pattern.skillsInvolved) {
+        if (!skillDomains[skill]) skillDomains[skill] = new Set();
+        skillDomains[skill].add(errorType);
+      }
+    }
+
+    for (const [skill, domains] of Object.entries(skillDomains)) {
+      if (domains.size >= 2) {
+        insights.push({
+          type: 'cross_domain',
+          skill,
+          domains: [...domains],
+          breadth: domains.size,
+          insight: `Skill ${skill} effective across ${domains.size} domains: [${[...domains].join(', ')}]. Versatile — consider as foundation skill.`,
+        });
+      }
+    }
+
     return insights;
   }
 
@@ -294,6 +316,21 @@ class RuminationEngine {
               actions.push({ action: 'guardrail_created', errorType: insight.errorType, guardrailId });
               log.info('rumination', `GUARDRAIL: ${guardrailId} auto-extracted from failure pattern`);
             } catch { /* skill creation can fail if name conflicts */ }
+          }
+          break;
+        }
+
+        case 'cross_domain': {
+          // Boost XP for versatile cross-domain skills
+          const note = await this.zk.getNote(insight.skill);
+          if (note) {
+            await this.zk.recordUsage(insight.skill, true, {});
+            actions.push({
+              action: 'cross_domain_boost',
+              skill: insight.skill,
+              domains: insight.domains,
+              breadth: insight.breadth,
+            });
           }
           break;
         }

@@ -52,7 +52,7 @@ function createApiClients() {
         const messages = [{ role: 'user', content: prompt }];
         // Qwen3 models support /no_think to skip reasoning for faster responses
         if (model.startsWith('qwen')) {
-          messages.unshift({ role: 'system', content: '/no_think' });
+          messages.unshift({ role: 'system', content: '/no_think\nYou are a precise code agent. Output ONLY what is requested. No markdown formatting, no explanations unless asked. Use node-redis v4 API (e.g. client.zAdd not client.zadd).' });
         }
         const body = JSON.stringify({
           model,

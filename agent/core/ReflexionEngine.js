@@ -121,12 +121,20 @@ class ReflexionEngine {
 
   _buildPrompt(context) {
     return [
-      'Generate a Vibe Coding skill to handle this task or failure.',
+      'You are a Kingdom agent skill generator. Output ONLY a valid JSON object, no markdown, no explanation.',
+      '',
       `Error/Context: ${context.error || context.message}`,
       `Type: ${context.errorType || context.type || 'unknown'}`,
       `Agent: ${context.agentId || 'unknown'}`,
-      'Return a JSON object with: { name, code, description, errorType }',
-      'The code must be safe, synchronous JavaScript for the agent workflow.',
+      '',
+      'Requirements:',
+      '- name: snake_case, descriptive (e.g. "handle_timeout_retry")',
+      '- code: safe synchronous JavaScript, max 20 lines, no require()',
+      '- description: one sentence explaining what this skill does',
+      '- errorType: matches the error category above',
+      '',
+      'JSON output:',
+      '{"name":"...","code":"...","description":"...","errorType":"..."}',
     ].join('\n');
   }
 
