@@ -16,7 +16,7 @@ const log = getLogger();
 class DecomposerAgent {
   constructor(options = {}) {
     this.board = options.board || new Blackboard();
-    this.llm = new ReflexionEngine(null, { board: this.board });
+    this.llm = new ReflexionEngine(null, { board: this.board, zk: options.zk || null });
     this.got = new GoTReasoner(options.zettelkasten || new SkillZettelkasten({ board: this.board }), { board: this.board });
     this.agentId = 'Kingdom_Decomposer';
     this.dedup = new DedupGuard();
@@ -67,7 +67,8 @@ class DecomposerAgent {
         `GoT synergy graph: ${JSON.stringify(graph)}\n\n` +
         `Break down the goal "${goal}" into a flat list of 5-8 actionable tasks.\n` +
         'Return JSON: { tasks: [{id, description, dependencyId}] }',
-        'normal'
+        'normal',
+        { topic: goal }
       );
       const tasks = parseLLMJson(rawTasks) || { tasks: [] };
 

@@ -18,7 +18,7 @@ const log = getLogger();
 class CoderAgent {
   constructor(options = {}) {
     this.board = options.board || new Blackboard();
-    this.llm = new ReflexionEngine(null, { board: this.board });
+    this.llm = new ReflexionEngine(null, { board: this.board, zk: options.zk || null });
     this.agentId = 'Kingdom_Coder';
     this.baseWorkspace = path.join(__dirname, '..', '..', 'workspace');
     // Feedback loop state — accumulated from TeamLead and GoTReasoner
@@ -90,7 +90,8 @@ class CoderAgent {
           `Project Goal: ${goal}\n` +
           'Return purely the file content. If multiple files, use a clear delimiter like // --- FILE: filename ---' +
           feedbackCtx,
-          'normal'
+          'normal',
+          { topic: goal, errorType: task.errorType }
         );
 
         if (!codeResponse) {

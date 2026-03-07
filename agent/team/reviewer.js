@@ -15,7 +15,7 @@ const log = getLogger();
 class ReviewerAgent {
   constructor(options = {}) {
     this.board = options.board || new Blackboard();
-    this.llm = new ReflexionEngine(null, { board: this.board });
+    this.llm = new ReflexionEngine(null, { board: this.board, zk: options.zk || null });
     this.rumination = new RuminationEngine(null, { board: this.board });
     this.agentId = 'Kingdom_Reviewer';
     this.dedup = new DedupGuard();
@@ -58,7 +58,8 @@ class ReviewerAgent {
         `Code content:\n${content}\n` +
         'Check for: logic errors, best practices, and task alignment.\n' +
         'Return JSON: { approved: boolean, feedback: string, suggestedFix: string | null }',
-        'normal'
+        'normal',
+        { errorType: 'quality', topic: file }
       );
       const reviewResult = parseLLMJson(rawReview) || { approved: false, feedback: 'LLM response parse failed' };
 

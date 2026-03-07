@@ -14,7 +14,7 @@ const log = getLogger();
 class ArchitectAgent {
   constructor(options = {}) {
     this.board = options.board || new Blackboard();
-    this.llm = new ReflexionEngine(null, { board: this.board });
+    this.llm = new ReflexionEngine(null, { board: this.board, zk: options.zk || null });
     this.agentId = 'Kingdom_Architect';
     this.dedup = new DedupGuard();
   }
@@ -57,7 +57,8 @@ class ArchitectAgent {
       const context = await this.llm.callLLM(
         `Design a technical architecture for this project: ${goal}.\n` +
         'Return detailed tech stack, folder structure, and key design decisions.',
-        'normal'
+        'normal',
+        { topic: goal }
       );
 
       if (!context) {

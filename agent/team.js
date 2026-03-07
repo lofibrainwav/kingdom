@@ -35,12 +35,12 @@ const sharedZK = new SkillZettelkasten({ board: sharedBoard });
 
 const AGENTS = [
   { name: 'PMAgent', factory: () => new PMAgent({ board: sharedBoard }) },
-  { name: 'Architect', factory: () => new ArchitectAgent({ board: sharedBoard }) },
+  { name: 'Architect', factory: () => new ArchitectAgent({ board: sharedBoard, zk: sharedZK }) },
   { name: 'Decomposer', factory: () => new DecomposerAgent({ board: sharedBoard, zettelkasten: sharedZK }) },
-  { name: 'Coder', factory: () => new CoderAgent({ board: sharedBoard }) },
-  { name: 'Reviewer', factory: () => new ReviewerAgent({ board: sharedBoard }) },
+  { name: 'Coder', factory: () => new CoderAgent({ board: sharedBoard, zk: sharedZK }) },
+  { name: 'Reviewer', factory: () => new ReviewerAgent({ board: sharedBoard, zk: sharedZK }) },
   { name: 'Deployer', factory: () => new DeployerAgent({ board: sharedBoard }) },
-  { name: 'Failure', factory: () => new FailureAgent({ board: sharedBoard }) },
+  { name: 'Failure', factory: () => new FailureAgent({ board: sharedBoard, zk: sharedZK }) },
   { name: 'Swarm', factory: () => new SwarmOrchestrator({ board: sharedBoard }) },
   { name: 'Watchdog', factory: () => new WatchdogAgent({ board: sharedBoard }) },
   { name: 'TaskCloseout', factory: () => new TaskCloseoutOrchestrator({ board: sharedBoard }), postInit: (inst) => inst.start() },

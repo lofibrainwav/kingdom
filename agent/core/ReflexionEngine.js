@@ -6,6 +6,7 @@
  */
 const { Blackboard } = require('./blackboard');
 const { getLogger } = require('./logger');
+const { KnowledgeEnricher } = require('./knowledge-enricher');
 const T = require('../../config/timeouts');
 const log = getLogger();
 
@@ -32,6 +33,10 @@ class ReflexionEngine {
     this.config = _getDefaultConfig();
     // Auto-create API clients if none injected
     this.apiClients = apiClients || require('./api-clients').createApiClients();
+    this.enricher = options.enricher || new KnowledgeEnricher({
+      zk: options.zk || null,
+      board: this.board,
+    });
     this.dailyCost = 0;
     this.totalCalls = 0;
     this.modelUsage = {};
@@ -71,11 +76,22 @@ class ReflexionEngine {
   }
 
   // 4.6: Multi-LLM router with escalation and fallback
-  async callLLM(prompt, severity = 'normal') {
+  // hints: { errorType, skills, topic } — optional context for knowledge enrichment
+  async callLLM(prompt, severity = 'normal', hints = null) {
     // Cost guardrail (0 = unlimited, for local/free models)
     if (this.config.maxCostPerDay > 0 && this.dailyCost >= this.config.maxCostPerDay) {
       log.warn('reflexion', 'daily cost limit reached');
       return null;
+    }
+
+    // Knowledge enrichment — inject accumulated wisdom into prompt
+    let enrichedPrompt = prompt;
+    if (hints && this.enricher) {
+      try {
+        enrichedPrompt = await this.enricher.enrich(prompt, hints);
+      } catch (err) {
+        log.warn('reflexion', `enrichment failed, using raw prompt: ${err.message}`);
+      }
     }
 
     const model = severity === 'critical'
@@ -87,7 +103,7 @@ class ReflexionEngine {
 
     // Try primary model
     try {
-      const result = await this._callModel(model, prompt);
+      const result = await this._callModel(model, enrichedPrompt);
       this._trackUsage(model);
       return result;
     } catch (primaryErr) {
@@ -96,7 +112,7 @@ class ReflexionEngine {
 
     // Fallback to Groq
     try {
-      const result = await this._callModel(this.config.fallbackModel, prompt);
+      const result = await this._callModel(this.config.fallbackModel, enrichedPrompt);
       this._trackUsage(this.config.fallbackModel);
       return result;
     } catch (fallbackErr) {

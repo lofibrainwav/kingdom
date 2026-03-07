@@ -14,7 +14,7 @@ const log = getLogger();
 class FailureAgent {
   constructor(options = {}) {
     this.board = options.board || new Blackboard();
-    this.llm = new ReflexionEngine(null, { board: this.board });
+    this.llm = new ReflexionEngine(null, { board: this.board, zk: options.zk || null });
     this.agentId = 'Kingdom_Failure';
     this.dedup = new DedupGuard();
   }
@@ -55,7 +55,8 @@ class FailureAgent {
         '2. Skill Failure (Agent lacks specific coding knowledge)\n' +
         '3. Environment Failure (Tool/Workspace/System issue)\n' +
         'Return JSON: { category, reason, mustNotGuardrail }',
-        'critical'
+        'critical',
+        { errorType: 'failure', topic: feedback?.slice(0, 50) }
       );
       const classification = parseLLMJson(rawClassification) || { category: 'unknown', reason: 'LLM response parse failed', mustNotGuardrail: null };
 
