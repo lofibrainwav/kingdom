@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 const { KnowledgeOperator } = require('../agent/memory/knowledge-operator');
 
 async function main() {

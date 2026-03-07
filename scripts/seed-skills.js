@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * Kingdom Skill Seed Library
  * 

@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 const { SkillEvaluator } = require('../agent/core/skill-evaluator');
 
 async function main() {

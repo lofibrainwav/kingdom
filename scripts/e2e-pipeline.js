@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * Kingdom E2E Pipeline Simulator
  * Discord 없이 전체 에이전트 파이프라인을 시뮬레이션한다.

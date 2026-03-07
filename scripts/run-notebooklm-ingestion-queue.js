@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 const path = require('path');
 const fsp = require('fs').promises;
 const { Blackboard } = require('../agent/core/blackboard');

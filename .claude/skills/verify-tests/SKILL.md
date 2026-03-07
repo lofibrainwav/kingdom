@@ -22,16 +22,16 @@ Verify that the Kingdom test suite is healthy and all agent files have coverage.
    - Flag any test files that had failures
 
 2. Validate thresholds:
-   - Total tests ≥ 365
+   - Total tests ≥ 576
    - Failed = 0
-   - Test files ≥ 38
+   - Test files ≥ 48
 
 3. Coverage map — verify each agent file has a corresponding test:
 
-### Core (agent/core/) — 9 files
+### Core (agent/core/) — 11 files
 | Agent File | Expected Test File |
 |---|---|
-| agent/core/blackboard.js | test/blackboard.test.js, test/blackboard-channels.test.js |
+| agent/core/blackboard.js | test/blackboard.test.js, test/blackboard-channels.test.js, test/e2e-blackboard.test.js |
 | agent/core/logger.js | test/logger.test.js |
 | agent/core/ReflexionEngine.js | test/reflexion-engine.test.js |
 | agent/core/api-clients.js | test/api-clients.test.js |
@@ -40,8 +40,10 @@ Verify that the Kingdom test suite is healthy and all agent files have coverage.
 | agent/core/skill-evaluator.js | test/skill-evaluator.test.js |
 | agent/core/task-closeout-orchestrator.js | test/task-closeout-orchestrator.test.js |
 | agent/core/task-runner.js | test/task-runner.test.js |
+| agent/core/dedup.js | test/dedup.test.js |
+| agent/core/knowledge-enricher.js | test/knowledge-enricher.test.js |
 
-### Team (agent/team/) — 9 agents
+### Team (agent/team/) — 10 agents
 | Agent File | Expected Test File |
 |---|---|
 | agent/team/pm-agent.js | test/pm-agent.test.js |
@@ -53,6 +55,7 @@ Verify that the Kingdom test suite is healthy and all agent files have coverage.
 | agent/team/reviewer.js | test/reviewer.test.js |
 | agent/team/swarm-orchestrator.js | test/swarm-orchestrator.test.js |
 | agent/team/watchdog-agent.js | test/watchdog-agent.test.js |
+| agent/team/team-lead.js | test/team-lead.test.js |
 
 ### Interface (agent/interface/) — 3 files
 | Agent File | Expected Test File |
@@ -61,7 +64,7 @@ Verify that the Kingdom test suite is healthy and all agent files have coverage.
 | agent/interface/obsidian-dashboard.js | test/obsidian-dashboard.test.js |
 | agent/interface/discord-bot.js | (no dedicated test — exempt, external API) |
 
-### Memory (agent/memory/) — 7 files
+### Memory (agent/memory/) — 11 files
 | Agent File | Expected Test File |
 |---|---|
 | agent/memory/got-reasoner.js | test/got-reasoner.test.js |
@@ -71,6 +74,10 @@ Verify that the Kingdom test suite is healthy and all agent files have coverage.
 | agent/memory/skill-zettelkasten.js | test/zettelkasten.test.js |
 | agent/memory/vault-sync.js | test/vault-sync.test.js |
 | agent/memory/zettelkasten-hooks.js | test/zettelkasten-hooks.test.js |
+| agent/memory/research-agent.js | test/research-agent.test.js |
+| agent/memory/notebooklm-queue.js | test/notebooklm-queue.test.js |
+| agent/memory/vault-bridge.js | test/vault-bridge.test.js |
+| agent/memory/mcp-client-factory.js | test/mcp-client-factory.test.js |
 
 ### Infrastructure tests (no 1:1 agent mapping)
 | Test File | Purpose |
@@ -87,8 +94,8 @@ Verify that the Kingdom test suite is healthy and all agent files have coverage.
 
 4. Report:
 ```
-✅ Tests: 365 pass / 0 fail / 0 skip (38 files)
-✅ Coverage: 28/29 agent files have tests (discord-bot exempt)
+✅ Tests: 576 pass / 0 fail / 0 skip (48 files)
+✅ Coverage: 34/35 agent files have tests (discord-bot exempt)
 ⚠️  Missing: [list any uncovered files]
 ```
 

@@ -58,6 +58,13 @@ const SKILL_MAP = {
   'weekly-questions': 'api-caller',
   // Research notes → closest atomic skill
   'agentic-engineering-9pillars': 'llm-prompter',
+  'afo-kingdom-v6-blueprint': 'llm-prompter',
+  'agentic-second-brain-blueprint': 'llm-prompter',
+  'agentic-second-brain-engineering': 'llm-prompter',
+  'architecting-ai-autonomy': 'llm-prompter',
+  'notebooklm-masterclass': 'api-caller',
+  'obsidian-context-engine': 'markdown-formatter',
+  'agentic-ai-ecosystem': 'llm-prompter',
   'memory-skill-compounding': 'redis-publisher',
   'weekly-2026-w10': 'markdown-formatter',
   // Daily/session notes
