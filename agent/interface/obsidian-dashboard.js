@@ -69,10 +69,10 @@ class ObsidianDashboard {
     if (this._writeTimer) clearInterval(this._writeTimer);
     this._flushAll();
     if (this.subscriber) {
-      await this.subscriber.pUnsubscribe().catch(() => {});
       await this.subscriber.disconnect().catch(() => {});
     }
-    await this.board.disconnect().catch(() => {});
+    // Do NOT disconnect board — it's shared via team.js.
+    // team.js owns the lifecycle (forceDisconnect at shutdown).
     log.info('obsidian-dashboard', 'shutdown complete');
   }
 

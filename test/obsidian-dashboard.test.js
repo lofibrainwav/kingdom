@@ -230,4 +230,24 @@ describe('ObsidianDashboard — lifecycle', () => {
     await dash.shutdown();
     assert.equal(dash._writeTimer !== null, true, 'timer reference preserved but cleared');
   });
+
+  it('shutdown does NOT disconnect shared board (owner-only disconnect)', async () => {
+    const dash = createDashboard();
+    let boardDisconnected = false;
+    dash.board = {
+      connect: async () => {},
+      disconnect: async () => { boardDisconnected = true; },
+      client: { isReady: true },
+      createSubscriber: async () => ({
+        on: () => {},
+        subscribe: async () => {},
+        pSubscribe: async () => {},
+        pUnsubscribe: async () => {},
+        disconnect: async () => {},
+      }),
+    };
+    dash.subscriber = await dash.board.createSubscriber();
+    await dash.shutdown();
+    assert.equal(boardDisconnected, false, 'shared board must not be disconnected by dashboard');
+  });
 });
