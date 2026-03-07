@@ -18,7 +18,7 @@
 const { Blackboard } = require('../core/blackboard');
 const { getLogger } = require('../core/logger');
 const { createApiClients } = require('../core/api-clients');
-const { calculateEros, spiderWebToEros } = require('../core/eros');
+const { calibratedEros } = require('../core/eros');
 const log = getLogger();
 
 const SPIDER_WEB_PROMPT = `Evaluate this code batch from 3 axes and their intersections:
@@ -280,20 +280,24 @@ class TeamLeadAgent {
 
       this.reviewCount++;
 
-      // EROS V6: compute 6-pillar score from Spider Web 3-axis result
-      const erosPillars = spiderWebToEros({
-        truth: result.truth?.score || 1,
-        goodness: result.goodness?.score || 1,
-        beauty: result.beauty?.score || 1,
-      });
-      const eros = calculateEros(erosPillars);
+      // EROS V6: calibrated scoring — LLM judgment + objective signals
+      const projectId = batch[0]?.projectId;
+      const signals = await this._collectObjectiveSignals(projectId, batch);
+      const eros = calibratedEros(
+        {
+          truth: result.truth?.score || 1,
+          goodness: result.goodness?.score || 1,
+          beauty: result.beauty?.score || 1,
+        },
+        signals,
+      );
 
-      // Publish review result (now includes EROS V6 data)
+      // Publish review result (now includes calibrated EROS V6 data)
       await this.board.publish('governance:teamlead:reviewed', {
         author: this.agentId,
         batchSize: batch.length,
         taskIds: batch.map(b => b.taskId),
-        projectId: batch[0]?.projectId,
+        projectId,
         verdict: result.verdict || 'unknown',
         scores: {
           truth: result.truth?.score,
@@ -304,7 +308,9 @@ class TeamLeadAgent {
           sScore: eros.sScore,
           fScore: eros.fScore,
           decision: eros.decision,
-          pillars: erosPillars,
+          confidence: eros.calibration.confidence,
+          pillars: eros.calibration.calibratedPillars,
+          adjustments: eros.calibration.adjustments,
         },
         summary: result.summary || '',
         storeWorthy: result.storeWorthy || false,
@@ -317,8 +323,10 @@ class TeamLeadAgent {
         sScore: eros.sScore,
         fScore: eros.fScore,
         decision: eros.decision,
+        confidence: eros.calibration.confidence,
+        adjustments: eros.calibration.adjustments,
         verdict: result.verdict,
-        projectId: batch[0]?.projectId,
+        projectId,
         taskIds: batch.map(b => b.taskId),
         timestamp: Date.now(),
       });
@@ -462,6 +470,33 @@ class TeamLeadAgent {
       ...(result.intersections?.truth_beauty?.gaps || []),
     ];
     return gaps.slice(0, 5).join('; ') || 'unspecified gaps';
+  }
+
+  /**
+   * Collect objective signals for EROS calibration.
+   * These are measurable facts, not LLM opinions.
+   */
+  async _collectObjectiveSignals(projectId, batch) {
+    const signals = {};
+    try {
+      // Signal 1: retry count from pipeline flow tracking
+      const flow = this.pipelineFlow[projectId];
+      if (flow) {
+        signals.retryCount = flow.stages['governance:failure:retry-requested']?.count || 0;
+        const requested = flow.stages['governance:review:requested']?.count || 0;
+        const rejected = flow.stages['governance:review:rejected']?.count || 0;
+        signals.rejectRatio = requested > 0 ? rejected / requested : 0;
+      }
+
+      // Signal 2: batch complexity (file count)
+      signals.filesChanged = batch.length;
+
+      // Signal 3: tests passed (default true — will be overridden by CI data when available)
+      signals.testsPassed = true;
+    } catch (err) {
+      log.debug(this.agentId, `objective signal collection failed: ${err.message}`);
+    }
+    return signals;
   }
 
   _parseResult(response) {

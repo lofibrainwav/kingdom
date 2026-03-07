@@ -8,6 +8,8 @@ const {
   calculateEros,
   spiderWebToEros,
   routeDecision,
+  calibrate,
+  calibratedEros,
   DEFAULT_WEIGHTS,
   PILLAR_ORDER,
   THRESHOLD_AUTO_RUN,
@@ -197,5 +199,121 @@ describe('EROS V6 — constants and exports', () => {
   it('should export V6 thresholds matching HyoGook spec', () => {
     assert.equal(THRESHOLD_AUTO_RUN, 9.25);
     assert.equal(THRESHOLD_ASK, 8.6);
+  });
+});
+
+// ── Calibration (Rolex-grade objective signal mixing) ─────────
+
+describe('EROS V6 — calibrate', () => {
+  const basePillars = { benevolence: 9, truth: 8, goodness: 10, beauty: 6, loyalty: 7, eternity: 8 };
+
+  it('should return unmodified pillars with no signals', () => {
+    const { pillars, confidence, adjustments } = calibrate(basePillars);
+    assert.deepEqual(pillars, basePillars);
+    assert.equal(confidence, 1.0); // all signals clean (defaults)
+    assert.equal(adjustments.length, 0);
+  });
+
+  it('should penalize truth on retries', () => {
+    const { pillars, adjustments } = calibrate(basePillars, { retryCount: 2 });
+    assert.equal(pillars.truth, 8 - 3); // 2 * 1.5 = 3 penalty
+    assert.equal(pillars.goodness, 10); // unaffected
+    assert.equal(adjustments.length, 1);
+    assert.ok(adjustments[0].includes('眞'));
+  });
+
+  it('should cap retry penalty at 4', () => {
+    const { pillars } = calibrate(basePillars, { retryCount: 10 });
+    assert.equal(pillars.truth, 8 - 4); // max penalty
+  });
+
+  it('should halve goodness on test failure', () => {
+    const { pillars, adjustments } = calibrate(basePillars, { testsPassed: false });
+    assert.equal(pillars.goodness, 5); // 10 * 0.5
+    assert.ok(adjustments.some(a => a.includes('善')));
+  });
+
+  it('should penalize loyalty on high reject ratio', () => {
+    const { pillars, adjustments } = calibrate(basePillars, { rejectRatio: 0.5 });
+    assertClose(pillars.loyalty, 7 - 1.5, 1e-6); // 0.5 * 3
+    assert.ok(adjustments.some(a => a.includes('忠')));
+  });
+
+  it('should not penalize loyalty on low reject ratio', () => {
+    const { pillars } = calibrate(basePillars, { rejectRatio: 0.2 });
+    assert.equal(pillars.loyalty, 7); // below 0.3 threshold
+  });
+
+  it('should penalize beauty on high file count', () => {
+    const { pillars, adjustments } = calibrate(basePillars, { filesChanged: 20 });
+    assertClose(pillars.beauty, 6 - 1.0, 1e-6); // (20-10)*0.1 = 1.0
+    assert.ok(adjustments.some(a => a.includes('美')));
+  });
+
+  it('should calculate confidence correctly', () => {
+    // All signals clean → 1.0
+    const clean = calibrate(basePillars, { retryCount: 0, testsPassed: true, rejectRatio: 0, filesChanged: 5 });
+    assert.equal(clean.confidence, 1.0);
+
+    // All signals bad → 0.5
+    const bad = calibrate(basePillars, { retryCount: 3, testsPassed: false, rejectRatio: 0.5, filesChanged: 20 });
+    assert.equal(bad.confidence, 0.5);
+
+    // 2 of 4 bad → 0.75
+    const mixed = calibrate(basePillars, { retryCount: 2, testsPassed: true, rejectRatio: 0, filesChanged: 20 });
+    assert.equal(mixed.confidence, 0.75);
+  });
+
+  it('should never produce negative pillar values', () => {
+    const extreme = { benevolence: 1, truth: 1, goodness: 1, beauty: 1, loyalty: 1, eternity: 1 };
+    const { pillars } = calibrate(extreme, { retryCount: 10, testsPassed: false, rejectRatio: 1.0, filesChanged: 50 });
+    for (const p of Object.values(pillars)) {
+      assert.equal(p > 0, true, `pillar should be > 0, got ${p}`);
+    }
+  });
+});
+
+describe('EROS V6 — calibratedEros (full pipeline)', () => {
+  it('should produce higher S-score without penalties than with', () => {
+    const clean = calibratedEros({ truth: 4, goodness: 5, beauty: 3 });
+    const penalized = calibratedEros({ truth: 4, goodness: 5, beauty: 3 }, { retryCount: 2, testsPassed: false });
+    assert.equal(clean.sScore > penalized.sScore, true, 'clean should score higher');
+  });
+
+  it('should downgrade decision on heavy penalties', () => {
+    // Perfect spider web → normally AUTO_RUN
+    const perfect = calibratedEros({ truth: 5, goodness: 5, beauty: 5 });
+    assert.equal(perfect.decision, 'AUTO_RUN');
+
+    // Same spider web but with failed tests + retries → should drop
+    const penalized = calibratedEros({ truth: 5, goodness: 5, beauty: 5 }, { retryCount: 3, testsPassed: false });
+    assert.equal(penalized.decision !== 'AUTO_RUN', true, 'should not auto-run with penalties');
+  });
+
+  it('should include calibration metadata', () => {
+    const result = calibratedEros({ truth: 4, goodness: 3, beauty: 4 }, { retryCount: 1 });
+    assert.ok(result.calibration);
+    assert.equal(typeof result.calibration.confidence, 'number');
+    assert.ok(Array.isArray(result.calibration.adjustments));
+    assert.ok(result.calibration.rawPillars);
+    assert.ok(result.calibration.calibratedPillars);
+    assert.equal(result.calibration.signalsUsed, 1);
+  });
+
+  it('should report confidence=0.5 as LLM-only baseline', () => {
+    // When ALL signals indicate problems
+    const worst = calibratedEros(
+      { truth: 5, goodness: 5, beauty: 5 },
+      { retryCount: 5, testsPassed: false, rejectRatio: 0.8, filesChanged: 30 },
+    );
+    assert.equal(worst.calibration.confidence, 0.5);
+  });
+
+  it('should report confidence=1.0 when all evidence is clean', () => {
+    const best = calibratedEros(
+      { truth: 5, goodness: 5, beauty: 5 },
+      { retryCount: 0, testsPassed: true, rejectRatio: 0, filesChanged: 3 },
+    );
+    assert.equal(best.calibration.confidence, 1.0);
   });
 });

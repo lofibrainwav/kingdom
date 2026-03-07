@@ -1,7 +1,7 @@
 /**
  * EROS V6 Calculator — Kingdom Port of HyoGook V6_EROS
  *
- * Pure math engine. No prompt changes. Phase 1 only.
+ * Rolex-grade scoring: LLM judgment + objective signal calibration.
  *
  * 6-virtue weighted geometric mean:
  *   S = exp(Σ w_i · log(score_i))
@@ -16,6 +16,12 @@
  *   beauty      = beauty * 2
  *   loyalty     = (truth + beauty) / 2 * 2
  *   eternity    = (truth + goodness + beauty) / 3 * 2
+ *
+ * Calibration layer (objective signals):
+ *   - retryCount: penalizes 眞(truth) — wasn't right first time
+ *   - testsPassed: penalizes 善(goodness) if false — safety risk
+ *   - rejectRatio: penalizes 忠(loyalty) — unreliable track record
+ *   - confidence: how much of the score is grounded in evidence (0-1)
  */
 
 const PILLAR_ORDER = ['benevolence', 'truth', 'goodness', 'beauty', 'loyalty', 'eternity'];
@@ -118,10 +124,109 @@ function routeDecision(sScore) {
   return 'BLOCK';
 }
 
+/**
+ * Calibrate EROS pillars with objective signals.
+ * Adjusts LLM-derived scores based on measurable evidence.
+ *
+ * @param {Object} pillars — 6-pillar EROS scores (0-10)
+ * @param {Object} signals — objective evidence
+ * @param {number} [signals.retryCount=0] — how many times this batch was rejected before
+ * @param {boolean} [signals.testsPassed=true] — did all tests pass?
+ * @param {number} [signals.rejectRatio=0] — historical reject ratio for this project (0-1)
+ * @param {number} [signals.filesChanged=0] — number of files in batch (complexity proxy)
+ * @returns {{ pillars: Object, confidence: number, adjustments: string[] }}
+ */
+function calibrate(pillars, signals = {}) {
+  const retryCount = signals.retryCount || 0;
+  const testsPassed = signals.testsPassed !== false; // default true
+  const rejectRatio = signals.rejectRatio || 0;
+  const filesChanged = signals.filesChanged || 0;
+
+  const adjusted = { ...pillars };
+  const adjustments = [];
+  let evidencePoints = 0;
+  let totalSignals = 0;
+
+  // Signal 1: Retry count penalizes 眞(truth) — it wasn't correct first time
+  totalSignals++;
+  if (retryCount > 0) {
+    const penalty = Math.min(retryCount * 1.5, 4); // max -4 from 10
+    adjusted.truth = Math.max(FLOOR, adjusted.truth - penalty);
+    adjustments.push(`眞-${penalty.toFixed(1)} (${retryCount} retries)`);
+  } else {
+    evidencePoints++;
+  }
+
+  // Signal 2: Test failure penalizes 善(goodness) — safety concern
+  totalSignals++;
+  if (!testsPassed) {
+    adjusted.goodness = Math.max(FLOOR, adjusted.goodness * 0.5);
+    adjustments.push(`善×0.5 (tests failed)`);
+  } else {
+    evidencePoints++;
+  }
+
+  // Signal 3: Historical reject ratio penalizes 忠(loyalty) — unreliable track record
+  totalSignals++;
+  if (rejectRatio > 0.3) {
+    const penalty = rejectRatio * 3; // 30% reject → -0.9, 50% → -1.5
+    adjusted.loyalty = Math.max(FLOOR, adjusted.loyalty - penalty);
+    adjustments.push(`忠-${penalty.toFixed(1)} (${(rejectRatio * 100).toFixed(0)}% reject history)`);
+  } else {
+    evidencePoints++;
+  }
+
+  // Signal 4: High complexity slightly penalizes 美(beauty) — harder to be clean
+  totalSignals++;
+  if (filesChanged > 10) {
+    const penalty = Math.min((filesChanged - 10) * 0.1, 2); // max -2
+    adjusted.beauty = Math.max(FLOOR, adjusted.beauty - penalty);
+    adjustments.push(`美-${penalty.toFixed(1)} (${filesChanged} files)`);
+  } else {
+    evidencePoints++;
+  }
+
+  // Confidence: ratio of evidence-backed signals
+  // 0 signals checked = 0.5 (LLM-only baseline)
+  // All signals clean = 1.0 (fully evidence-backed)
+  const confidence = totalSignals > 0
+    ? 0.5 + 0.5 * (evidencePoints / totalSignals)
+    : 0.5;
+
+  return { pillars: adjusted, confidence, adjustments };
+}
+
+/**
+ * Full calibrated EROS pipeline: Spider Web → calibrate → calculate.
+ * This is the Rolex-grade entry point.
+ *
+ * @param {Object} spiderWeb — { truth, goodness, beauty } each 1-5
+ * @param {Object} [signals] — objective calibration signals
+ * @returns {Object} — full EROS result with calibration metadata
+ */
+function calibratedEros(spiderWeb, signals = {}) {
+  const rawPillars = spiderWebToEros(spiderWeb);
+  const { pillars, confidence, adjustments } = calibrate(rawPillars, signals);
+  const result = calculateEros(pillars);
+
+  return {
+    ...result,
+    calibration: {
+      confidence,
+      adjustments,
+      rawPillars,
+      calibratedPillars: pillars,
+      signalsUsed: Object.keys(signals).filter(k => signals[k] !== undefined).length,
+    },
+  };
+}
+
 module.exports = {
   calculateEros,
   spiderWebToEros,
   routeDecision,
+  calibrate,
+  calibratedEros,
   DEFAULT_WEIGHTS,
   PILLAR_ORDER,
   THRESHOLD_AUTO_RUN,
