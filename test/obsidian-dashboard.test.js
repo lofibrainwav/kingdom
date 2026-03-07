@@ -145,11 +145,14 @@ describe('ObsidianDashboard — event processing', () => {
     dash._updateMetrics('governance:review:rejected', {});
     dash._updateMetrics('governance:failure:retry-requested', {});
     dash._updateMetrics('execution:deployment:completed', {});
+    dash._updateMetrics('team:celebration', {});
+    dash._updateMetrics('team:celebration', {});
     assert.equal(dash.metrics.knowledgeCaptures, 2);
     assert.equal(dash.metrics.reviewsApproved, 1);
     assert.equal(dash.metrics.reviewsRejected, 1);
     assert.equal(dash.metrics.retryCount, 1);
     assert.equal(dash.metrics.deploymentsCompleted, 1);
+    assert.equal(dash.metrics.skillTierUps, 2);
   });
 
   it('_markDirty tracks which files need writing', () => {
@@ -206,6 +209,34 @@ describe('ObsidianDashboard — file writes', () => {
 
   it('_render returns null for unknown file', () => {
     assert.equal(dash._render('unknown-file'), null);
+  });
+});
+
+describe('ObsidianDashboard — dead event coverage', () => {
+  it('subscribes to all previously-dead events (source verification)', () => {
+    const src = fs.readFileSync(
+      path.join(__dirname, '..', 'agent', 'interface', 'obsidian-dashboard.js'), 'utf-8'
+    );
+    const requiredChannels = [
+      'knowledge:notebooklm:claimed',
+      'knowledge:notebooklm:prepared',
+      'team:celebration',
+      'orchestrator:registered',
+      'orchestrator:deregistered',
+      'config:llm:updated',
+    ];
+    for (const ch of requiredChannels) {
+      assert.equal(src.includes(`'${ch}'`), true, `dashboard must subscribe to ${ch}`);
+    }
+  });
+
+  it('_renderHealth includes skillTierUps metric', () => {
+    const dash = createDashboard();
+    dash._startedAt = Date.now();
+    dash.metrics.skillTierUps = 7;
+    const md = dash._renderHealth();
+    assert.equal(md.includes('Skill tier-ups'), true);
+    assert.equal(md.includes('7'), true);
   });
 });
 

@@ -395,10 +395,10 @@ See `~/.claude/skills/{skill-name}/SKILL.md` for details.
 ---
 
 ## Current Operating Focus
-- Phase-5 complete: 572 tests green, 18 agents, 6 dead events (informational), 0 phantom listeners
+- Phase-5 complete: 574 tests green, 18 agents, 0 dead events, 0 phantom listeners
 - Codebase structure: `agent/core/` (11), `agent/team/` (10), `agent/interface/` (3), `agent/memory/` (11) = 35 files
 - Team launcher: 18 agents (10 team + 2 phase-5 + 6 core/memory)
-- Event map: 6 dead events (config:llm:updated, orchestrator:registered/deregistered, notebooklm:claimed/prepared, team:celebration — informational, no consumer yet), 0 phantom listeners
+- Event map: 0 dead events, 0 phantom listeners
 - Completed:
   1. ~~skill/control-layer cleanup~~ (Phase-2)
   2. ~~green test baseline restoration~~ (365/365 → 433/433 green)

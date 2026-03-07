@@ -41,6 +41,7 @@ class ObsidianDashboard {
       reviewsApproved: 0,
       reviewsRejected: 0,
       deploymentsCompleted: 0,
+      skillTierUps: 0,
     };
     this._startedAt = null;
   }
@@ -139,6 +140,9 @@ class ObsidianDashboard {
       'knowledge:rumination:digested',
       'knowledge:research:completed',
       'knowledge:notebooklm:ingested',
+      'knowledge:notebooklm:claimed',
+      'knowledge:notebooklm:prepared',
+      'team:celebration',
     ];
     for (const ch of knowledgeChannels) {
       this.subscriber.subscribe(ch, (message) => {
@@ -158,6 +162,9 @@ class ObsidianDashboard {
       'governance:teamlead:reviewed',
       'governance:teamlead:vibe-translated',
       'governance:watchdog:recovery',
+      'orchestrator:registered',
+      'orchestrator:deregistered',
+      'config:llm:updated',
     ];
     for (const ch of govChannels) {
       this.subscriber.subscribe(ch, (message) => {
@@ -195,6 +202,7 @@ class ObsidianDashboard {
     if (channel === 'governance:review:approved') this.metrics.reviewsApproved++;
     if (channel === 'governance:review:rejected') this.metrics.reviewsRejected++;
     if (channel === 'execution:deployment:completed') this.metrics.deploymentsCompleted++;
+    if (channel === 'team:celebration') this.metrics.skillTierUps++;
   }
 
   _markDirty(...files) {
@@ -389,6 +397,7 @@ updated: "${now}"
 | Reviews rejected | ${this.metrics.reviewsRejected} |
 | Retries | ${this.metrics.retryCount} |
 | Deployments | ${this.metrics.deploymentsCompleted} |
+| Skill tier-ups | ${this.metrics.skillTierUps} |
 
 ## See Also
 - [[agent-status]] — Agent states
