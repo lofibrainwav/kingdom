@@ -105,6 +105,8 @@ class VaultBridge {
     const content = `---
 source: kingdom-blackboard
 event: governance:task:completed
+tags: [type/task, source/vault-bridge, status/active]
+related: ["[[kingdom/infrastructure]]"]
 project: "${data.projectId || 'unknown'}"
 task_id: "${data.taskId || ''}"
 bridged_at: "${timestamp}"
@@ -136,6 +138,8 @@ ${data.summary || 'Task completed via Kingdom governance pipeline.'}
     const content = `---
 source: kingdom-blackboard
 event: knowledge:notebooklm:ingested
+tags: [type/research, source/vault-bridge, status/active]
+related: ["[[weekly-questions]]"]
 project: "${data.projectId || 'unknown'}"
 bridged_at: "${timestamp}"
 ---
@@ -166,6 +170,8 @@ ${data.summary || 'Source was ingested into NotebookLM via Kingdom pipeline.'}
     const content = `---
 source: kingdom-blackboard
 event: knowledge:capture:stored
+tags: [type/insight, source/vault-bridge, status/active]
+related: ["[[metacognition]]"]
 project: "${data.projectId || 'unknown'}"
 outcome: "${data.outcome || 'unknown'}"
 bridged_at: "${timestamp}"
@@ -198,6 +204,8 @@ bridged_at: "${timestamp}"
     const content = `---
 source: kingdom-blackboard
 event: governance:teamlead:reviewed
+tags: [type/review, source/vault-bridge, status/active]
+related: ["[[metacognition]]"]
 project: "${data.projectId || 'unknown'}"
 verdict: "${data.verdict || 'unknown'}"
 bridged_at: "${timestamp}"
@@ -231,6 +239,8 @@ ${data.summary || 'No summary provided.'}
     const content = `---
 source: kingdom-blackboard
 event: governance:teamlead:vibe-translated
+tags: [type/pattern, source/vault-bridge, status/active]
+related: ["[[kingdom/patterns]]"]
 project: "${data.projectId || 'unknown'}"
 bridged_at: "${timestamp}"
 ---
@@ -265,6 +275,8 @@ ${patterns || 'No patterns extracted.'}
     const content = `---
 source: kingdom-blackboard
 event: knowledge:research:completed
+tags: [type/research, source/vault-bridge, status/active]
+related: ["[[weekly-questions]]"]
 project: "${data.projectId || 'unknown'}"
 bridged_at: "${timestamp}"
 ---

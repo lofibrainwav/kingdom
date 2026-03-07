@@ -107,6 +107,8 @@ describe('VaultBridge — handleTaskCompleted', () => {
 
     assert.ok(putPath.includes('05-Operations/kingdom-tasks/task-42.md'));
     assert.ok(putContent.includes('governance:task:completed'));
+    assert.ok(putContent.includes('tags: [type/task, source/vault-bridge, status/active]'));
+    assert.ok(putContent.includes('related: ["[[kingdom/infrastructure]]"]'));
     assert.ok(putContent.includes('proj-1'));
     assert.ok(putContent.includes('Fixed the bug'));
     assert.ok(putContent.includes('3'));
@@ -153,6 +155,8 @@ describe('VaultBridge — handleNotebookLMIngested', () => {
 
     assert.ok(putPath.includes('02-Research/kingdom-ingested-weekly-research-w10.md'));
     assert.ok(putContent.includes('knowledge:notebooklm:ingested'));
+    assert.ok(putContent.includes('tags: [type/research, source/vault-bridge, status/active]'));
+    assert.ok(putContent.includes('related: ["[[weekly-questions]]"]'));
     assert.ok(putContent.includes('Weekly Research W10'));
     assert.ok(putContent.includes('Ingested weekly research notes'));
   });
@@ -190,6 +194,8 @@ describe('VaultBridge — handleCaptureStored', () => {
 
     assert.ok(putPath.includes('05-Operations/knowledge-captures/completed-task-1.md'));
     assert.ok(putContent.includes('knowledge:capture:stored'));
+    assert.ok(putContent.includes('tags: [type/insight, source/vault-bridge, status/active]'));
+    assert.ok(putContent.includes('related: ["[[metacognition]]"]'));
     assert.ok(putContent.includes('passed'));
     assert.ok(putContent.includes('syntax'));
     assert.ok(putContent.includes('Fixed parsing logic'));
@@ -321,6 +327,8 @@ describe('VaultBridge — handleTeamLeadReviewed', () => {
 
     assert.ok(putPath.includes('05-Operations/teamlead-reviews/'));
     assert.ok(putContent.includes('governance:teamlead:reviewed'));
+    assert.ok(putContent.includes('tags: [type/review, source/vault-bridge, status/active]'));
+    assert.ok(putContent.includes('related: ["[[metacognition]]"]'));
     assert.ok(putContent.includes('pass'));
     assert.ok(putContent.includes('Truth=4'));
     assert.ok(putContent.includes('Solid batch'));
@@ -347,6 +355,8 @@ describe('VaultBridge — handleVibeTranslated', () => {
 
     assert.ok(putPath.includes('05-Operations/teamlead-vibes/'));
     assert.ok(putContent.includes('governance:teamlead:vibe-translated'));
+    assert.ok(putContent.includes('tags: [type/pattern, source/vault-bridge, status/active]'));
+    assert.ok(putContent.includes('related: ["[[kingdom/patterns]]"]'));
     assert.ok(putContent.includes('Naming is key'));
     assert.ok(putContent.includes('camelCase'));
     assert.ok(putContent.includes('clean code'));
@@ -372,6 +382,8 @@ describe('VaultBridge — handleResearchCompleted', () => {
 
     assert.ok(putPath.includes('02-Research/kingdom-research/'));
     assert.ok(putContent.includes('knowledge:research:completed'));
+    assert.ok(putContent.includes('tags: [type/research, source/vault-bridge, status/active]'));
+    assert.ok(putContent.includes('related: ["[[weekly-questions]]"]'));
     assert.ok(putContent.includes('Redis pub/sub'));
     assert.ok(putContent.includes('Grok Answer**: Yes'));
     assert.ok(putContent.includes('NLM Answer**: No'));

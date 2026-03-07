@@ -5,8 +5,10 @@
  *
  * Usage:
  *   node scripts/sync-to-vault.js              # full sync
+ *   node scripts/sync-to-vault.js --quick      # skip test counting
  *   node scripts/sync-to-vault.js --infra      # infrastructure only
- *   node scripts/sync-to-vault.js --session     # session log only
+ *   node scripts/sync-to-vault.js --session    # session log only
+ *   node scripts/sync-to-vault.js --review     # weekly review
  *
  * Writes to:
  *   bb/01-Projects/kingdom/infrastructure.md
@@ -25,6 +27,7 @@ const args = process.argv.slice(2);
 const modeArgs = args.filter(a => a !== '--quick');
 const doInfra = modeArgs.length === 0 || modeArgs.includes('--infra');
 const doSession = modeArgs.length === 0 || modeArgs.includes('--session');
+const doReview = modeArgs.includes('--review');
 
 // --- Helpers ---
 
@@ -121,7 +124,14 @@ function syncInfra() {
   }
 
   const now = new Date().toISOString().split('T')[0];
-  const content = `# Kingdom Infrastructure — Auto-synced
+  const content = `---
+tags: [type/infrastructure, source/sync-to-vault, status/active]
+related: ["[[kingdom/patterns]]", "[[metacognition]]"]
+created: ${now}
+author: sync-to-vault
+---
+
+# Kingdom Infrastructure — Auto-synced
 
 > Last sync: ${now} by \`sync-to-vault.js\`
 
@@ -172,6 +182,11 @@ Task → PM → Architect → Decomposer → Coder → Reviewer (local qwen3-8b)
 | TeamLead (Claude) | ~$0.01/batch | 진선미 + vibe translation |
 | ResearchAgent (Grok+NLM) | $0 or API | Only when storeWorthy |
 | Redis | $0 (local Docker) | All pub/sub + state |
+
+## See Also
+- [[kingdom/patterns]] — Codebase patterns and conventions
+- [[metacognition]] — Session learnings and behavior principles
+- [[debugging]] — Debugging lessons
 `;
 
   fs.mkdirSync(VAULT_PROJECTS, { recursive: true });
@@ -201,7 +216,16 @@ function syncSession() {
   if (fs.existsSync(logPath)) {
     fs.appendFileSync(logPath, entry);
   } else {
-    fs.writeFileSync(logPath, `# Session Log — ${date}\n${entry}`);
+    const header = `---
+tags: [type/session, source/sync-to-vault, status/active]
+related: ["[[kingdom/infrastructure]]"]
+created: ${date}
+author: sync-to-vault
+---
+
+# Session Log — ${date}
+`;
+    fs.writeFileSync(logPath, header + entry);
   }
   console.log(`Appended: ${logPath}`);
 }
@@ -239,10 +263,85 @@ function syncClaudeMd() {
   console.log(`Updated: ${claudePath} (${agentFiles} files, ${agents} agents)`);
 }
 
+// --- Weekly Review Sync ---
+
+function syncReview() {
+  const now = new Date();
+  const weekNum = getWeekNumber(now);
+  const year = now.getFullYear();
+  const label = `${year}-W${String(weekNum).padStart(2, '0')}`;
+
+  console.log(`Generating weekly review: ${label}...`);
+
+  // Scan past 7 days of session logs
+  const logs = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().split('T')[0];
+    const logPath = path.join(VAULT_DAILY, `${dateStr}-session-log.md`);
+    if (fs.existsSync(logPath)) {
+      logs.push({ date: dateStr, content: fs.readFileSync(logPath, 'utf-8') });
+    }
+  }
+
+  // Extract stats from logs
+  const commitCount = logs.reduce((sum, log) => {
+    const matches = log.content.match(/Commit:/g);
+    return sum + (matches ? matches.length : 0);
+  }, 0);
+
+  const sessionDates = logs.map(l => l.date).reverse();
+
+  // Get test count and git stats
+  const tests = args.includes('--quick') ? '(skipped)' : countTests();
+  const commit = getLatestCommit();
+
+  const reviewPath = path.join(VAULT_DAILY, `weekly-review-${label}.md`);
+  const content = `---
+tags: [type/review, source/sync-to-vault, status/active]
+related: ["[[kingdom/infrastructure]]", "[[metacognition]]"]
+created: ${now.toISOString().split('T')[0]}
+author: sync-to-vault
+---
+
+# Weekly Review — ${label}
+
+## Summary
+- **Sessions**: ${logs.length} days with session logs
+- **Session dates**: ${sessionDates.join(', ') || 'none'}
+- **Commits logged**: ${commitCount}
+- **Current tests**: ${tests}
+- **Latest commit**: ${commit}
+
+## Session Logs
+${logs.map(l => `- [[${l.date}-session-log]] (${l.date})`).join('\n') || '- No session logs found'}
+
+## See Also
+- [[kingdom/infrastructure]] — Current infrastructure state
+- [[metacognition]] — Session learnings
+`;
+
+  fs.mkdirSync(VAULT_DAILY, { recursive: true });
+  fs.writeFileSync(reviewPath, content);
+  console.log(`Wrote: ${reviewPath}`);
+}
+
+function getWeekNumber(d) {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+}
+
 // --- Main ---
 
-if (doInfra) syncInfra();
-if (doSession) syncSession();
-syncClaudeMd();
+if (doReview) {
+  syncReview();
+} else {
+  if (doInfra) syncInfra();
+  if (doSession) syncSession();
+  syncClaudeMd();
+}
 
 console.log('Vault sync complete.');
