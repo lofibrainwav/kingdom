@@ -1,5 +1,5 @@
 /**
- * E2E Boot Test — verifies all 17 agents can init() and shutdown() with live Redis.
+ * E2E Boot Test — verifies all 18 agents can init() and shutdown() with live Redis.
  * Requires Redis on localhost:6380 (Docker).
  * Run: node --test test/e2e-boot.test.js
  */
@@ -25,6 +25,7 @@ const { SkillZettelkasten } = require('../agent/memory/skill-zettelkasten');
 const { NotebookLMQueue } = require('../agent/memory/notebooklm-queue');
 const { TeamLeadAgent } = require('../agent/team/team-lead');
 const { ResearchAgent } = require('../agent/memory/research-agent');
+const { ObsidianDashboard } = require('../agent/interface/obsidian-dashboard');
 
 const REDIS_URL = process.env.BLACKBOARD_REDIS_URL || 'redis://localhost:6380';
 
@@ -66,6 +67,7 @@ function createAgentDefs() {
       { name: 'NotebookLMQueue', factory: () => new NotebookLMQueue({ board: sharedBoard }), postInit: (inst) => inst.start() },
       { name: 'TeamLead', factory: () => new TeamLeadAgent({ board: sharedBoard }), postInit: (inst) => inst.start() },
       { name: 'ResearchAgent', factory: () => new ResearchAgent({ board: sharedBoard }), postInit: (inst) => inst.start() },
+      { name: 'ObsidianDashboard', factory: () => new ObsidianDashboard({ board: sharedBoard }), postInit: (inst) => inst.start() },
       {
         name: 'GoTReasoner',
         factory: () => new GoTReasoner(sharedZK, { board: sharedBoard }),

@@ -48,7 +48,7 @@ describe('team.js — Phase 4 synapse registration', () => {
 
   it('should have correct agent count matching AGENTS array', () => {
     const matches = teamSrc.match(/\{\s*name:\s*'/g);
-    assert.equal(matches.length >= 17, true, `Expected at least 17 agents, got ${matches.length}`);
+    assert.equal(matches.length >= 18, true, `Expected at least 18 agents, got ${matches.length}`);
   });
 
   it('should import TeamLeadAgent', () => {
@@ -65,6 +65,14 @@ describe('team.js — Phase 4 synapse registration', () => {
 
   it('should register ResearchAgent in AGENTS', () => {
     assert.equal(teamSrc.includes("name: 'ResearchAgent'"), true);
+  });
+
+  it('should import ObsidianDashboard', () => {
+    assert.equal(teamSrc.includes("require('./interface/obsidian-dashboard')"), true);
+  });
+
+  it('should register ObsidianDashboard in AGENTS', () => {
+    assert.equal(teamSrc.includes("name: 'ObsidianDashboard'"), true);
   });
 
   it('should call startEventFeed for RuminationEngine postInit', () => {

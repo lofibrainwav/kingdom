@@ -27,6 +27,7 @@ const { NotebookLMQueue } = require('./memory/notebooklm-queue');
 const { TeamLeadAgent } = require('./team/team-lead');
 const { ResearchAgent } = require('./memory/research-agent');
 const { createMcpClients } = require('./memory/mcp-client-factory');
+const { ObsidianDashboard } = require('./interface/obsidian-dashboard');
 
 // Shared dependencies — single Redis connection + single Zettelkasten
 const sharedBoard = new Blackboard();
@@ -57,6 +58,7 @@ const AGENTS = [
     const { grokClient, nlmClient } = createMcpClients();
     return new ResearchAgent({ board: sharedBoard, grokClient, nlmClient });
   }, postInit: (inst) => inst.start() },
+  { name: 'ObsidianDashboard', factory: () => new ObsidianDashboard({ board: sharedBoard }), postInit: (inst) => inst.start() },
   {
     name: 'GoTReasoner',
     factory: () => new GoTReasoner(sharedZK, { board: sharedBoard }),
