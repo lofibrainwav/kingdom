@@ -38,13 +38,13 @@ describe('E2E: Blackboard + Redis integration', { skip: !redisAvailable && 'Redi
   // ── Connection ─────────────────────────────────────────────
 
   it('should connect to Redis :6380', () => {
-    assert.ok(board.client.isOpen);
-    assert.ok(subBoard.client.isOpen);
+    assert.equal(board.client.isOpen, true, 'board should be open');
+    assert.equal(subBoard.client.isOpen, true, 'subBoard should be open');
   });
 
   it('should be idempotent on double connect', async () => {
     await board.connect(); // should not throw
-    assert.ok(board.client.isOpen);
+    assert.equal(board.client.isOpen, true, 'board should remain open after double connect');
   });
 
   // ── Pub/Sub routing ────────────────────────────────────────
@@ -195,11 +195,11 @@ describe('E2E: Blackboard + Redis integration', { skip: !redisAvailable && 'Redi
     await new Promise(r => setTimeout(r, 100));
 
     // Verify all 3 stages arrived in order (may have extras from alias families)
-    assert.ok(stages.includes('init'), 'should have init stage');
-    assert.ok(stages.includes('designed'), 'should have designed stage');
-    assert.ok(stages.includes('decomposed'), 'should have decomposed stage');
-    assert.ok(stages.indexOf('init') < stages.indexOf('designed'), 'init before designed');
-    assert.ok(stages.indexOf('designed') < stages.indexOf('decomposed'), 'designed before decomposed');
+    assert.equal(stages.includes('init'), true, 'should have init stage');
+    assert.equal(stages.includes('designed'), true, 'should have designed stage');
+    assert.equal(stages.includes('decomposed'), true, 'should have decomposed stage');
+    assert.equal(stages.indexOf('init') < stages.indexOf('designed'), true, 'init before designed');
+    assert.equal(stages.indexOf('designed') < stages.indexOf('decomposed'), true, 'designed before decomposed');
 
     await sub.unsubscribe('work:planning:init');
     await sub.unsubscribe('work:planning:designed');
@@ -216,11 +216,11 @@ describe('E2E: Blackboard + Redis integration', { skip: !redisAvailable && 'Redi
 
     // disconnect should be a no-op when shared
     await shared.disconnect();
-    assert.ok(shared.client.isOpen, 'shared board should still be connected');
+    assert.equal(shared.client.isOpen, true, 'shared board should still be connected');
 
     // forceDisconnect should actually disconnect
     await shared.forceDisconnect();
-    assert.ok(!shared.client.isOpen, 'forceDisconnect should close connection');
+    assert.equal(shared.client.isOpen, false, 'forceDisconnect should close connection');
   });
 
   // ── Agent status tracking ──────────────────────────────────
