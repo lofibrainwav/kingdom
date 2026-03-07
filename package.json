@@ -28,7 +28,15 @@
     "sync:review": "node scripts/sync-to-vault.js --review",
     "vault:health": "node scripts/vault-health.js",
     "vault:seed": "node scripts/seed-zettelkasten.js",
-    "vault:digest": "node scripts/vault-digest.js"
+    "vault:digest": "node scripts/vault-digest.js",
+    "boot": "bash scripts/boot.sh",
+    "boot:check": "bash scripts/boot.sh --check",
+    "clock": "bash scripts/clockwork.sh all",
+    "clock:morning": "bash scripts/clockwork.sh morning",
+    "clock:evening": "bash scripts/clockwork.sh evening",
+    "clock:weekly": "bash scripts/clockwork.sh weekly",
+    "clock:install": "bash scripts/install-clockwork.sh install",
+    "clock:status": "bash scripts/install-clockwork.sh status"
   },
   "keywords": [],
   "author": "",

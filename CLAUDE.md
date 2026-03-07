@@ -88,7 +88,7 @@ Choose the right pattern for the task at hand:
 
 ### When unsure → `kingdom-orchestrator`
 
-### Agents (36 files — 10 team + 11 core + 4 interface + 11 memory)
+### Agents (35 files — 10 team + 11 core + 3 interface + 11 memory)
 | Agent | One-liner |
 |-------|-----------|
 | `kingdom-orchestrator` | **START HERE** for complex tasks |
