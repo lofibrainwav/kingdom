@@ -4,23 +4,19 @@ node_modules/
 # Environment — contains secrets, never commit
 .env
 
-# PaperMC server runtime files (only jar is version-controlled)
-server/server.properties
-server/octiv-world/
-server/cache/
-server/libraries/
-server/logs/
-server/plugins/
-server/versions/
-server/crash-reports/
-server/generated/
-server/bundler/
-server/*.log
-server/session.lock
+# Legacy Minecraft adapter (removed — origin story only)
+server/
 
-# OpenClaw runtime state
+# Agent runtime state
 agent/.openclaw/
 agent/sessions/
+agent/logs/
+
+# BMAD generated artifacts
+workspace/
+{output_folder}/
+Templates/
+skills/
 
 # macOS
 .DS_Store

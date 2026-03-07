@@ -77,16 +77,20 @@ describe('grok-http-bridge', () => {
     assert.equal(typeof data.error, 'string', 'should return error string');
   });
 
-  it('POST /ask with valid question returns 502 when Chrome unavailable', async () => {
+  it('POST /ask with valid question returns response (200 if Chrome, 502/503 if not)', async () => {
     const res = await fetch(`${BASE}/ask`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ question: 'test question' }),
     });
-    // Without Chrome/CDP, we expect 502 (browser connection failure)
-    assert.equal([502, 503].includes(res.status), true, `Expected 502 or 503, got ${res.status}`);
+    // 200 if Chrome+Grok available, 502/503 if not
+    assert.equal([200, 502, 503].includes(res.status), true, `Expected 200/502/503, got ${res.status}`);
     const data = await res.json();
-    assert.equal(typeof data.error, 'string', 'should return error string');
+    if (res.status === 200) {
+      assert.equal(typeof data.answer, 'string', 'should return answer string');
+    } else {
+      assert.equal(typeof data.error, 'string', 'should return error string');
+    }
   });
 
   it('GET /unknown returns 404', async () => {

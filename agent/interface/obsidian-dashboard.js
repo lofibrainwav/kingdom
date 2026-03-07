@@ -136,7 +136,6 @@ class ObsidianDashboard {
       'knowledge:promotion:candidate',
       'knowledge:promotion:applied',
       'knowledge:reflexion:triggered',
-      'knowledge:reflexion:completed',
       'knowledge:rumination:digested',
       'knowledge:research:completed',
       'knowledge:notebooklm:ingested',
@@ -158,7 +157,6 @@ class ObsidianDashboard {
     const govChannels = [
       'governance:teamlead:reviewed',
       'governance:teamlead:vibe-translated',
-      'governance:safety:threat-detected',
       'governance:watchdog:recovery',
     ];
     for (const ch of govChannels) {
