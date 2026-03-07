@@ -210,6 +210,6 @@ describe('ReflexionEngine', () => {
     engine = new ReflexionEngine({});
     engine.board = { ...board, disconnect: async () => { disconnected = true; } };
     await engine.shutdown();
-    assert.ok(disconnected);
+    assert.equal(disconnected, true);
   });
 });

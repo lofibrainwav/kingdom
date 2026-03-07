@@ -31,7 +31,7 @@ describe('Blackboard — Redis Integration', () => {
   });
 
   it('Should successfully connect to Redis', () => {
-    assert.ok(board.client.isReady, 'Redis client should be ready');
+    assert.equal(board.client.isReady, true, 'Redis client should be ready');
   });
 
   it('Should support publish -> get roundtrip', async () => {
@@ -46,19 +46,19 @@ describe('Blackboard — Redis Integration', () => {
     await board.publish('test:roundtrip', testData);
     const result = await board.get('test:roundtrip');
 
-    assert.ok(result, 'Published data should be retrievable');
+    assert.notEqual(result, null, 'Published data should be retrievable');
     assert.equal(result.status, 'spawned');
     assert.deepStrictEqual(result.position, { x: 10, y: 64, z: -20 });
     assert.equal(result.health, 20);
-    assert.ok(result.ts, 'Timestamp should be included');
+    assert.notEqual(result.ts, undefined, 'Timestamp should be included');
   });
 
   it('Should set TTL on :latest keys (300s)', async () => {
     await board.publish('test:ttl', { author: 'test', check: true });
 
     const ttl = await board.client.ttl('kingdom:test:ttl:latest');
-    assert.ok(ttl > 0, `TTL should be positive, got: ${ttl}`);
-    assert.ok(ttl <= 300, `TTL should be <= 300, got: ${ttl}`);
+    assert.equal(ttl > 0, true, `TTL should be positive, got: ${ttl}`);
+    assert.equal(ttl <= 300, true, `TTL should be <= 300, got: ${ttl}`);
   });
 
   it('Should return null for non-existent channels', async () => {
@@ -71,8 +71,8 @@ describe('Blackboard — Redis Integration', () => {
     await board.updateAC('test-bot', 2, 'done');
 
     const progress = await board.getACProgress('test-bot');
-    assert.ok(progress['AC-1'], 'AC-1 should exist');
-    assert.ok(progress['AC-2'], 'AC-2 should exist');
+    assert.notEqual(progress['AC-1'], undefined, 'AC-1 should exist');
+    assert.notEqual(progress['AC-2'], undefined, 'AC-2 should exist');
 
     const ac1 = JSON.parse(progress['AC-1']);
     assert.equal(ac1.status, 'in_progress');
@@ -88,7 +88,7 @@ describe('Blackboard — Redis Integration', () => {
     }
 
     const logs = await board.client.lRange('kingdom:agent:test-bot:reflexion', 0, -1);
-    assert.ok(logs.length <= 50, `Should keep max 50, got: ${logs.length}`);
+    assert.equal(logs.length <= 50, true, `Should keep max 50, got: ${logs.length}`);
   });
 
   // ── 眞善美孝永 Validation Tests ──────────────────────────────
@@ -146,7 +146,7 @@ describe('Blackboard — Redis Integration', () => {
     const result = await board.get('test:valid');
     assert.equal(result.author, 'test-agent');
     assert.equal(result.value, 42);
-    assert.ok(result.ts, 'Timestamp should be present');
+    assert.notEqual(result.ts, undefined, 'Timestamp should be present');
   });
 
   it('孝: batchPublish should reject entries without author', async () => {
@@ -281,8 +281,8 @@ describe('Blackboard — Supplemental methods', () => {
     assert.equal(miss, null);
 
     const full = await board.getHash('sup:hash1');
-    assert.ok(full['fieldA']);
-    assert.ok(full['fieldB']);
+    assert.notEqual(full['fieldA'], undefined);
+    assert.notEqual(full['fieldB'], undefined);
 
     await board.deleteHashField('sup:hash1', 'fieldA');
     const bAfter = await board.getHashField('sup:hash1', 'fieldA');
@@ -315,7 +315,7 @@ describe('Blackboard — Supplemental methods', () => {
 
   it('createSubscriber should return an open duplicate client', async () => {
     const sub = await board.createSubscriber();
-    assert.ok(sub.isReady);
+    assert.equal(sub.isReady, true);
     await sub.quit();
   });
   
@@ -331,10 +331,10 @@ describe('Blackboard — Shared Instance Safety', () => {
   it('connect() is idempotent — second call is no-op', async () => {
     const b = new Blackboard();
     await b.connect();
-    assert.ok(b.client.isOpen);
+    assert.equal(b.client.isOpen, true);
     // Second connect should NOT throw
     await assert.doesNotReject(() => b.connect());
-    assert.ok(b.client.isOpen);
+    assert.equal(b.client.isOpen, true);
     await b.disconnect();
   });
 
@@ -343,18 +343,18 @@ describe('Blackboard — Shared Instance Safety', () => {
     await b.connect();
     b.markShared();
     await b.disconnect(); // should be no-op
-    assert.ok(b.client.isOpen, 'Client should still be open after shared disconnect');
+    assert.equal(b.client.isOpen, true, 'Client should still be open after shared disconnect');
     // forceDisconnect should actually close it
     await b.forceDisconnect();
-    assert.ok(!b.client.isOpen, 'Client should be closed after forceDisconnect');
+    assert.equal(b.client.isOpen, false, 'Client should be closed after forceDisconnect');
   });
 
   it('forceDisconnect() clears shared flag and disconnects', async () => {
     const b = new Blackboard();
     await b.connect();
     b.markShared();
-    assert.ok(b._shared);
+    assert.equal(b._shared, true);
     await b.forceDisconnect();
-    assert.ok(!b._shared);
+    assert.equal(b._shared, false);
   });
 });

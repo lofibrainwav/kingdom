@@ -65,9 +65,9 @@ describe('Pipeline Integration — Real Redis Pub/Sub', () => {
 
     await new Promise(r => setTimeout(r, 100));
 
-    assert.ok(received.length >= 1);
+    assert.equal(received.length >= 1, true, 'should receive at least 1 message');
     const msg = received.find(m => m.projectId === 'test-project');
-    assert.ok(msg);
+    assert.notEqual(msg, undefined, 'should find test-project message');
   });
 
   it('governance:review:requested channel delivers payload', async () => {
@@ -89,9 +89,9 @@ describe('Pipeline Integration — Real Redis Pub/Sub', () => {
 
     await new Promise(r => setTimeout(r, 100));
 
-    assert.ok(received.length >= 1);
+    assert.equal(received.length >= 1, true, 'should receive at least 1 message');
     const msg = received.find(m => m.file === 'test.js');
-    assert.ok(msg);
+    assert.notEqual(msg, undefined, 'should find test.js message');
   });
 
   it('setConfig and getConfig round-trip through Redis', async () => {
@@ -123,7 +123,7 @@ describe('Pipeline Integration — Real Redis Pub/Sub', () => {
     await new Promise(r => setTimeout(r, 100));
 
     const msg = received.find(m => m.task === 'alias-test');
-    assert.ok(msg, 'alias should resolve and deliver to canonical subscriber');
+    assert.notEqual(msg, undefined, 'alias should resolve and deliver to canonical subscriber');
 
     await sub2.disconnect();
   });

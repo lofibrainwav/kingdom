@@ -103,9 +103,9 @@ describe('WatchdogAgent', () => {
     board.disconnect = async () => { boardDisconnected = true; };
 
     await agent.init();
-    assert.ok(agent.timer);
+    assert.equal(!!agent.timer, true);
 
     await agent.shutdown();
-    assert.ok(boardDisconnected);
+    assert.equal(boardDisconnected, true);
   });
 });

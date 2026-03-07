@@ -52,7 +52,7 @@ describe('RuminationEngine — feed / feedFailure', () => {
   it('should add experience to rawBuffer', () => {
     engine.feed({ skillUsed: 'dig', succeeded: true });
     assert.equal(engine.rawBuffer.length, 1);
-    assert.ok(engine.rawBuffer[0].ingestedAt > 0);
+    assert.equal(engine.rawBuffer[0].ingestedAt > 0, true, 'Expected ingestedAt > 0');
     assert.equal(engine.rawBuffer[0].digested, false);
   });
 
@@ -87,14 +87,14 @@ describe('RuminationEngine — _filterPatterns (Stomach 2)', () => {
 
     const patterns = engine._filterPatterns(exps);
 
-    assert.ok(patterns['dig:fail']);
+    assert.notEqual(patterns['dig:fail'], undefined);
     assert.equal(patterns['dig:fail'].experiences.length, 2);
     assert.equal(patterns['dig:fail'].successCount, 1);
     assert.equal(patterns['dig:fail'].failureCount, 1);
-    assert.ok(patterns['dig:fail'].skillsInvolved.includes('dig_v1'));
-    assert.ok(patterns['dig:fail'].skillsInvolved.includes('dig_v2'));
+    assert.equal(patterns['dig:fail'].skillsInvolved.includes('dig_v1'), true);
+    assert.equal(patterns['dig:fail'].skillsInvolved.includes('dig_v2'), true);
 
-    assert.ok(patterns['nav:stuck']);
+    assert.notEqual(patterns['nav:stuck'], undefined);
     assert.equal(patterns['nav:stuck'].experiences.length, 1);
   });
 
@@ -105,9 +105,9 @@ describe('RuminationEngine — _filterPatterns (Stomach 2)', () => {
 
     const patterns = engine._filterPatterns(exps);
 
-    assert.ok(patterns['build:fail'].skillsInvolved.includes('place'));
-    assert.ok(patterns['build:fail'].skillsInvolved.includes('dig'));
-    assert.ok(patterns['build:fail'].skillsInvolved.includes('craft'));
+    assert.equal(patterns['build:fail'].skillsInvolved.includes('place'), true);
+    assert.equal(patterns['build:fail'].skillsInvolved.includes('dig'), true);
+    assert.equal(patterns['build:fail'].skillsInvolved.includes('craft'), true);
   });
 
   it('should use "general" key when no error type or skill', () => {
@@ -116,7 +116,7 @@ describe('RuminationEngine — _filterPatterns (Stomach 2)', () => {
     ];
 
     const patterns = engine._filterPatterns(exps);
-    assert.ok(patterns['general']);
+    assert.notEqual(patterns['general'], undefined);
   });
 });
 
@@ -141,9 +141,9 @@ describe('RuminationEngine — _extractInsights (Stomach 3)', () => {
     const insights = engine._extractInsights(patterns);
 
     const effective = insights.find(i => i.type === 'effective_skill');
-    assert.ok(effective);
-    assert.ok(effective.skills.includes('dig_v2'));
-    assert.ok(effective.confidence > 0.5);
+    assert.notEqual(effective, undefined);
+    assert.equal(effective.skills.includes('dig_v2'), true);
+    assert.equal(effective.confidence > 0.5, true, `Expected confidence > 0.5, got ${effective.confidence}`);
   });
 
   it('should find co-occurrence patterns (2+ skills, >60% success)', () => {
@@ -160,9 +160,9 @@ describe('RuminationEngine — _extractInsights (Stomach 3)', () => {
     const insights = engine._extractInsights(patterns);
 
     const coOccurrence = insights.find(i => i.type === 'co_occurrence');
-    assert.ok(coOccurrence);
-    assert.ok(coOccurrence.skills.includes('pathfind'));
-    assert.ok(coOccurrence.skills.includes('jump'));
+    assert.notEqual(coOccurrence, undefined);
+    assert.equal(coOccurrence.skills.includes('pathfind'), true);
+    assert.equal(coOccurrence.skills.includes('jump'), true);
   });
 
   it('should find failure patterns (3+ failures, <30% success)', () => {
@@ -179,9 +179,9 @@ describe('RuminationEngine — _extractInsights (Stomach 3)', () => {
     const insights = engine._extractInsights(patterns);
 
     const failure = insights.find(i => i.type === 'failure_pattern');
-    assert.ok(failure);
-    assert.ok(failure.insight.includes('Persistent failure'));
-    assert.ok(failure.failureRate > 0.7);
+    assert.notEqual(failure, undefined);
+    assert.equal(failure.insight.includes('Persistent failure'), true);
+    assert.equal(failure.failureRate > 0.7, true, `Expected failureRate > 0.7, got ${failure.failureRate}`);
   });
 
   it('should find cross-domain skills effective across multiple errorTypes', () => {
@@ -205,10 +205,10 @@ describe('RuminationEngine — _extractInsights (Stomach 3)', () => {
     const insights = engine._extractInsights(patterns);
 
     const crossDomain = insights.find(i => i.type === 'cross_domain' && i.skill === 'debug_agent');
-    assert.ok(crossDomain, 'Should detect debug_agent as cross-domain skill');
+    assert.notEqual(crossDomain, undefined, 'Should detect debug_agent as cross-domain skill');
     assert.equal(crossDomain.breadth, 2);
-    assert.ok(crossDomain.domains.includes('nav:stuck'));
-    assert.ok(crossDomain.domains.includes('build:fail'));
+    assert.equal(crossDomain.domains.includes('nav:stuck'), true);
+    assert.equal(crossDomain.domains.includes('build:fail'), true);
   });
 
   it('should skip patterns with fewer than MIN_EXPERIENCES', () => {
@@ -259,11 +259,11 @@ describe('RuminationEngine — digest (Stomach 4)', () => {
     const result = await engine.digest();
 
     assert.equal(result.digested, 4);
-    assert.ok(result.insights.length > 0);
+    assert.equal(result.insights.length > 0, true, `Expected insights, got ${result.insights.length}`);
     assert.equal(engine.rawBuffer.length, 0); // buffer drained
     assert.equal(engine.totalDigestions, 1);
     // Should have published results
-    assert.ok(published.some(p => p.ch === 'knowledge:rumination:digested'));
+    assert.equal(published.some(p => p.ch === 'knowledge:rumination:digested'), true);
   });
 
   it('should call logger if provided', async () => {
@@ -285,7 +285,7 @@ describe('RuminationEngine — digest (Stomach 4)', () => {
 
     await engine.digest();
 
-    assert.ok(logs.some(l => l.type === 'rumination'));
+    assert.equal(logs.some(l => l.type === 'rumination'), true);
   });
 });
 
@@ -311,7 +311,7 @@ describe('RuminationEngine — shutdown', () => {
 
     await engine.shutdown();
 
-    assert.ok(disconnected);
+    assert.equal(disconnected, true);
     assert.equal(engine.digestTimer._destroyed, true);
   });
 });
@@ -388,9 +388,9 @@ describe('RuminationEngine — actions (Stomach 4 handling)', () => {
 
     // 1 failure experience of fight to trigger gomguk
     const result = await engine.digest();
-    assert.ok(result.insights.length >= 3);
-    assert.ok(result.actions.length >= 3);
-    assert.ok(recorded > 0);
+    assert.equal(result.insights.length >= 3, true, `Expected >= 3 insights, got ${result.insights.length}`);
+    assert.equal(result.actions.length >= 3, true, `Expected >= 3 actions, got ${result.actions.length}`);
+    assert.equal(recorded > 0, true, `Expected recorded > 0, got ${recorded}`);
   });
 });
 
@@ -400,8 +400,8 @@ describe('RuminationEngine — init and start cycle', () => {
     let connected = false;
     engine.board.connect = async () => { connected = true; };
     await engine.init();
-    assert.ok(connected);
-    assert.ok(engine.digestTimer);
+    assert.equal(connected, true);
+    assert.notEqual(engine.digestTimer, undefined);
     await engine.shutdown();
   });
 

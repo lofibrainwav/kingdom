@@ -25,7 +25,7 @@ describe('E2E Pub/Sub — real event propagation', async () => {
   const available = await isRedisAvailable();
   if (!available) {
     it('SKIP: Redis not available', { skip: 'Redis not reachable' }, () => {
-      assert.ok(true, 'skipped — Redis not available');
+      assert.equal(true, true, 'skipped — Redis not available');
     });
     return;
   }

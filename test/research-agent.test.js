@@ -211,7 +211,7 @@ describe('ResearchAgent', () => {
     board.disconnect = async () => { boardDisconnected = true; };
 
     await agent.shutdown();
-    assert.ok(subDisconnected);
-    assert.ok(boardDisconnected);
+    assert.equal(subDisconnected, true);
+    assert.equal(boardDisconnected, true);
   });
 });

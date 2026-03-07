@@ -26,7 +26,7 @@ describe('Logger', () => {
 
     it('creates MemoryLogger when persist=true', () => {
       const logger = new Logger({ persist: true, logDir: '/tmp/test-logger' });
-      assert.ok(logger.memoryLogger);
+      assert.notEqual(logger.memoryLogger, null, 'memoryLogger should be created when persist=true');
     });
 
     it('does not create MemoryLogger when persist=false', () => {
@@ -231,7 +231,7 @@ describe('Logger', () => {
 
     it('returns a Logger instance', () => {
       const logger = getLogger();
-      assert.ok(logger instanceof Logger);
+      assert.equal(logger instanceof Logger, true, 'getLogger should return a Logger instance');
     });
 
     it('returns the same instance on subsequent calls', () => {

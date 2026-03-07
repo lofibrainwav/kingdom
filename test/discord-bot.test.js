@@ -30,8 +30,8 @@ describe('Discord Bot — Utility Functions', () => {
     const h1 = _anonymousHash('builder-01');
     const h2 = _anonymousHash('safety-01');
     // Could theoretically collide but very unlikely for these inputs
-    assert.ok(typeof h1 === 'number');
-    assert.ok(typeof h2 === 'number');
+    assert.equal(typeof h1, 'number', 'hash should be a number');
+    assert.equal(typeof h2, 'number', 'hash should be a number');
   });
 
   it('_roleColor returns correct color for known roles', () => {
@@ -50,15 +50,15 @@ describe('Discord Bot — Utility Functions', () => {
   });
 
   it('ROLE_COLORS has expected keys', () => {
-    assert.ok(ROLE_COLORS.leader);
-    assert.ok(ROLE_COLORS.builder);
-    assert.ok(ROLE_COLORS.safety);
-    assert.ok(ROLE_COLORS.explorer);
+    assert.equal(typeof ROLE_COLORS.leader, 'number', 'leader color should be a number');
+    assert.equal(typeof ROLE_COLORS.builder, 'number', 'builder color should be a number');
+    assert.equal(typeof ROLE_COLORS.safety, 'number', 'safety color should be a number');
+    assert.equal(typeof ROLE_COLORS.explorer, 'number', 'explorer color should be a number');
   });
 
   it('REACT_THROTTLE_MS is a positive number', () => {
-    assert.ok(typeof REACT_THROTTLE_MS === 'number');
-    assert.ok(REACT_THROTTLE_MS > 0);
+    assert.equal(typeof REACT_THROTTLE_MS, 'number', 'REACT_THROTTLE_MS should be a number');
+    assert.equal(REACT_THROTTLE_MS > 0, true, 'REACT_THROTTLE_MS should be positive');
   });
 });
 

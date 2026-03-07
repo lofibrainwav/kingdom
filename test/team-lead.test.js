@@ -304,8 +304,8 @@ describe('TeamLeadAgent', () => {
     agent._trackPipelineEvent('work:intake', { projectId: 'p2', author: 'pm' });
 
     const all = agent.getPipelineState();
-    assert.ok(all.p1);
-    assert.ok(all.p2);
+    assert.equal(typeof all.p1, 'object', 'should contain p1 pipeline state');
+    assert.equal(typeof all.p2, 'object', 'should contain p2 pipeline state');
   });
 
   it('getPipelineState returns null for unknown project', async () => {
@@ -430,8 +430,8 @@ describe('TeamLeadAgent', () => {
     board.disconnect = async () => { boardDisconnected = true; };
 
     await agent.shutdown();
-    assert.ok(subDisconnected);
-    assert.ok(boardDisconnected);
+    assert.equal(subDisconnected, true, 'subscriber should be disconnected');
+    assert.equal(boardDisconnected, true, 'board should be disconnected');
   });
 
   it('start subscribes to all pipeline stages + review channels', async () => {
@@ -455,7 +455,8 @@ describe('TeamLeadAgent', () => {
         `should subscribe to ${stage}`
       );
     }
-    assert.ok(subscribedChannels.length >= PIPELINE_STAGES.length + 2);
+    assert.equal(subscribedChannels.length >= PIPELINE_STAGES.length + 2, true,
+      `should subscribe to at least ${PIPELINE_STAGES.length + 2} channels, got ${subscribedChannels.length}`);
   });
 
   it('PIPELINE_STAGES exports the logical pipeline order', () => {

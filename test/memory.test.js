@@ -65,10 +65,10 @@ describe('MemoryLogger — Disk Persistence (AC-7)', () => {
     it('Should clear agent log file', async () => {
         await logger.logEvent('clear-agent', { type: 'test' });
         const filePath = path.join(tmpDir, 'clear-agent.jsonl');
-        assert.ok(fs.existsSync(filePath));
+        assert.equal(fs.existsSync(filePath), true, 'Log file should exist after logEvent');
 
         await logger.clear('clear-agent');
-        assert.ok(!fs.existsSync(filePath), 'File should be deleted');
+        assert.equal(fs.existsSync(filePath), false, 'File should be deleted after clear');
     });
 
     it('Should return empty array for non-existent agent', async () => {
@@ -88,7 +88,7 @@ describe('MemoryLogger — Disk Persistence (AC-7)', () => {
         
         console.error = ogConsoleError;
         fsp.appendFile = ogAppend;
-        assert.ok(errLog.includes('mock append error'));
+        assert.equal(errLog.includes('mock append error'), true, 'error log should contain mock append error message');
     });
 
     it('Should throw non-ENOENT error from getHistory', async () => {

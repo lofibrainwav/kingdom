@@ -166,8 +166,8 @@ describe('SkillPipeline', () => {
     await pipeline.deploySkill({ name: 'a', code: '1' });
     await pipeline.deploySkill({ name: 'b', code: '2' });
     const lib = await pipeline.getLibrary();
-    assert.ok(lib.a);
-    assert.ok(lib.b);
+    assert.equal(lib.a.code, '1', 'library should contain skill a');
+    assert.equal(lib.b.code, '2', 'library should contain skill b');
   });
 
   it('shutdown disconnects board', async () => {
@@ -175,6 +175,6 @@ describe('SkillPipeline', () => {
     createPipeline();
     pipeline.board = { ...board, disconnect: async () => { disconnected = true; } };
     await pipeline.shutdown();
-    assert.ok(disconnected);
+    assert.equal(disconnected, true, 'board should be disconnected on shutdown');
   });
 });

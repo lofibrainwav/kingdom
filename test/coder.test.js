@@ -188,10 +188,10 @@ describe('CoderAgent', () => {
     agent.skillSynergies = [{ combo: 'TDD+Refactor', insight: 'Refactor after green' }];
 
     const ctx = agent._buildFeedbackContext();
-    assert.ok(ctx.includes('Use camelCase'));
-    assert.ok(ctx.includes('naming'));
-    assert.ok(ctx.includes('TDD+Refactor'));
-    assert.ok(ctx.includes('Refactor after green'));
+    assert.equal(ctx.includes('Use camelCase'), true);
+    assert.equal(ctx.includes('naming'), true);
+    assert.equal(ctx.includes('TDD+Refactor'), true);
+    assert.equal(ctx.includes('Refactor after green'), true);
   });
 
   it('handlePlanComplete injects feedback context into LLM prompt', async () => {
@@ -205,8 +205,8 @@ describe('CoderAgent', () => {
       tasks: { tasks: [{ id: 'T1', description: 'Create endpoint' }] },
     });
 
-    assert.ok(capturedPrompt.includes('Always validate input'));
-    assert.ok(capturedPrompt.includes('guardrails from recent reviews'));
+    assert.equal(capturedPrompt.includes('Always validate input'), true);
+    assert.equal(capturedPrompt.includes('guardrails from recent reviews'), true);
   });
 
   it('shutdown disconnects subscriber, board, and LLM', async () => {
@@ -220,8 +220,8 @@ describe('CoderAgent', () => {
 
     await agent.shutdown();
 
-    assert.ok(subDisconnected);
-    assert.ok(boardDisconnected);
-    assert.ok(llmShutdown);
+    assert.equal(subDisconnected, true);
+    assert.equal(boardDisconnected, true);
+    assert.equal(llmShutdown, true);
   });
 });

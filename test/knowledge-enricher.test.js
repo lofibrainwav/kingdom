@@ -60,18 +60,18 @@ describe('KnowledgeEnricher', () => {
 
     enricher.invalidateCache();
     const result = await enricher.enrich('Fix syntax error', { errorType: 'syntax' });
-    assert.ok(result.includes('[KNOWLEDGE CONTEXT]'));
-    assert.ok(result.includes('test-enrich-skill'));
-    assert.ok(result.includes('[END CONTEXT]'));
-    assert.ok(result.includes('Fix syntax error'));
+    assert.equal(result.includes('[KNOWLEDGE CONTEXT]'), true, 'should include knowledge context header');
+    assert.equal(result.includes('test-enrich-skill'), true, 'should include skill name');
+    assert.equal(result.includes('[END CONTEXT]'), true, 'should include context end marker');
+    assert.equal(result.includes('Fix syntax error'), true, 'should preserve original prompt');
   });
 
   it('enriches with top XP skills when no errorType match', async () => {
     enricher.invalidateCache();
     const result = await enricher.enrich('Generic task', { errorType: 'nonexistent-type' });
     // Should fall back to top-XP skills
-    assert.ok(result.includes('[KNOWLEDGE CONTEXT]'));
-    assert.ok(result.includes('test-enrich-skill'));
+    assert.equal(result.includes('[KNOWLEDGE CONTEXT]'), true, 'should include knowledge context header');
+    assert.equal(result.includes('test-enrich-skill'), true, 'should fall back to top-XP skill');
   });
 
   it('respects maxContextChars budget', async () => {
@@ -80,7 +80,7 @@ describe('KnowledgeEnricher', () => {
     const result = await smallEnricher.enrich('Task', { errorType: 'syntax' });
     // Context block should be trimmed
     const contextBlock = result.split('[END CONTEXT]')[0];
-    assert.ok(contextBlock.includes('...'));
+    assert.equal(contextBlock.includes('...'), true, 'context block should be trimmed with ellipsis');
   });
 
   it('works without zk (no crash, returns raw prompt)', async () => {
@@ -102,8 +102,8 @@ describe('KnowledgeEnricher', () => {
 
     enricher.invalidateCache();
     const result = await enricher.enrich('Fix runtime error', { errorType: 'runtime' });
-    assert.ok(result.includes('Rumination insights'));
-    assert.ok(result.includes('Always check null before access'));
+    assert.equal(result.includes('Rumination insights'), true, 'should include rumination section');
+    assert.equal(result.includes('Always check null before access'), true, 'should include rumination insight text');
   });
 
   it('invalidateCache clears cached data', () => {

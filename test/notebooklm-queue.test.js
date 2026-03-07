@@ -258,17 +258,17 @@ describe('NotebookLMQueue — _renderPacket', () => {
       queueType: 'promotion-source',
     });
 
-    assert.ok(packet.includes('source: kingdom-nlm-queue'));
-    assert.ok(packet.includes('type: notebooklm-packet'));
-    assert.ok(packet.includes('Test Source'));
-    assert.ok(packet.includes('# Content'));
-    assert.ok(packet.includes('promotion-source'));
+    assert.equal(packet.includes('source: kingdom-nlm-queue'), true, 'packet should contain source header');
+    assert.equal(packet.includes('type: notebooklm-packet'), true, 'packet should contain type header');
+    assert.equal(packet.includes('Test Source'), true, 'packet should contain source title');
+    assert.equal(packet.includes('# Content'), true, 'packet should contain content');
+    assert.equal(packet.includes('promotion-source'), true, 'packet should contain queue type');
   });
 
   it('should handle missing fields', () => {
     const packet = q._renderPacket({});
-    assert.ok(packet.includes('unknown'));
-    assert.ok(packet.includes('Unknown'));
+    assert.equal(packet.includes('unknown'), true, 'packet should contain "unknown" for missing fields');
+    assert.equal(packet.includes('Unknown'), true, 'packet should contain "Unknown" for missing title');
   });
 });
 
@@ -292,7 +292,7 @@ describe('NotebookLMQueue — shutdown', () => {
     q.subscriber = { disconnect: async () => { subDisconnected = true; } };
     q.board = { disconnect: async () => {}, client: null };
     await q.shutdown();
-    assert.ok(subDisconnected);
+    assert.equal(subDisconnected, true, 'subscriber should be disconnected');
   });
 
   it('should handle missing subscriber', async () => {
@@ -314,10 +314,10 @@ describe('NotebookLMQueue — team.js registration', () => {
   );
 
   it('should be imported in team.js', () => {
-    assert.ok(teamSrc.includes("require('./memory/notebooklm-queue')"));
+    assert.equal(teamSrc.includes("require('./memory/notebooklm-queue')"), true, 'team.js should import notebooklm-queue');
   });
 
   it('should be registered in AGENTS', () => {
-    assert.ok(teamSrc.includes("name: 'NotebookLMQueue'"));
+    assert.equal(teamSrc.includes("name: 'NotebookLMQueue'"), true, 'team.js should register NotebookLMQueue agent');
   });
 });

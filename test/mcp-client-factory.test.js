@@ -47,8 +47,8 @@ describe('createMcpClients', () => {
     process.env.GROK_MCP_URL = 'http://grok:3100/ask';
     process.env.NLM_MCP_URL = 'http://nlm:3200/ask';
     const { grokClient, nlmClient } = createMcpClients();
-    assert.ok(grokClient instanceof HttpMcpClient);
-    assert.ok(nlmClient instanceof HttpMcpClient);
+    assert.equal(grokClient instanceof HttpMcpClient, true, 'grokClient should be HttpMcpClient instance');
+    assert.equal(nlmClient instanceof HttpMcpClient, true, 'nlmClient should be HttpMcpClient instance');
   });
 });
 
@@ -104,6 +104,6 @@ describe('HttpMcpClient', () => {
 
     const result = await client.askQuestion('test');
     global.fetch = origFetch;
-    assert.ok(result.includes('raw'));
+    assert.equal(result.includes('raw'), true, 'stringified response should contain raw data');
   });
 });

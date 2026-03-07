@@ -217,8 +217,8 @@ describe('DecomposerAgent', () => {
 
     await agent.shutdown();
 
-    assert.ok(subDisconnected);
-    assert.ok(boardDisconnected);
-    assert.ok(llmShutdown);
+    assert.equal(subDisconnected, true);
+    assert.equal(boardDisconnected, true);
+    assert.equal(llmShutdown, true);
   });
 });

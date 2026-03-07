@@ -183,7 +183,7 @@ describe('Test Quality — Agent Coverage Map', () => {
 
 describe('Test Quality — Threshold Guards', () => {
   it(`test file count should be >= ${THRESHOLDS.MIN_TEST_FILES}`, () => {
-    assert.ok(ALL_TEST_FILES.length >= THRESHOLDS.MIN_TEST_FILES,
+    assert.equal(ALL_TEST_FILES.length >= THRESHOLDS.MIN_TEST_FILES, true,
       `Only ${ALL_TEST_FILES.length} test files (minimum: ${THRESHOLDS.MIN_TEST_FILES}). Did a test file get deleted?`);
   });
 

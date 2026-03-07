@@ -53,8 +53,8 @@ describe('Event Schema Coverage', () => {
 
   it('every schema has at least one required field', () => {
     for (const [channel, fields] of Object.entries(SCHEMAS)) {
-      assert.ok(
-        Array.isArray(fields) && fields.length > 0,
+      assert.equal(
+        Array.isArray(fields) && fields.length > 0, true,
         `Schema ${channel} has no required fields`
       );
     }
@@ -75,9 +75,9 @@ describe('Event Schema Coverage', () => {
 
   it('wildcard schemas match concrete channels', () => {
     const schema = getSchemaForChannel('rc:cmd:status');
-    assert.ok(schema, 'rc:cmd:status should match rc:cmd:*');
-    assert.ok(schema.includes('author'));
-    assert.ok(schema.includes('requestId'));
+    assert.notEqual(schema, null, 'rc:cmd:status should match rc:cmd:*');
+    assert.equal(schema.includes('author'), true, 'schema should require author field');
+    assert.equal(schema.includes('requestId'), true, 'schema should require requestId field');
   });
 
   it('unknown channels return null (no validation)', () => {

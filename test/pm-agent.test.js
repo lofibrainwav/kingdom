@@ -68,8 +68,8 @@ describe('PMAgent', () => {
 
     await agent.shutdown();
 
-    assert.ok(subDisconnected);
-    assert.ok(boardDisconnected);
+    assert.equal(subDisconnected, true);
+    assert.equal(boardDisconnected, true);
   });
 
   it('treats retry intake as continuation of the existing task', async () => {

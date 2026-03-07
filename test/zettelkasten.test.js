@@ -495,8 +495,8 @@ describe('SkillZettelkasten — Vault Persistence', () => {
     assert.ok(fs.existsSync(filepath), 'Vault file should exist');
 
     const content = fs.readFileSync(filepath, 'utf-8');
-    assert.ok(content.includes('vault_test'), 'File should contain skill name');
-    assert.ok(content.includes('Novice'), 'File should contain tier');
+    assert.equal(content.includes('vault_test'), true, 'File should contain skill name');
+    assert.equal(content.includes('Novice'), true, 'File should contain tier');
   });
 });
 

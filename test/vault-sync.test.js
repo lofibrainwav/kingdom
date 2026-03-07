@@ -207,8 +207,8 @@ describe('vault-sync — writePattern & addDashboardLink', () => {
   it('addDashboardLink appends link under INDEX:section', async () => {
     await addDashboardLink('Recent Achievements', '[[Some Note]] - Cool thing');
     const content = writtenData[DASHBOARD_PATH];
-    assert.ok(content);
-    assert.ok(content.includes('<!-- INDEX:Recent Achievements -->\n- [[Some Note]] - Cool thing'));
+    assert.equal(typeof content, 'string', 'Dashboard content should be a string');
+    assert.equal(content.includes('<!-- INDEX:Recent Achievements -->\n- [[Some Note]] - Cool thing'), true, 'should contain appended link under section');
   });
 });
 
@@ -232,8 +232,8 @@ describe('vault-sync — VaultAgent', () => {
     await agent.handleApproval({ projectId: 'ProjX', taskId: 'T-123', file: 'x.js' });
     
     const content = writtenData[DASHBOARD_PATH];
-    assert.ok(content, 'Dashboard should have been updated by handleApproval');
-    assert.ok(content.includes('[[ProjX]] - Task T-123 approved in x.js'));
+    assert.equal(typeof content, 'string', 'Dashboard should have been updated by handleApproval');
+    assert.equal(content.includes('[[ProjX]] - Task T-123 approved in x.js'), true, 'should contain approval link');
   });
 
   it('handleFailure adds a link to Dashboard', async () => {
@@ -241,8 +241,8 @@ describe('vault-sync — VaultAgent', () => {
     await agent.handleFailure({ projectId: 'ProjY', taskId: 'T-999', category: 'lint', guardrail: 'no-console' });
     
     const content = writtenData[DASHBOARD_PATH];
-    assert.ok(content, 'Dashboard should have been updated by handleFailure');
-    assert.ok(content.includes('[[ProjY]] - lint failure on T-999. Guardrail: \`no-console\`'));
+    assert.equal(typeof content, 'string', 'Dashboard should have been updated by handleFailure');
+    assert.equal(content.includes('[[ProjY]] - lint failure on T-999. Guardrail: \`no-console\`'), true, 'should contain failure link');
   });
 
   it('shutdown disconnects subscriber and board', async () => {
@@ -261,8 +261,8 @@ describe('vault-sync — VaultAgent', () => {
     await agent.init(mockBoard);
     await agent.shutdown();
 
-    assert.ok(subDisconnected);
-    assert.ok(boardDisconnected);
+    assert.equal(subDisconnected, true, 'subscriber should be disconnected');
+    assert.equal(boardDisconnected, true, 'board should be disconnected');
   });
 
   it('init wires up Redis subscriber correctly', async () => {

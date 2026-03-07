@@ -105,13 +105,13 @@ describe('VaultBridge — handleTaskCompleted', () => {
       summary: 'Fixed the bug',
     });
 
-    assert.ok(putPath.includes('05-Operations/kingdom-tasks/task-42.md'));
-    assert.ok(putContent.includes('governance:task:completed'));
-    assert.ok(putContent.includes('tags: [type/task, source/vault-bridge, status/active]'));
-    assert.ok(putContent.includes('related: ["[[kingdom/infrastructure]]"]'));
-    assert.ok(putContent.includes('proj-1'));
-    assert.ok(putContent.includes('Fixed the bug'));
-    assert.ok(putContent.includes('3'));
+    assert.equal(putPath.includes('05-Operations/kingdom-tasks/task-42.md'), true);
+    assert.equal(putContent.includes('governance:task:completed'), true);
+    assert.equal(putContent.includes('tags: [type/task, source/vault-bridge, status/active]'), true);
+    assert.equal(putContent.includes('related: ["[[kingdom/infrastructure]]"]'), true);
+    assert.equal(putContent.includes('proj-1'), true);
+    assert.equal(putContent.includes('Fixed the bug'), true);
+    assert.equal(putContent.includes('3'), true);
   });
 
   it('should handle missing fields gracefully', async () => {
@@ -122,8 +122,8 @@ describe('VaultBridge — handleTaskCompleted', () => {
 
     await bridge.handleTaskCompleted({});
 
-    assert.ok(putPath.includes('unknown-task'));
-    assert.ok(putContent.includes('project: "unknown"'));
+    assert.equal(putPath.includes('unknown-task'), true);
+    assert.equal(putContent.includes('project: "unknown"'), true);
   });
 
   it('should handle string message (JSON)', async () => {
@@ -133,7 +133,7 @@ describe('VaultBridge — handleTaskCompleted', () => {
 
     await bridge.handleTaskCompleted(JSON.stringify({ taskId: 'from-string' }));
 
-    assert.ok(putPath.includes('from-string'));
+    assert.equal(putPath.includes('from-string'), true);
   });
 });
 
@@ -153,12 +153,12 @@ describe('VaultBridge — handleNotebookLMIngested', () => {
       summary: 'Ingested weekly research notes',
     });
 
-    assert.ok(putPath.includes('02-Research/kingdom-ingested-weekly-research-w10.md'));
-    assert.ok(putContent.includes('knowledge:notebooklm:ingested'));
-    assert.ok(putContent.includes('tags: [type/research, source/vault-bridge, status/active]'));
-    assert.ok(putContent.includes('related: ["[[weekly-questions]]"]'));
-    assert.ok(putContent.includes('Weekly Research W10'));
-    assert.ok(putContent.includes('Ingested weekly research notes'));
+    assert.equal(putPath.includes('02-Research/kingdom-ingested-weekly-research-w10.md'), true);
+    assert.equal(putContent.includes('knowledge:notebooklm:ingested'), true);
+    assert.equal(putContent.includes('tags: [type/research, source/vault-bridge, status/active]'), true);
+    assert.equal(putContent.includes('related: ["[[weekly-questions]]"]'), true);
+    assert.equal(putContent.includes('Weekly Research W10'), true);
+    assert.equal(putContent.includes('Ingested weekly research notes'), true);
   });
 
   it('should fallback to sourcePath for slug when no sourceTitle', async () => {
@@ -168,8 +168,8 @@ describe('VaultBridge — handleNotebookLMIngested', () => {
 
     await bridge.handleNotebookLMIngested({ sourcePath: '/some/path.md' });
 
-    assert.ok(putPath.includes('kingdom-ingested-'));
-    assert.ok(putPath.includes('some-path-md'));
+    assert.equal(putPath.includes('kingdom-ingested-'), true);
+    assert.equal(putPath.includes('some-path-md'), true);
   });
 });
 
@@ -192,13 +192,13 @@ describe('VaultBridge — handleCaptureStored', () => {
       improvementNote: 'Fixed parsing logic',
     });
 
-    assert.ok(putPath.includes('05-Operations/knowledge-captures/completed-task-1.md'));
-    assert.ok(putContent.includes('knowledge:capture:stored'));
-    assert.ok(putContent.includes('tags: [type/insight, source/vault-bridge, status/active]'));
-    assert.ok(putContent.includes('related: ["[[metacognition]]"]'));
-    assert.ok(putContent.includes('passed'));
-    assert.ok(putContent.includes('syntax'));
-    assert.ok(putContent.includes('Fixed parsing logic'));
+    assert.equal(putPath.includes('05-Operations/knowledge-captures/completed-task-1.md'), true);
+    assert.equal(putContent.includes('knowledge:capture:stored'), true);
+    assert.equal(putContent.includes('tags: [type/insight, source/vault-bridge, status/active]'), true);
+    assert.equal(putContent.includes('related: ["[[metacognition]]"]'), true);
+    assert.equal(putContent.includes('passed'), true);
+    assert.equal(putContent.includes('syntax'), true);
+    assert.equal(putContent.includes('Fixed parsing logic'), true);
   });
 
   it('should handle missing fields with defaults', async () => {
@@ -208,8 +208,8 @@ describe('VaultBridge — handleCaptureStored', () => {
 
     await bridge.handleCaptureStored({});
 
-    assert.ok(putContent.includes('unknown'));
-    assert.ok(putContent.includes('none'));
+    assert.equal(putContent.includes('unknown'), true);
+    assert.equal(putContent.includes('none'), true);
   });
 });
 
@@ -226,8 +226,8 @@ describe('VaultBridge — _obsidianPut', () => {
 
     global.fetch = origFetch;
 
-    assert.ok(fetchArgs.url.includes('localhost:27124'));
-    assert.ok(fetchArgs.url.includes('05-Operations'));
+    assert.equal(fetchArgs.url.includes('localhost:27124'), true);
+    assert.equal(fetchArgs.url.includes('05-Operations'), true);
     assert.equal(fetchArgs.opts.method, 'PUT');
     assert.equal(fetchArgs.opts.headers.Authorization, 'Bearer test-token');
     assert.equal(fetchArgs.opts.headers['Content-Type'], 'application/markdown');
@@ -297,12 +297,12 @@ describe('VaultBridge — start() channel subscriptions', () => {
     await bridge.start();
 
     assert.equal(channels.length, 6);
-    assert.ok(channels.includes('governance:task:completed'));
-    assert.ok(channels.includes('knowledge:notebooklm:ingested'));
-    assert.ok(channels.includes('knowledge:capture:stored'));
-    assert.ok(channels.includes('governance:teamlead:reviewed'));
-    assert.ok(channels.includes('governance:teamlead:vibe-translated'));
-    assert.ok(channels.includes('knowledge:research:completed'));
+    assert.equal(channels.includes('governance:task:completed'), true);
+    assert.equal(channels.includes('knowledge:notebooklm:ingested'), true);
+    assert.equal(channels.includes('knowledge:capture:stored'), true);
+    assert.equal(channels.includes('governance:teamlead:reviewed'), true);
+    assert.equal(channels.includes('governance:teamlead:vibe-translated'), true);
+    assert.equal(channels.includes('knowledge:research:completed'), true);
   });
 });
 
@@ -325,13 +325,13 @@ describe('VaultBridge — handleTeamLeadReviewed', () => {
       storeWorthy: true,
     });
 
-    assert.ok(putPath.includes('05-Operations/teamlead-reviews/'));
-    assert.ok(putContent.includes('governance:teamlead:reviewed'));
-    assert.ok(putContent.includes('tags: [type/review, source/vault-bridge, status/active]'));
-    assert.ok(putContent.includes('related: ["[[metacognition]]"]'));
-    assert.ok(putContent.includes('pass'));
-    assert.ok(putContent.includes('Truth=4'));
-    assert.ok(putContent.includes('Solid batch'));
+    assert.equal(putPath.includes('05-Operations/teamlead-reviews/'), true);
+    assert.equal(putContent.includes('governance:teamlead:reviewed'), true);
+    assert.equal(putContent.includes('tags: [type/review, source/vault-bridge, status/active]'), true);
+    assert.equal(putContent.includes('related: ["[[metacognition]]"]'), true);
+    assert.equal(putContent.includes('pass'), true);
+    assert.equal(putContent.includes('Truth=4'), true);
+    assert.equal(putContent.includes('Solid batch'), true);
   });
 });
 
@@ -353,13 +353,13 @@ describe('VaultBridge — handleVibeTranslated', () => {
       suggestedPromptPatch: 'Always use camelCase',
     });
 
-    assert.ok(putPath.includes('05-Operations/teamlead-vibes/'));
-    assert.ok(putContent.includes('governance:teamlead:vibe-translated'));
-    assert.ok(putContent.includes('tags: [type/pattern, source/vault-bridge, status/active]'));
-    assert.ok(putContent.includes('related: ["[[kingdom/patterns]]"]'));
-    assert.ok(putContent.includes('Naming is key'));
-    assert.ok(putContent.includes('camelCase'));
-    assert.ok(putContent.includes('clean code'));
+    assert.equal(putPath.includes('05-Operations/teamlead-vibes/'), true);
+    assert.equal(putContent.includes('governance:teamlead:vibe-translated'), true);
+    assert.equal(putContent.includes('tags: [type/pattern, source/vault-bridge, status/active]'), true);
+    assert.equal(putContent.includes('related: ["[[kingdom/patterns]]"]'), true);
+    assert.equal(putContent.includes('Naming is key'), true);
+    assert.equal(putContent.includes('camelCase'), true);
+    assert.equal(putContent.includes('clean code'), true);
   });
 });
 
@@ -380,12 +380,12 @@ describe('VaultBridge — handleResearchCompleted', () => {
       hasNlmAnswer: false,
     });
 
-    assert.ok(putPath.includes('02-Research/kingdom-research/'));
-    assert.ok(putContent.includes('knowledge:research:completed'));
-    assert.ok(putContent.includes('tags: [type/research, source/vault-bridge, status/active]'));
-    assert.ok(putContent.includes('related: ["[[weekly-questions]]"]'));
-    assert.ok(putContent.includes('Redis pub/sub'));
-    assert.ok(putContent.includes('Grok Answer**: Yes'));
-    assert.ok(putContent.includes('NLM Answer**: No'));
+    assert.equal(putPath.includes('02-Research/kingdom-research/'), true);
+    assert.equal(putContent.includes('knowledge:research:completed'), true);
+    assert.equal(putContent.includes('tags: [type/research, source/vault-bridge, status/active]'), true);
+    assert.equal(putContent.includes('related: ["[[weekly-questions]]"]'), true);
+    assert.equal(putContent.includes('Redis pub/sub'), true);
+    assert.equal(putContent.includes('Grok Answer**: Yes'), true);
+    assert.equal(putContent.includes('NLM Answer**: No'), true);
   });
 });

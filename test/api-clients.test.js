@@ -21,9 +21,9 @@ describe('createApiClients', () => {
 
     const clients = createApiClients();
     // Only local may be present if LM_STUDIO_ENABLED is not false
-    assert.ok(!clients.anthropic, 'no anthropic client without key');
-    assert.ok(!clients.groq, 'no groq client without key');
-    assert.ok(!clients.local, 'no local client when disabled');
+    assert.equal(clients.anthropic, undefined, 'no anthropic client without key');
+    assert.equal(clients.groq, undefined, 'no groq client without key');
+    assert.equal(clients.local, undefined, 'no local client when disabled');
   });
 
   it('creates local client when LM_STUDIO_ENABLED is not false', () => {
@@ -56,6 +56,6 @@ describe('createApiClients', () => {
 
     const clients = createApiClients();
     // If @anthropic-ai/sdk is not installed, anthropic won't exist — both outcomes are valid
-    assert.ok(typeof clients === 'object');
+    assert.equal(typeof clients, 'object', 'should return an object');
   });
 });

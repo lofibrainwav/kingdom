@@ -19,60 +19,60 @@ describe('team.js — Phase 4 synapse registration', () => {
   );
 
   it('should import VaultBridge', () => {
-    assert.ok(teamSrc.includes("require('./memory/vault-bridge')"));
+    assert.equal(teamSrc.includes("require('./memory/vault-bridge')"), true);
   });
 
   it('should import RuminationEngine', () => {
-    assert.ok(teamSrc.includes("require('./memory/rumination-engine')"));
+    assert.equal(teamSrc.includes("require('./memory/rumination-engine')"), true);
   });
 
   it('should import GoTReasoner', () => {
-    assert.ok(teamSrc.includes("require('./memory/got-reasoner')"));
+    assert.equal(teamSrc.includes("require('./memory/got-reasoner')"), true);
   });
 
   it('should import SkillZettelkasten for shared instance', () => {
-    assert.ok(teamSrc.includes("require('./memory/skill-zettelkasten')"));
+    assert.equal(teamSrc.includes("require('./memory/skill-zettelkasten')"), true);
   });
 
   it('should register VaultBridge in AGENTS', () => {
-    assert.ok(teamSrc.includes("name: 'VaultBridge'"));
+    assert.equal(teamSrc.includes("name: 'VaultBridge'"), true);
   });
 
   it('should register RuminationEngine in AGENTS', () => {
-    assert.ok(teamSrc.includes("name: 'RuminationEngine'"));
+    assert.equal(teamSrc.includes("name: 'RuminationEngine'"), true);
   });
 
   it('should register GoTReasoner in AGENTS', () => {
-    assert.ok(teamSrc.includes("name: 'GoTReasoner'"));
+    assert.equal(teamSrc.includes("name: 'GoTReasoner'"), true);
   });
 
   it('should have correct agent count matching AGENTS array', () => {
     const matches = teamSrc.match(/\{\s*name:\s*'/g);
-    assert.ok(matches.length >= 17, `Expected at least 17 agents, got ${matches.length}`);
+    assert.equal(matches.length >= 17, true, `Expected at least 17 agents, got ${matches.length}`);
   });
 
   it('should import TeamLeadAgent', () => {
-    assert.ok(teamSrc.includes("require('./team/team-lead')"));
+    assert.equal(teamSrc.includes("require('./team/team-lead')"), true);
   });
 
   it('should import ResearchAgent', () => {
-    assert.ok(teamSrc.includes("require('./memory/research-agent')"));
+    assert.equal(teamSrc.includes("require('./memory/research-agent')"), true);
   });
 
   it('should register TeamLead in AGENTS', () => {
-    assert.ok(teamSrc.includes("name: 'TeamLead'"));
+    assert.equal(teamSrc.includes("name: 'TeamLead'"), true);
   });
 
   it('should register ResearchAgent in AGENTS', () => {
-    assert.ok(teamSrc.includes("name: 'ResearchAgent'"));
+    assert.equal(teamSrc.includes("name: 'ResearchAgent'"), true);
   });
 
   it('should call startEventFeed for RuminationEngine postInit', () => {
-    assert.ok(teamSrc.includes('inst.startEventFeed()'));
+    assert.equal(teamSrc.includes('inst.startEventFeed()'), true);
   });
 
   it('should subscribe GoTReasoner to knowledge:rumination:digested', () => {
-    assert.ok(teamSrc.includes("'knowledge:rumination:digested'"));
+    assert.equal(teamSrc.includes("'knowledge:rumination:digested'"), true);
   });
 });
 
@@ -139,7 +139,7 @@ describe('VaultBridge — graceful degradation', () => {
     };
     await bridge.init();
     await bridge.start();
-    assert.ok(subscribed);
+    assert.equal(subscribed, true);
   });
 
   it('should shutdown cleanly with subscriber', async () => {
@@ -148,7 +148,7 @@ describe('VaultBridge — graceful degradation', () => {
     bridge.subscriber = { disconnect: async () => { disconnected = true; } };
     bridge.board = { disconnect: async () => {}, client: null };
     await bridge.shutdown();
-    assert.ok(disconnected);
+    assert.equal(disconnected, true);
   });
 
   it('should shutdown cleanly without subscriber', async () => {
@@ -194,8 +194,8 @@ describe('RuminationEngine — startEventFeed', () => {
 
     await engine.startEventFeed();
 
-    assert.ok(subscriptions['knowledge:capture:stored']);
-    assert.ok(subscriptions['work:dry-run:recorded']);
+    assert.notEqual(subscriptions['knowledge:capture:stored'], undefined);
+    assert.notEqual(subscriptions['work:dry-run:recorded'], undefined);
     const subscribedCb = subscriptions['knowledge:capture:stored'];
 
     // Simulate a capture event
@@ -295,8 +295,8 @@ describe('RuminationEngine — startEventFeed', () => {
 
     await engine.shutdown();
 
-    assert.ok(eventDisconnected);
-    assert.ok(boardDisconnected);
+    assert.equal(eventDisconnected, true);
+    assert.equal(boardDisconnected, true);
   });
 });
 
@@ -326,8 +326,8 @@ describe('GoTReasoner — event-driven trigger', () => {
 
     await got.shutdown();
 
-    assert.ok(eventDisconnected);
-    assert.ok(boardDisconnected);
+    assert.equal(eventDisconnected, true);
+    assert.equal(boardDisconnected, true);
   });
 
   it('should shutdown cleanly without _eventSubscriber', async () => {

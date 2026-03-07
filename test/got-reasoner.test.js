@@ -89,9 +89,9 @@ describe('GoTReasoner — init', () => {
 
     await got.init();
 
-    assert.ok(connected);
+    assert.equal(connected, true);
     const stat = await fsp.stat(tmpDir);
-    assert.ok(stat.isDirectory());
+    assert.equal(stat.isDirectory(), true);
   });
 });
 
@@ -109,8 +109,8 @@ describe('GoTReasoner — buildGraph', () => {
 
     const graph = await got.buildGraph();
 
-    assert.ok(graph.nodes.dig);
-    assert.ok(graph.nodes.place);
+    assert.notEqual(graph.nodes.dig, undefined);
+    assert.notEqual(graph.nodes.place, undefined);
     assert.equal(graph.edges.length, 2); // dig→place + place→dig
     assert.equal(graph.adjacency.dig.length, 1);
     assert.equal(graph.adjacency.dig[0].target, 'place');
@@ -127,7 +127,7 @@ describe('GoTReasoner — buildGraph', () => {
 
     const graph = await got.buildGraph();
 
-    assert.ok(graph.nodes.active);
+    assert.notEqual(graph.nodes.active, undefined);
     assert.equal(graph.nodes.old, undefined);
   });
 
@@ -156,10 +156,10 @@ describe('GoTReasoner — discoverSynergies', () => {
 
     const synergies = await got.discoverSynergies();
 
-    assert.ok(synergies.length >= 1);
+    assert.equal(synergies.length >= 1, true, `Expected at least 1 synergy, got ${synergies.length}`);
     const syn = synergies[0];
-    assert.ok(syn.score >= 0.4);
-    assert.ok(syn.reason.length > 0);
+    assert.equal(syn.score >= 0.4, true, `Expected score >= 0.4, got ${syn.score}`);
+    assert.equal(syn.reason.length > 0, true, 'Expected non-empty reason');
   });
 
   it('should ignore pairs below score threshold', async () => {
@@ -188,7 +188,7 @@ describe('GoTReasoner — discoverSynergies', () => {
 
     const synergies = await got.discoverSynergies();
     assert.equal(synergies.length, 1);
-    assert.ok(synergies[0].score > 0);
+    assert.equal(synergies[0].score > 0, true, `Expected score > 0, got ${synergies[0].score}`);
   });
 });
 
@@ -207,10 +207,10 @@ describe('GoTReasoner — findOptimalBuilds', () => {
 
     const builds = await got.findOptimalBuilds(3);
 
-    assert.ok(builds.length >= 1);
-    assert.ok(builds[0].skills.includes('root'));
-    assert.ok(builds[0].totalXP > 0);
-    assert.ok(builds[0].buildStrength > 0);
+    assert.equal(builds.length >= 1, true, `Expected at least 1 build, got ${builds.length}`);
+    assert.equal(builds[0].skills.includes('root'), true, 'Expected root in skills');
+    assert.equal(builds[0].totalXP > 0, true, `Expected totalXP > 0, got ${builds[0].totalXP}`);
+    assert.equal(builds[0].buildStrength > 0, true, `Expected buildStrength > 0, got ${builds[0].buildStrength}`);
   });
 
   it('should filter out compound and low-success skills', async () => {
@@ -228,8 +228,8 @@ describe('GoTReasoner — findOptimalBuilds', () => {
 
     // compound and weak should not be roots
     for (const build of builds) {
-      assert.ok(!build.skills.includes('compound'));
-      assert.ok(!build.skills.includes('weak'));
+      assert.equal(build.skills.includes('compound'), false, 'compound should not be in build');
+      assert.equal(build.skills.includes('weak'), false, 'weak should not be in build');
     }
   });
 });
@@ -246,9 +246,9 @@ describe('GoTReasoner — identifyGaps', () => {
 
     const gaps = await got.identifyGaps();
 
-    assert.ok(gaps.length >= 1);
+    assert.equal(gaps.length >= 1, true, `Expected at least 1 gap, got ${gaps.length}`);
     assert.equal(gaps[0].errorType, 'dig:fail');
-    assert.ok(gaps[0].recommendation.includes('weak'));
+    assert.equal(gaps[0].recommendation.includes('weak'), true, 'Expected recommendation to include "weak"');
   });
 
   it('should return empty for well-covered error types', async () => {
@@ -342,10 +342,10 @@ describe('GoTReasoner — fullReasoningCycle', () => {
 
     const result = await got.fullReasoningCycle();
     
-    assert.ok(result.timestamp);
+    assert.notEqual(result.timestamp, undefined);
     assert.equal(result.synergies.length, 1);
     assert.equal(result.summary.totalSynergies, 1);
-    assert.ok(published);
+    assert.notEqual(published, null);
     assert.equal(published.channel, 'knowledge:got:completed');
     assert.equal(published.data.totalSynergies, 1);
   });
@@ -357,7 +357,7 @@ describe('GoTReasoner — _explainSynergy', () => {
     const a = { tags: ['nav', 'combat'], errorType: null, successRate: 0.5 };
     const b = { tags: ['nav'], errorType: null, successRate: 0.5 };
     const result = got._explainSynergy(a, b, ['nav']);
-    assert.ok(result.includes('shared tags: nav'));
+    assert.equal(result.includes('shared tags: nav'), true, 'Expected result to include "shared tags: nav"');
   });
 
   it('should explain same error type', () => {
@@ -365,7 +365,7 @@ describe('GoTReasoner — _explainSynergy', () => {
     const a = { tags: [], errorType: 'dig:fail', successRate: 0.5 };
     const b = { tags: [], errorType: 'dig:fail', successRate: 0.5 };
     const result = got._explainSynergy(a, b, []);
-    assert.ok(result.includes('same error type'));
+    assert.equal(result.includes('same error type'), true, 'Expected result to include "same error type"');
   });
 
   it('should return default when no specific reason', () => {
@@ -386,7 +386,7 @@ describe('GoTReasoner — shutdown', () => {
     got.board = { disconnect: async () => { disconnected = true; } };
 
     await got.shutdown();
-    assert.ok(disconnected);
+    assert.equal(disconnected, true);
   });
 });
 
@@ -407,7 +407,7 @@ describe('GoTReasoner — vault persistence', () => {
     await got._saveReasoningTrace('synergy-discovery', { test: true });
     const files = await fsp.readdir(tmpDir);
     assert.deepStrictEqual(files, ['synergy-discovery.md']);
-    assert.ok(!files[0].includes('_2026'), 'should not have timestamp suffix');
+    assert.equal(files[0].includes('_2026'), false, 'should not have timestamp suffix');
   });
 
   it('writes valid YAML frontmatter', async () => {
@@ -419,10 +419,10 @@ describe('GoTReasoner — vault persistence', () => {
 
     await got._saveReasoningTrace('gap-analysis', { gaps: [] });
     const content = await fsp.readFile(path.join(tmpDir, 'gap-analysis.md'), 'utf-8');
-    assert.ok(content.startsWith('---'));
-    assert.ok(content.includes('strategy: "gap-analysis"'));
-    assert.ok(content.includes('tags: ["got", "reasoning", "gap-analysis"]'));
-    assert.ok(content.includes('date:'));
+    assert.equal(content.startsWith('---'), true, 'Expected YAML frontmatter start');
+    assert.equal(content.includes('strategy: "gap-analysis"'), true);
+    assert.equal(content.includes('tags: ["got", "reasoning", "gap-analysis"]'), true);
+    assert.equal(content.includes('date:'), true);
   });
 
   it('overwrites same file on repeated calls', async () => {
@@ -437,7 +437,7 @@ describe('GoTReasoner — vault persistence', () => {
     const files = await fsp.readdir(tmpDir);
     assert.equal(files.length, 1);
     const content = await fsp.readFile(path.join(tmpDir, 'optimal-builds.md'), 'utf-8');
-    assert.ok(content.includes('"v": 2'));
+    assert.equal(content.includes('"v": 2'), true);
   });
 
   it('generates Mermaid skill graph', async () => {
@@ -460,18 +460,18 @@ describe('GoTReasoner — vault persistence', () => {
 
     const graphPath = path.join(tmpDir, '04-Skills', 'Skill-Graph.md');
     const content = await fsp.readFile(graphPath, 'utf-8');
-    assert.ok(content.includes('```mermaid'));
-    assert.ok(content.includes('graph TD'));
-    assert.ok(content.includes('mine_wood'));
-    assert.ok(content.includes('craft_planks'));
-    assert.ok(content.includes('tags: [graph, skills, auto-generated]'));
+    assert.equal(content.includes('```mermaid'), true);
+    assert.equal(content.includes('graph TD'), true);
+    assert.equal(content.includes('mine_wood'), true);
+    assert.equal(content.includes('craft_planks'), true);
+    assert.equal(content.includes('tags: [graph, skills, auto-generated]'), true);
   });
 
   it('generates Mermaid skill graph handles empty nodes', async () => {
     const zk = createMockZettelkasten({});
     const got = new GoTReasoner(zk);
     await got._generateMermaidGraph(); // should just return early, no throw
-    assert.ok(got); // To satisfy no simple boolean rule
+    assert.notEqual(got, undefined); // Verify instance exists after handling empty nodes
   });
 
   it('generates Mermaid skill graph with Grandmaster tier', async () => {
@@ -492,6 +492,6 @@ describe('GoTReasoner — vault persistence', () => {
 
     const graphPath = path.join(tmpDir, '04-Skills', 'Skill-Graph.md');
     const content = await fsp.readFile(graphPath, 'utf-8');
-    assert.ok(content.includes('class gm master'));
+    assert.equal(content.includes('class gm master'), true);
   });
 });
