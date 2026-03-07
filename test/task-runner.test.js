@@ -282,12 +282,12 @@ describe('TaskRunner', () => {
   });
 
   it('shutdown is safe when board is already closed', async () => {
-    board.disconnect = async () => {};
+    let disconnectCalled = false;
+    board.disconnect = async () => { disconnectCalled = true; };
     board.client = { isOpen: false };
     const runner = new TaskRunner({ board, workspaceRoot: tmpDir });
-
-    // Should not throw
     await runner.shutdown();
+    assert.equal(disconnectCalled, false, 'should not disconnect already-closed board');
   });
 
   it('_patchTaskState increments _version on each mutation', async () => {

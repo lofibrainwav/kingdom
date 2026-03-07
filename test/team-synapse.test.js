@@ -112,16 +112,17 @@ describe('VaultBridge — graceful degradation', () => {
   });
 
   it('should skip start() when disabled', async () => {
+    let subscriberCreated = false;
     const bridge = new VaultBridge({ obsidianToken: '' });
     bridge.board = {
       connect: async () => {},
       client: { isOpen: false },
-      createSubscriber: async () => {
-        throw new Error('should not be called');
-      },
+      createSubscriber: async () => { subscriberCreated = true; throw new Error('should not be called'); },
     };
     await bridge.init();
-    await bridge.start(); // should not throw
+    await bridge.start();
+    assert.equal(bridge.enabled, false, 'bridge should remain disabled');
+    assert.equal(subscriberCreated, false, 'should not create subscriber when disabled');
   });
 
   it('should create subscriber when enabled', async () => {
@@ -153,7 +154,10 @@ describe('VaultBridge — graceful degradation', () => {
   it('should shutdown cleanly without subscriber', async () => {
     const bridge = new VaultBridge({ obsidianToken: '' });
     bridge.board = { disconnect: async () => {}, client: null };
-    await bridge.shutdown(); // should not throw
+    let threw = false;
+    try { await bridge.shutdown(); } catch { threw = true; }
+    assert.equal(threw, false, 'shutdown should not throw without subscriber');
+    assert.equal(bridge.subscriber == null, true, 'subscriber should remain absent');
   });
 });
 

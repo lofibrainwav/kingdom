@@ -195,14 +195,16 @@ describe('Logger', () => {
     });
 
     it('handles memoryLogger errors gracefully', async () => {
+      let errorThrown = false;
       const mockML = {
         logEvent: async () => { throw new Error('disk full'); },
       };
       const logger = new Logger({ memoryLogger: mockML, console: false });
-      // Should not throw
-      logger.error('bot-01', 'test');
-      await new Promise(r => setTimeout(r, 10));
-      // No assertion needed — just verifying it doesn't crash
+      try {
+        logger.error('bot-01', 'test');
+        await new Promise(r => setTimeout(r, 10));
+      } catch { errorThrown = true; }
+      assert.equal(errorThrown, false, 'logger should swallow memoryLogger errors');
     });
   });
 

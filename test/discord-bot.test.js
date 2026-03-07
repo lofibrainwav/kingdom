@@ -177,49 +177,57 @@ describe('Discord Bot — Embed Safety', () => {
     bot._forumTagCache = new Map();
   });
 
-  it('_postStatusEmbed does not crash with no channels', () => {
-    bot._postStatusEmbed('test:channel', { agentId: 'test', health: 20 });
-    // No error = pass
+  it('embed methods skip gracefully when channels not configured', () => {
+    // All embed methods should return undefined without throwing
+    assert.equal(bot._postStatusEmbed('ch', { agentId: 'x', health: 20 }), undefined);
+    assert.equal(bot._postHealthEmbed({ agentId: 'x', health: 10 }), undefined);
+    assert.equal(bot._postInventoryEmbed({ agentId: 'x', items: [] }), undefined);
+    assert.equal(bot._postReactPulse({ agentId: 'x', iteration: 1 }), undefined);
+    assert.equal(bot._postAlertEmbed('threat', { description: 'x' }), undefined);
+    assert.equal(bot._postSkillEmbed({ skillName: 'x' }), undefined);
+    assert.equal(bot._postChatMessage({ agentId: 'x', message: 'x' }), undefined);
+    assert.equal(bot._postMilestoneEmbed({ agentId: 'x', message: 'x' }), undefined);
   });
 
-  it('_postHealthEmbed does not crash with no channels', () => {
-    bot._postHealthEmbed({ agentId: 'test', health: 10, food: 15 });
+  it('_postShinmungo skips when no forum channel', async () => {
+    const result = await bot._postShinmungo({ agentId: 'test', message: 'confession' });
+    assert.equal(result, undefined);
   });
 
-  it('_postInventoryEmbed does not crash with no channels', () => {
-    bot._postInventoryEmbed({ agentId: 'test', items: [] });
+  it('embed methods call channel.send when channel exists', () => {
+    let sendCount = 0;
+    const mockChannel = { send: async () => { sendCount++; } };
+    bot.channels.status = mockChannel;
+    bot.channels.alerts = mockChannel;
+    bot.channels.chat = mockChannel;
+
+    bot._postStatusEmbed('ch', { agentId: 'a', health: 20, position: { x: 0, y: 0, z: 0 } });
+    bot._postHealthEmbed({ agentId: 'a', health: 10, food: 15, position: { x: 0, y: 0, z: 0 } });
+    bot._postInventoryEmbed({ agentId: 'a', items: [{ name: 'sword', count: 1 }] });
+    bot._postAlertEmbed('threat', { description: 'test', agentId: 'a' });
+    bot._postSkillEmbed({ skillName: 'skill-1', agentId: 'a' });
+    bot._postChatMessage({ agentId: 'a', message: 'hi', to: 'b' });
+    bot._postMilestoneEmbed({ agentId: 'a', message: 'done', position: { x: 1, y: 2, z: 3 } });
+
+    assert.equal(sendCount, 7, `expected 7 sends, got ${sendCount}`);
   });
 
-  it('_postReactPulse does not crash with no channels', () => {
-    bot._postReactPulse({ agentId: 'test', iteration: 1 });
-  });
+  it('_postReactPulse throttles by agent', () => {
+    let sendCount = 0;
+    bot.channels.status = { send: async () => { sendCount++; } };
 
-  it('_postAlertEmbed does not crash with no channels', () => {
-    bot._postAlertEmbed('threat', { description: 'test threat' });
-  });
-
-  it('_postSkillEmbed does not crash with no channels', () => {
-    bot._postSkillEmbed({ skillName: 'test-skill', agentId: 'coder' });
-  });
-
-  it('_postChatMessage does not crash with no channels', () => {
-    bot._postChatMessage({ agentId: 'test', message: 'hello' });
-  });
-
-  it('_postMilestoneEmbed does not crash with no channels', () => {
-    bot._postMilestoneEmbed({ agentId: 'test', message: 'milestone!' });
-  });
-
-  it('_postShinmungo does not crash with no forum channel', async () => {
-    await bot._postShinmungo({ agentId: 'test', message: 'confession' });
-  });
-
-  it('_postReactPulse throttles correctly', () => {
-    bot.channels.status = { send: async () => {} };
     bot._postReactPulse({ agentId: 'agent-1', iteration: 1 });
+    assert.equal(sendCount, 1, 'first pulse sent');
+
     const firstTime = bot._reactThrottle.get('agent-1');
-    assert.ok(firstTime > 0);
-    // Second call within throttle window should be suppressed (no error)
+    assert.equal(typeof firstTime, 'number');
+
+    // Second call within throttle window — suppressed
     bot._postReactPulse({ agentId: 'agent-1', iteration: 2 });
+    assert.equal(sendCount, 1, 'throttled — still 1');
+
+    // Different agent — not throttled
+    bot._postReactPulse({ agentId: 'agent-2', iteration: 1 });
+    assert.equal(sendCount, 2, 'different agent sent');
   });
 });

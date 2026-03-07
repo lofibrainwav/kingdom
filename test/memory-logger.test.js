@@ -68,14 +68,16 @@ describe('MemoryLogger', () => {
   });
 
   it('clear on non-existent file does not throw', async () => {
-    await logger.clear('nonexistent'); // should not throw
+    let threw = false;
+    try { await logger.clear('nonexistent'); } catch { threw = true; }
+    assert.equal(threw, false, 'clear should not throw for missing file');
   });
 
   it('logEvent handles write error gracefully', async () => {
-    // Create logger with valid dir, then point to invalid path for writes
     const badLogger = new MemoryLogger(logDir);
     badLogger.logDir = '/nonexistent/path/that/cannot/exist';
-    // Should not throw — error is caught internally via console.error
-    await badLogger.logEvent('test', { type: 'fail' });
+    let threw = false;
+    try { await badLogger.logEvent('test', { type: 'fail' }); } catch { threw = true; }
+    assert.equal(threw, false, 'logEvent should swallow write errors');
   });
 });

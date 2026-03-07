@@ -59,7 +59,9 @@ describe('NotebookLMQueue — graceful degradation', () => {
   it('should skip start() when disabled', async () => {
     const q = new NotebookLMQueue({ obsidianToken: '', board: createMockBoard() });
     await q.init();
-    await q.start(); // should not throw
+    await q.start();
+    assert.equal(q.enabled, false, 'queue should remain disabled');
+    assert.equal(q.subscriber, null, 'should not create subscriber when disabled');
   });
 
   afterEach(async () => {
@@ -296,7 +298,9 @@ describe('NotebookLMQueue — shutdown', () => {
   it('should handle missing subscriber', async () => {
     const q = new NotebookLMQueue();
     q.board = { disconnect: async () => {}, client: null };
-    await q.shutdown(); // should not throw
+    let threw = false;
+    try { await q.shutdown(); } catch { threw = true; }
+    assert.equal(threw, false, 'shutdown should not throw without subscriber');
   });
 });
 
