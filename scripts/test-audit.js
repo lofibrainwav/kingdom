@@ -121,3 +121,8 @@ if (stats.empty === 0 && stats.weak < totalItBlocks * 0.15) {
 
 console.log(`\n진짜 증거: ${stats.strong}/${totalItBlocks} tests make specific assertions`);
 console.log('━'.repeat(55) + '\n');
+
+// CI gate: fail if empty tests exist
+if (stats.empty > 0) {
+  process.exitCode = 1;
+}

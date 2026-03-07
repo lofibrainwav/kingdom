@@ -38,10 +38,16 @@ jobs:
       - name: 🔍 Lint
         run: npm run lint
 
-      - name: 🧪 Test (365+ required)
+      - name: 🧪 Test (560+ required)
         run: npm test
         env:
           BLACKBOARD_REDIS_URL: redis://localhost:6380
+
+      - name: 🔍 Quality Check (secrets, events, DI, coverage)
+        run: node scripts/quality-check.js
+
+      - name: 🔬 Test Quality Audit (no empty assertions allowed)
+        run: node scripts/test-audit.js
 
       - name: 📊 Test Summary
         if: always()

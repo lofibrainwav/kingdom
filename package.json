@@ -19,6 +19,8 @@
     "compound": "node --env-file=.env scripts/compound-demo.js",
     "party": "node --env-file=.env scripts/party-mode.js",
     "redis:check": "redis-cli -p 6380 ping",
+    "quality": "node scripts/quality-check.js",
+    "audit:tests": "node scripts/test-audit.js",
     "lint": "eslint agent/ test/",
     "status": "redis-cli hgetall kingdom:team:status:latest 2>/dev/null || echo \"Redis key not set yet\"",
     "sync": "node scripts/sync-to-vault.js",
