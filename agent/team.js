@@ -25,6 +25,7 @@ const { SkillZettelkasten } = require('./memory/skill-zettelkasten');
 const { NotebookLMQueue } = require('./memory/notebooklm-queue');
 const { TeamLeadAgent } = require('./team/team-lead');
 const { ResearchAgent } = require('./memory/research-agent');
+const { createMcpClients } = require('./memory/mcp-client-factory');
 
 // Shared SkillZettelkasten for RuminationEngine and GoTReasoner
 const sharedZK = new SkillZettelkasten();
@@ -49,7 +50,10 @@ const AGENTS = [
   },
   { name: 'NotebookLMQueue', factory: () => new NotebookLMQueue(), postInit: (inst) => inst.start() },
   { name: 'TeamLead', factory: () => new TeamLeadAgent(), postInit: (inst) => inst.start() },
-  { name: 'ResearchAgent', factory: () => new ResearchAgent(), postInit: (inst) => inst.start() },
+  { name: 'ResearchAgent', factory: () => {
+    const { grokClient, nlmClient } = createMcpClients();
+    return new ResearchAgent({ grokClient, nlmClient });
+  }, postInit: (inst) => inst.start() },
   {
     name: 'GoTReasoner',
     factory: () => new GoTReasoner(sharedZK),

@@ -508,6 +508,51 @@ describe('DashboardServer state API', () => {
   });
 });
 
+describe('DashboardServer — teamleadHealth in API state', () => {
+  it('includes teamleadHealth from Redis when getConfig is available', async () => {
+    const dashboard = new DashboardServer(0);
+    dashboard.taskRunner = { listTasks: async () => [] };
+    const healthData = {
+      timestamp: 1700000000000,
+      agentCount: 17,
+      activeAgents: 3,
+      trackedProjects: 2,
+      bottlenecks: [],
+    };
+    dashboard.board = {
+      listConfigs: async () => [],
+      getConfig: async (key) => key === 'teamlead:health' ? healthData : null,
+    };
+
+    let payload = '';
+    const res = {
+      writeHead: () => {},
+      end: (body) => { payload = body; },
+    };
+
+    await dashboard._handleAPIState({}, res, new URL('http://localhost/api/state'));
+    const data = JSON.parse(payload);
+    assert.deepEqual(data.teamleadHealth, healthData);
+    assert.equal(data.teamleadHealth.agentCount, 17);
+  });
+
+  it('returns null teamleadHealth when getConfig is not available', async () => {
+    const dashboard = new DashboardServer(0);
+    dashboard.taskRunner = { listTasks: async () => [] };
+    dashboard.board = { listConfigs: async () => [] };
+
+    let payload = '';
+    const res = {
+      writeHead: () => {},
+      end: (body) => { payload = body; },
+    };
+
+    await dashboard._handleAPIState({}, res, new URL('http://localhost/api/state'));
+    const data = JSON.parse(payload);
+    assert.equal(data.teamleadHealth, null);
+  });
+});
+
 describe('_sanitizeParam — input validation', () => {
   it('returns null for falsy values', () => {
     assert.equal(_sanitizeParam(null), null);

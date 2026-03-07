@@ -337,6 +337,26 @@ class DashboardServer {
       } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
     });
 
+    // Phase-5: TeamLead events → dashboard visibility
+    this.subscriber.subscribe('governance:teamlead:reviewed', (message) => {
+      try {
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
+        this._broadcast({ type: 'teamlead-reviewed', channel: 'governance:teamlead:reviewed', data });
+      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
+    });
+    this.subscriber.subscribe('governance:teamlead:vibe-translated', (message) => {
+      try {
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
+        this._broadcast({ type: 'teamlead-vibe', channel: 'governance:teamlead:vibe-translated', data });
+      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
+    });
+    this.subscriber.subscribe('knowledge:research:completed', (message) => {
+      try {
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
+        this._broadcast({ type: 'research-completed', channel: 'knowledge:research:completed', data });
+      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
+    });
+
     this.subscriber.pSubscribe('knowledge:reflexion:*', (message, channel) => {
       try {
         const data = typeof message === 'string' ? JSON.parse(message) : message;
@@ -614,6 +634,9 @@ class DashboardServer {
       const taskKnowledge = await this._loadTaskKnowledgeIndex(filters);
       const promotionCandidates = await this._loadPromotionCandidates(filters);
       const notebooklmQueue = await this._loadNotebookLMQueue(filters);
+      const teamleadHealth = this.board.getConfig
+        ? (await this.board.getConfig('teamlead:health') || null)
+        : null;
       const hydratedTasks = tasks.map((task) => ({
         ...task,
         latestKnowledge: taskKnowledge.get(`${task.projectId}:${task.taskId}`) || null,
@@ -635,6 +658,7 @@ class DashboardServer {
           notebooklmQueueCount: notebooklmQueue.length,
           notebooklmQueueCounts: this._derivePromotionQueueCounts(notebooklmQueue),
         },
+        teamleadHealth,
         timestamp: Date.now(),
       }));
     } catch (err) {

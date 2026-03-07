@@ -72,17 +72,20 @@ describe('CoderAgent', () => {
     };
   });
 
-  it('init subscribes to work:planning:decomposed and sets idle status', async () => {
-    let subscribedChannel = null;
+  it('init subscribes to 3 channels and sets idle status', async () => {
+    const channels = [];
     board.createSubscriber = async () => ({
       on: () => {},
-      subscribe: async (channel) => { subscribedChannel = channel; },
+      subscribe: async (channel) => { channels.push(channel); },
       disconnect: async () => {},
     });
 
     await agent.init();
 
-    assert.equal(subscribedChannel, 'work:planning:decomposed');
+    assert.equal(channels.length, 3);
+    assert.ok(channels.includes('work:planning:decomposed'));
+    assert.ok(channels.includes('governance:teamlead:vibe-translated'));
+    assert.ok(channels.includes('knowledge:got:completed'));
     assert.equal(statuses.at(-1).agentId, 'Kingdom_Coder');
     assert.equal(statuses.at(-1).status.state, 'idle');
   });
@@ -126,6 +129,84 @@ describe('CoderAgent', () => {
     const codingStatuses = statuses.filter(s => s.status.state === 'coding');
     assert.equal(codingStatuses.length, 2);
     assert.equal(statuses.at(-1).status.state, 'idle');
+  });
+
+  it('_absorbVibePatch stores guardrails from vibe translation', () => {
+    agent._absorbVibePatch({
+      patterns: [
+        { guardrail: 'Always use camelCase', gap: 'naming' },
+        { guardrail: 'Add input validation', gap: 'security' },
+      ],
+    });
+
+    assert.equal(agent.vibePatches.length, 2);
+    assert.equal(agent.vibePatches[0].guardrail, 'Always use camelCase');
+    assert.equal(agent.vibePatches[1].gap, 'security');
+  });
+
+  it('_absorbVibePatch handles JSON string input', () => {
+    agent._absorbVibePatch(JSON.stringify({
+      patterns: [{ guardrail: 'Use strict mode', gap: 'safety' }],
+    }));
+
+    assert.equal(agent.vibePatches.length, 1);
+    assert.equal(agent.vibePatches[0].guardrail, 'Use strict mode');
+  });
+
+  it('_absorbVibePatch caps at 10 patches', () => {
+    for (let i = 0; i < 15; i++) {
+      agent._absorbVibePatch({ patterns: [{ guardrail: `rule-${i}` }] });
+    }
+    assert.equal(agent.vibePatches.length, 10);
+    assert.equal(agent.vibePatches[0].guardrail, 'rule-5');
+  });
+
+  it('_absorbSkillSynergies stores synergy data', () => {
+    agent._absorbSkillSynergies({
+      synergies: [
+        { combo: 'TDD+Security', insight: 'Test security paths first' },
+      ],
+    });
+
+    assert.equal(agent.skillSynergies.length, 1);
+    assert.equal(agent.skillSynergies[0].combo, 'TDD+Security');
+  });
+
+  it('_absorbSkillSynergies caps at 10 synergies', () => {
+    for (let i = 0; i < 12; i++) {
+      agent._absorbSkillSynergies({ synergies: [{ combo: `s-${i}`, insight: 'x' }] });
+    }
+    assert.equal(agent.skillSynergies.length, 10);
+  });
+
+  it('_buildFeedbackContext returns empty string when no patches', () => {
+    assert.equal(agent._buildFeedbackContext(), '');
+  });
+
+  it('_buildFeedbackContext includes vibe patches and synergies', () => {
+    agent.vibePatches = [{ guardrail: 'Use camelCase', gap: 'naming' }];
+    agent.skillSynergies = [{ combo: 'TDD+Refactor', insight: 'Refactor after green' }];
+
+    const ctx = agent._buildFeedbackContext();
+    assert.ok(ctx.includes('Use camelCase'));
+    assert.ok(ctx.includes('naming'));
+    assert.ok(ctx.includes('TDD+Refactor'));
+    assert.ok(ctx.includes('Refactor after green'));
+  });
+
+  it('handlePlanComplete injects feedback context into LLM prompt', async () => {
+    let capturedPrompt = '';
+    llm.callLLM = async (prompt) => { capturedPrompt = prompt; return '// code'; };
+    agent.vibePatches = [{ guardrail: 'Always validate input', gap: 'security' }];
+
+    await agent.handlePlanComplete({
+      projectId: 'proj-1',
+      goal: 'Build API',
+      tasks: { tasks: [{ id: 'T1', description: 'Create endpoint' }] },
+    });
+
+    assert.ok(capturedPrompt.includes('Always validate input'));
+    assert.ok(capturedPrompt.includes('guardrails from recent reviews'));
   });
 
   it('shutdown disconnects subscriber, board, and LLM', async () => {
