@@ -18,6 +18,7 @@
 const { Blackboard } = require('../core/blackboard');
 const { getLogger } = require('../core/logger');
 const { createApiClients } = require('../core/api-clients');
+const { calculateEros, spiderWebToEros } = require('../core/eros');
 const log = getLogger();
 
 const SPIDER_WEB_PROMPT = `Evaluate this code batch from 3 axes and their intersections:
@@ -279,7 +280,15 @@ class TeamLeadAgent {
 
       this.reviewCount++;
 
-      // Publish review result
+      // EROS V6: compute 6-pillar score from Spider Web 3-axis result
+      const erosPillars = spiderWebToEros({
+        truth: result.truth?.score || 1,
+        goodness: result.goodness?.score || 1,
+        beauty: result.beauty?.score || 1,
+      });
+      const eros = calculateEros(erosPillars);
+
+      // Publish review result (now includes EROS V6 data)
       await this.board.publish('governance:teamlead:reviewed', {
         author: this.agentId,
         batchSize: batch.length,
@@ -291,11 +300,17 @@ class TeamLeadAgent {
           goodness: result.goodness?.score,
           beauty: result.beauty?.score,
         },
+        eros: {
+          sScore: eros.sScore,
+          fScore: eros.fScore,
+          decision: eros.decision,
+          pillars: erosPillars,
+        },
         summary: result.summary || '',
         storeWorthy: result.storeWorthy || false,
       });
 
-      log.info(this.agentId, `batch review complete: ${result.verdict} (T:${result.truth?.score} G:${result.goodness?.score} B:${result.beauty?.score})`);
+      log.info(this.agentId, `batch review complete: ${result.verdict} (T:${result.truth?.score} G:${result.goodness?.score} B:${result.beauty?.score}) EROS S:${eros.sScore.toFixed(2)} → ${eros.decision}`);
 
       // Quality gate: TeamLead takes responsibility for output quality
       if (result.verdict === 'fail') {
