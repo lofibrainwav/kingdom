@@ -92,6 +92,29 @@ task_test_audit() {
   log "test-audit: done"
 }
 
+task_vault_digest() {
+  log "=== Vault Digest (Obsidian wikilinks → Zettelkasten XP) ==="
+  cd "$KINGDOM"
+  if check_redis; then
+    node scripts/vault-digest.js 2>&1 | tee -a "$LOG"
+    log "vault-digest: done"
+  else
+    log "SKIP: vault-digest requires Redis"
+  fi
+}
+
+task_seed_zettelkasten() {
+  log "=== Seed Zettelkasten (load new skills + verify) ==="
+  cd "$KINGDOM"
+  if check_redis; then
+    node scripts/seed-zettelkasten.js --load-only 2>&1 | tee -a "$LOG"
+    node scripts/seed-zettelkasten.js --verify 2>&1 | tee -a "$LOG"
+    log "seed-zettelkasten: done"
+  else
+    log "SKIP: seed-zettelkasten requires Redis"
+  fi
+}
+
 # ── Modes ──────────────────────────────────────────────
 
 MODE="${1:-morning}"
@@ -107,15 +130,19 @@ case "$MODE" in
     task_vault_health
     task_sync_infra
     task_event_scan
+    task_vault_digest
     ;;
   evening)
     task_sync_session
     task_test_audit
+    task_seed_zettelkasten
     ;;
   weekly)
     task_vault_health
     task_sync_infra
     task_weekly_review
+    task_seed_zettelkasten
+    task_vault_digest
     ;;
   all)
     task_vault_health
@@ -123,6 +150,8 @@ case "$MODE" in
     task_event_scan
     task_sync_session
     task_test_audit
+    task_seed_zettelkasten
+    task_vault_digest
     ;;
   *)
     log "Unknown mode: $MODE (use: morning|evening|weekly|all)"
