@@ -247,6 +247,17 @@ function syncClaudeMd() {
     if (fs.existsSync(d)) dirs[key] = fs.readdirSync(d).filter(f => f.endsWith('.js')).length;
   }
 
+  // Fix test count in phase status line
+  if (!args.includes('--quick')) {
+    const tests = countTests();
+    if (typeof tests === 'number') {
+      src = src.replace(
+        /\d+ tests green/,
+        `${tests} tests green`
+      );
+    }
+  }
+
   // Fix agent file header
   src = src.replace(
     /### Agents \(\d+ files — \d+ team \+ \d+ core \+ \d+ interface \+ \d+ memory\)/,

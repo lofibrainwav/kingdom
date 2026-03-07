@@ -79,8 +79,12 @@ describe('team.js — Phase 4 synapse registration', () => {
     assert.equal(teamSrc.includes('inst.startEventFeed()'), true);
   });
 
-  it('should subscribe GoTReasoner to knowledge:rumination:digested', () => {
-    assert.equal(teamSrc.includes("'knowledge:rumination:digested'"), true);
+  it('should call start() for GoTReasoner postInit', () => {
+    assert.equal(teamSrc.includes("name: 'GoTReasoner'"), true);
+    assert.equal(teamSrc.includes('inst.start()'), true);
+    // Subscription now lives inside GoTReasoner.start()
+    const gotSrc = fs.readFileSync(path.join(__dirname, '..', 'agent', 'memory', 'got-reasoner.js'), 'utf-8');
+    assert.equal(gotSrc.includes("'knowledge:rumination:digested'"), true);
   });
 });
 

@@ -348,6 +348,13 @@ class TeamLeadAgent {
 
   _bufferFailure(message) {
     const data = typeof message === 'string' ? JSON.parse(message) : (message || {});
+
+    // Guard: skip own rejections to prevent infinite loop
+    if (data.author === this.agentId) {
+      log.debug(this.agentId, `skipping own rejection for ${data.taskId}`);
+      return;
+    }
+
     this.failureBuffer.push({
       ...data,
       bufferedAt: Date.now(),

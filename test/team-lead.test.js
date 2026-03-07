@@ -406,6 +406,19 @@ describe('TeamLeadAgent', () => {
     assert.ok(statuses.at(-1).status.task.includes('Vibe error'));
   });
 
+  it('_bufferFailure skips own rejections to prevent infinite loop', async () => {
+    agent = new TeamLeadAgent({ board, apiClients, batchSize: 3 });
+    await agent.init();
+
+    // Buffer own rejection (author === agentId)
+    agent._bufferFailure({ projectId: 'p1', taskId: 'T1', author: agent.agentId });
+    assert.equal(agent.failureBuffer.length, 0, 'own rejection should be skipped');
+
+    // Buffer external rejection
+    agent._bufferFailure({ projectId: 'p1', taskId: 'T2', author: 'reviewer' });
+    assert.equal(agent.failureBuffer.length, 1, 'external rejection should be buffered');
+  });
+
   // ── Stats / Lifecycle ──────────────────────────────────────────
 
   it('getStats returns extended state', async () => {

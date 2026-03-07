@@ -124,6 +124,12 @@ Choose the right pattern for the task at hand:
 | `/eval <target>` | Feature completeness evaluation (pass@1 metrics) |
 | `/learn [topic]` | Extract patterns from session → instincts |
 | `/checkpoint [name]` | Save session state snapshot for recovery |
+| `/dev <feature>` | Full pipeline (야전교범: preflight → battle → debrief) |
+| `/dev preflight` | Readiness check — 6-category weapon inspection |
+| `/dev research <topic>` | Codebase + vault + Grok unified search |
+| `/dev tdd <feature>` | TDD-only mode (skip research, jump to execute) |
+| `/dev debug <error>` | Debug pipeline with auto-search + Grok |
+| `/dev debrief` | Post-battle XP collection + lessons learned |
 
 **BMAD Commands** (41 commands — `.claude/commands/bmad-*`):
 Planning and methodology commands from the BMAD framework. Key ones:
@@ -389,9 +395,9 @@ See `~/.claude/skills/{skill-name}/SKILL.md` for details.
 ---
 
 ## Current Operating Focus
-- Phase-5 complete: 527 tests green, 17 agents, 0 dead events, 0 phantom listeners
+- Phase-5 complete: 560 tests green, 18 agents, 0 dead events, 0 phantom listeners
 - Codebase structure: `agent/core/` (11), `agent/team/` (10), `agent/interface/` (3), `agent/memory/` (11) = 35 files
-- Team launcher: 17 agents (10 team + 2 phase-5 + 6 core/memory → but TeamLead is in team/, ResearchAgent is in memory/)
+- Team launcher: 18 agents (10 team + 2 phase-5 + 6 core/memory)
 - Event map: 0 dead events, 0 phantom listeners
 - Completed:
   1. ~~skill/control-layer cleanup~~ (Phase-2)

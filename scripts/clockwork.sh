@@ -45,9 +45,15 @@ check_node() {
 # ── Tasks ──────────────────────────────────────────────
 
 task_vault_health() {
-  log "=== Vault Health Check ==="
+  log "=== Vault Health Check + Auto-fix ==="
   cd "$KINGDOM"
-  node scripts/vault-health.js 2>&1 | tee -a "$LOG"
+  # Skip auto-fix if user has uncommitted vault changes (prevent conflict)
+  if git -C "$BB" diff --quiet 2>/dev/null; then
+    node scripts/vault-health.js --fix 2>&1 | tee -a "$LOG"
+  else
+    log "WARN: uncommitted vault changes detected — running health check only (no --fix)"
+    node scripts/vault-health.js 2>&1 | tee -a "$LOG"
+  fi
   log "vault-health: done"
 }
 

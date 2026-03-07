@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Kingdom Team Launcher
- * Spawned by start.js — initializes all 17 agents with graceful shutdown.
+ * Spawned by start.js — initializes all 18 agents with graceful shutdown.
  */
 const { getLogger } = require('./core/logger');
 const { Blackboard } = require('./core/blackboard');
@@ -59,26 +59,7 @@ const AGENTS = [
     return new ResearchAgent({ board: sharedBoard, grokClient, nlmClient });
   }, postInit: (inst) => inst.start() },
   { name: 'ObsidianDashboard', factory: () => new ObsidianDashboard({ board: sharedBoard }), postInit: (inst) => inst.start() },
-  {
-    name: 'GoTReasoner',
-    factory: () => new GoTReasoner(sharedZK, { board: sharedBoard }),
-    postInit: async (inst) => {
-      const sub = await inst.board.createSubscriber();
-      sub.on('error', (err) => log.error('team', 'GoT subscriber error', { error: err.message }));
-      await sub.subscribe('knowledge:rumination:digested', async (message) => {
-        try {
-          const data = typeof message === 'string' ? JSON.parse(message) : (message || {});
-          if (data.insightCount > 0) {
-            await inst.fullReasoningCycle();
-          }
-        } catch (err) {
-          log.error('team', 'GoT trigger error', { error: err.message });
-        }
-      });
-      inst._eventSubscriber = sub;
-      log.info('team', 'GoTReasoner subscribed to knowledge:rumination:digested');
-    },
-  },
+  { name: 'GoTReasoner', factory: () => new GoTReasoner(sharedZK, { board: sharedBoard }), postInit: (inst) => inst.start() },
 ];
 
 const instances = [];

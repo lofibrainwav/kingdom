@@ -44,6 +44,24 @@ class GoTReasoner {
     log.info('got', 'initialized');
   }
 
+  async start() {
+    this._eventSubscriber = await this.board.createSubscriber();
+    this._eventSubscriber.on('error', (err) =>
+      log.error('got', 'subscriber error', { error: err.message })
+    );
+    await this._eventSubscriber.subscribe('knowledge:rumination:digested', async (message) => {
+      try {
+        const data = typeof message === 'string' ? JSON.parse(message) : (message || {});
+        if (data.insightCount > 0) {
+          await this.fullReasoningCycle();
+        }
+      } catch (err) {
+        log.error('got', 'event trigger error', { error: err.message });
+      }
+    });
+    log.info('got', 'subscribed to knowledge:rumination:digested');
+  }
+
   // ── Graph Construction ────────────────────────────────────
 
   /**

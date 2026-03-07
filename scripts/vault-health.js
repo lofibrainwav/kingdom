@@ -15,6 +15,32 @@ const BB = path.join(__dirname, '..', '..');
 const VAULT_DAILY = path.join(BB, '04-Daily');
 const SKIP_FILES = ['_README.md', '_CONTEXT.md', 'README.md'];
 const SKIP_DIRS = ['.obsidian', 'kingdom', 'node_modules', '.git', 'mcp-servers'];
+const args = process.argv.slice(2);
+const doFix = args.includes('--fix');
+
+// Folder → default related wikilinks mapping
+const FOLDER_LINKS = {
+  '00-Inbox': ['[[metacognition]]'],
+  '01-Projects': ['[[metacognition]]'],
+  '02-Research': ['[[weekly-questions]]', '[[kingdom/infrastructure]]'],
+  '03-Skills': ['[[debugging]]', '[[metacognition]]'],
+  '04-Daily': ['[[kingdom/infrastructure]]'],
+  '05-Operations': ['[[metacognition]]', '[[kingdom/infrastructure]]'],
+  '06-Archive': ['[[metacognition]]'],
+  '06-Dashboard': ['[[kingdom/infrastructure]]'],
+};
+
+// Folder → default type tag
+const FOLDER_TAGS = {
+  '00-Inbox': 'type/inbox',
+  '01-Projects': 'type/infrastructure',
+  '02-Research': 'type/research',
+  '03-Skills': 'type/pattern',
+  '04-Daily': 'type/session',
+  '05-Operations': 'type/decision',
+  '06-Archive': 'type/archive',
+  '06-Dashboard': 'type/infrastructure',
+};
 
 // --- Helpers ---
 
@@ -80,6 +106,73 @@ function checkStale(files) {
     }
   }
   return stale;
+}
+
+// --- Auto-fix ---
+
+function fixFrontmatter(files, missingFm) {
+  let fixed = 0;
+  for (const relPath of missingFm) {
+    try {
+      const fullPath = path.join(BB, relPath);
+      const content = fs.readFileSync(fullPath, 'utf-8');
+
+      // Skip if file has malformed frontmatter (starts with --- but isn't valid)
+      if (content.startsWith('---')) continue;
+
+      const folder = relPath.split('/')[0];
+      const now = new Date().toISOString().split('T')[0];
+      const typeTag = FOLDER_TAGS[folder] || 'type/note';
+      const statusTag = folder === '06-Archive' ? 'status/archived' : 'status/active';
+      const related = FOLDER_LINKS[folder] || ['[[metacognition]]'];
+
+      const frontmatter = [
+        '---',
+        `tags: [${typeTag}, source/vault-health, ${statusTag}]`,
+        `related: [${related.map(r => `"${r}"`).join(', ')}]`,
+        `created: ${now}`,
+        'author: vault-health-autofix',
+        '---',
+        '',
+      ].join('\n');
+
+      fs.writeFileSync(fullPath, frontmatter + content);
+      console.log(`  FIXED frontmatter: ${relPath}`);
+      fixed++;
+    } catch (err) {
+      console.log(`  SKIP frontmatter: ${relPath} (${err.code || err.message})`);
+    }
+  }
+  return fixed;
+}
+
+function fixOrphans(files, orphans) {
+  let fixed = 0;
+  for (const relPath of orphans) {
+    try {
+      const fullPath = path.join(BB, relPath);
+      const content = fs.readFileSync(fullPath, 'utf-8');
+      const folder = relPath.split('/')[0];
+      const links = FOLDER_LINKS[folder] || ['[[metacognition]]'];
+
+      // Skip if already has a See Also section
+      if (content.includes('## See Also')) continue;
+
+      const seeAlso = [
+        '',
+        '## See Also',
+        ...links.map(l => `- ${l}`),
+        '',
+      ].join('\n');
+
+      fs.writeFileSync(fullPath, content.trimEnd() + '\n' + seeAlso);
+      console.log(`  FIXED orphan: ${relPath} (added ${links.length} links)`);
+      fixed++;
+    } catch (err) {
+      console.log(`  SKIP orphan: ${relPath} (${err.code || err.message})`);
+    }
+  }
+  return fixed;
 }
 
 // --- Report ---
@@ -166,6 +259,15 @@ if (missingFm.length > 0) missingFm.forEach(m => console.log(`  - ${m}`));
 console.log(`\nStale active notes (>90 days): ${stale.length}`);
 if (stale.length > 0) stale.forEach(s => console.log(`  - ${s.path} (${s.days}d)`));
 
+// Auto-fix mode
+let fixedFm = 0, fixedOrphans = 0;
+if (doFix) {
+  console.log('\n--- Auto-fix mode ---');
+  fixedFm = fixFrontmatter(files, missingFm);
+  fixedOrphans = fixOrphans(files, orphans);
+  console.log(`\nFixed: ${fixedFm} frontmatter, ${fixedOrphans} orphans`);
+}
+
 // Write report
 const report = generateReport(orphans, missingFm, stale);
 const now = new Date().toISOString().split('T')[0];
@@ -173,3 +275,7 @@ const reportPath = path.join(VAULT_DAILY, `vault-health-${now}.md`);
 fs.mkdirSync(VAULT_DAILY, { recursive: true });
 fs.writeFileSync(reportPath, report);
 console.log(`\nReport: ${reportPath}`);
+
+if (!doFix && (orphans.length > 0 || missingFm.length > 0)) {
+  console.log('\nTip: Run with --fix to auto-repair frontmatter and orphan notes');
+}
