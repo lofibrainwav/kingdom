@@ -24,7 +24,9 @@
     "sync": "node scripts/sync-to-vault.js",
     "sync:quick": "node scripts/sync-to-vault.js --quick",
     "sync:review": "node scripts/sync-to-vault.js --review",
-    "vault:health": "node scripts/vault-health.js"
+    "vault:health": "node scripts/vault-health.js",
+    "vault:seed": "node scripts/seed-zettelkasten.js",
+    "vault:digest": "node scripts/vault-digest.js"
   },
   "keywords": [],
   "author": "",
