@@ -25,6 +25,19 @@ From step-01:
 
 ## EXECUTION SEQUENCE
 
+### 0. Auto-Research (Kingdom Integration)
+
+Before touching code, gather external knowledge:
+
+- **Codebase search**: Grep/Glob for existing implementations of similar functionality
+- **Vault knowledge**: Check `bb/03-Skills/debugging.md`, `bb/03-Skills/accuracy-rules.md`, `bb/01-Projects/kingdom/patterns.md` for relevant lessons
+- **Grok research** (if `GROK_MCP_URL` is set): Query Grok for best practices:
+  `node scripts/dev-research.js "<user's task description>"`
+  This auto-searches codebase + vault + asks Grok in one shot.
+- **Prior art**: Check if similar code exists elsewhere in the project before writing new
+
+Output: 3-5 bullet summary of research findings. This context feeds into the plan.
+
 ### 1. Identify Files to Modify
 
 Based on user's direct instructions:

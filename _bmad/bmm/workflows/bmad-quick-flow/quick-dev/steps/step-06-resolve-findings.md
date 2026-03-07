@@ -116,15 +116,11 @@ If `{execution_mode}` is "tech-spec":
 
 ---
 
-## WORKFLOW COMPLETE
+## NEXT STEP
 
-This is the final step. The Quick Dev workflow is now complete.
+Proceed immediately to `step-07-ship.md` — auto-commit, push, and sync.
 
-User can:
-
-- Commit changes
-- Run additional tests
-- Start new Quick Dev session
+This is the energy blast: all gathered work fires at once.
 
 ---
 

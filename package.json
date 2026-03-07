@@ -36,7 +36,9 @@
     "clock:evening": "bash scripts/clockwork.sh evening",
     "clock:weekly": "bash scripts/clockwork.sh weekly",
     "clock:install": "bash scripts/install-clockwork.sh install",
-    "clock:status": "bash scripts/install-clockwork.sh status"
+    "clock:status": "bash scripts/install-clockwork.sh status",
+    "dev:research": "node --env-file=.env scripts/dev-research.js",
+    "dev:ship": "bash scripts/auto-commit.sh --push"
   },
   "keywords": [],
   "author": "",
