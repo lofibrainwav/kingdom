@@ -297,6 +297,34 @@ class TeamLeadAgent {
 
       log.info(this.agentId, `batch review complete: ${result.verdict} (T:${result.truth?.score} G:${result.goodness?.score} B:${result.beauty?.score})`);
 
+      // Quality gate: TeamLead takes responsibility for output quality
+      if (result.verdict === 'fail') {
+        // Hard reject — send ALL tasks back for rework
+        log.warn(this.agentId, `QUALITY GATE: rejecting batch (${batch.length} tasks) — ${result.summary}`);
+        for (const item of batch) {
+          await this.board.publish('governance:review:rejected', {
+            projectId: item.projectId,
+            taskId: item.taskId,
+            file: item.file || 'unknown',
+            feedback: `[TeamLead Spider Web FAIL] ${result.summary}. Truth:${result.truth?.score}/5, Goodness:${result.goodness?.score}/5, Beauty:${result.beauty?.score}/5. Issues: ${this._collectIssues(result)}`,
+            author: this.agentId,
+          });
+        }
+      } else if (result.verdict === 'partial') {
+        // Partial — identify weak-axis tasks and send specific feedback
+        const gaps = this._collectGaps(result);
+        log.warn(this.agentId, `QUALITY GATE: partial pass — gaps: ${gaps}`);
+        await this.board.publish('governance:teamlead:vibe-translated', {
+          author: this.agentId,
+          failureCount: 0,
+          taskIds: batch.map(b => b.taskId),
+          projectId: batch[0]?.projectId,
+          patterns: [{ intent: 'quality improvement', gap: gaps, guardrail: result.summary }],
+          metaInsight: `Partial pass — strengthen: ${gaps}`,
+          suggestedPromptPatch: `Pay extra attention to: ${gaps}`,
+        });
+      }
+
       // If progress detected and result is store-worthy, trigger research
       if (result.storeWorthy && result.verdict !== 'fail') {
         await this.board.publish('knowledge:research:trigger', {
@@ -384,6 +412,24 @@ class TeamLeadAgent {
   }
 
   // ── Utilities ─────────────────────────────────────────────────
+
+  _collectIssues(result) {
+    const issues = [
+      ...(result.truth?.issues || []),
+      ...(result.goodness?.issues || []),
+      ...(result.beauty?.issues || []),
+    ];
+    return issues.slice(0, 5).join('; ') || 'unspecified';
+  }
+
+  _collectGaps(result) {
+    const gaps = [
+      ...(result.intersections?.truth_goodness?.gaps || []),
+      ...(result.intersections?.goodness_beauty?.gaps || []),
+      ...(result.intersections?.truth_beauty?.gaps || []),
+    ];
+    return gaps.slice(0, 5).join('; ') || 'unspecified gaps';
+  }
 
   _parseResult(response) {
     if (typeof response === 'object' && response !== null) return response;

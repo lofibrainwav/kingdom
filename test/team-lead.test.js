@@ -150,6 +150,66 @@ describe('TeamLeadAgent', () => {
     assert.equal(trigger.data.author, 'Kingdom_TeamLead');
   });
 
+  it('quality gate: fail verdict rejects all tasks back for rework', async () => {
+    mockAnthropicResponse = JSON.stringify({
+      truth: { score: 1, issues: ['Critical logic error'] },
+      goodness: { score: 2, issues: ['Security hole'] },
+      beauty: { score: 1, issues: ['Unreadable'] },
+      intersections: {
+        truth_goodness: { score: 1, gaps: [] },
+        goodness_beauty: { score: 1, gaps: [] },
+        truth_beauty: { score: 1, gaps: [] },
+      },
+      verdict: 'fail',
+      summary: 'Critical issues in all axes',
+      storeWorthy: false,
+    });
+
+    await agent.init();
+    const batch = [
+      { projectId: 'p1', taskId: 'T1', file: 'a.js' },
+      { projectId: 'p1', taskId: 'T2', file: 'b.js' },
+    ];
+    await agent.batchReview(batch);
+
+    // Should reject EACH task
+    const rejections = published.filter(p => p.channel === 'governance:review:rejected');
+    assert.equal(rejections.length, 2);
+    assert.equal(rejections[0].data.taskId, 'T1');
+    assert.equal(rejections[1].data.taskId, 'T2');
+    assert.ok(rejections[0].data.feedback.includes('Spider Web FAIL'));
+    assert.equal(rejections[0].data.author, 'Kingdom_TeamLead');
+  });
+
+  it('quality gate: partial verdict sends vibe feedback without rejection', async () => {
+    mockAnthropicResponse = JSON.stringify({
+      truth: { score: 4, issues: [] },
+      goodness: { score: 3, issues: ['Minor perf issue'] },
+      beauty: { score: 2, issues: ['Messy structure'] },
+      intersections: {
+        truth_goodness: { score: 3, gaps: ['Performance gap'] },
+        goodness_beauty: { score: 2, gaps: ['Structure vs maintainability'] },
+        truth_beauty: { score: 3, gaps: [] },
+      },
+      verdict: 'partial',
+      summary: 'Truth ok, but beauty needs work',
+      storeWorthy: false,
+    });
+
+    await agent.init();
+    await agent.batchReview([{ projectId: 'p1', taskId: 'T1', file: 'a.js' }]);
+
+    // Should NOT hard-reject
+    const rejections = published.filter(p => p.channel === 'governance:review:rejected');
+    assert.equal(rejections.length, 0);
+
+    // Should publish vibe-translated with gaps
+    const vibe = published.find(p => p.channel === 'governance:teamlead:vibe-translated');
+    assert.ok(vibe);
+    assert.ok(vibe.data.metaInsight.includes('Partial pass'));
+    assert.ok(vibe.data.patterns[0].gap.includes('Performance gap'));
+  });
+
   it('batchReview does NOT trigger research when verdict=fail', async () => {
     mockAnthropicResponse = JSON.stringify({
       truth: { score: 1, issues: ['Critical bug'] },
