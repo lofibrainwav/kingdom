@@ -56,6 +56,13 @@ const SKILL_MAP = {
   'knowledge-os': 'markdown-formatter',
   'obsidian-playbook': 'markdown-formatter',
   'weekly-questions': 'api-caller',
+  // Research notes → closest atomic skill
+  'agentic-engineering-9pillars': 'llm-prompter',
+  'memory-skill-compounding': 'redis-publisher',
+  'weekly-2026-w10': 'markdown-formatter',
+  // Daily/session notes
+  'session-log': 'file-writer',
+  'weekly-review': 'markdown-formatter',
 };
 
 // ── File Scanner (Obsidian API with file fallback) ────────────────
