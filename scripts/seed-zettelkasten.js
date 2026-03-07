@@ -21,6 +21,20 @@ const { RuminationEngine } = require('../agent/memory/rumination-engine');
 const VAULT_ATOMIC = path.join(__dirname, '..', 'agent', 'vault', '04-Skills', 'atomic');
 const ZK_PREFIX = 'zettelkasten';
 
+// Skill descriptions — human-readable purpose for each atomic skill
+const SKILL_DESCRIPTIONS = {
+  'api-caller': 'External API integration and HTTP request handling',
+  'code-reviewer': 'Code analysis for bugs, security issues, and improvements',
+  'env-checker': 'Environment variable validation and configuration verification',
+  'file-writer': 'File system operations — create, write, and manage files',
+  'git-commit': 'Git version control — staging, committing, branch management',
+  'lint-checker': 'Code style and formatting enforcement via ESLint/Prettier',
+  'llm-prompter': 'LLM prompt engineering and AI reasoning orchestration',
+  'markdown-formatter': 'Markdown document generation and formatting',
+  'redis-publisher': 'Redis pub/sub event publishing and data persistence',
+  'test-runner': 'Test execution, assertion validation, and coverage tracking',
+};
+
 // Realistic experience scenarios based on actual agent workflows
 const EXPERIENCE_SCENARIOS = [
   // code-reviewer + test-runner co-occurrence (quality pattern)
@@ -108,10 +122,11 @@ function parseFrontmatter(content, filename) {
     return m ? m[1].split(',').map(s => s.replace(/["' ]/g, '').trim()).filter(Boolean) : [];
   };
 
+  const id = get('id') || filename.replace('.md', '');
   return {
-    id: get('id') || filename.replace('.md', ''),
-    name: get('name') || filename.replace('.md', ''),
-    description: '',
+    id,
+    name: get('name') || id,
+    description: SKILL_DESCRIPTIONS[id] || '',
     errorType: get('error_type') || 'unknown',
     createdBy: get('created_by') || 'seed-script',
     createdAt: getNum('created_at') || Date.now(),

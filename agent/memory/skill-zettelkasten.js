@@ -278,7 +278,7 @@ class SkillZettelkasten {
     const compound = await this.createNote({
       name: compoundId,
       code: `// Compound: ${noteA.name} + ${noteB.name}\n${noteA.code}\n${noteB.code}`,
-      description: `Compound skill: ${noteA.description} + ${noteB.description}`,
+      description: `Compound skill: ${noteA.description || noteA.name} + ${noteB.description || noteB.name}`,
       errorType: `compound:${noteA.errorType}+${noteB.errorType}`,
       agentId: 'zettelkasten',
     });
@@ -293,6 +293,10 @@ class SkillZettelkasten {
 
     await this.board.setHashField(`${ZK_PREFIX}:notes`, compound.id, compound);
     await this._writeVaultNote(compound, 'compound');
+
+    // Clean up the atomic/ copy created by createNote()
+    const atomicCopy = path.join(this.vaultDir, 'atomic', `${compound.id}.md`);
+    try { await fsp.unlink(atomicCopy); } catch { /* may not exist */ }
 
     // Publish compound creation event
     await this.board.publish('knowledge:zettelkasten:compound-created', {
