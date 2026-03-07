@@ -17,7 +17,7 @@ class DecomposerAgent {
   constructor(options = {}) {
     this.board = options.board || new Blackboard();
     this.llm = new ReflexionEngine(null, { board: this.board });
-    this.got = new GoTReasoner(options.zettelkasten || new SkillZettelkasten(), { board: this.board });
+    this.got = new GoTReasoner(options.zettelkasten || new SkillZettelkasten({ board: this.board }), { board: this.board });
     this.agentId = 'Kingdom_Decomposer';
     this.dedup = new DedupGuard();
   }

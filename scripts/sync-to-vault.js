@@ -206,9 +206,43 @@ function syncSession() {
   console.log(`Appended: ${logPath}`);
 }
 
+// --- CLAUDE.md Stale Number Fix ---
+
+function syncClaudeMd() {
+  const claudePath = path.join(KINGDOM, 'CLAUDE.md');
+  if (!fs.existsSync(claudePath)) return;
+
+  let src = fs.readFileSync(claudePath, 'utf-8');
+  const agents = countAgents();
+  const agentFiles = countAgentFiles();
+
+  // Count per directory
+  const dirs = { core: 0, team: 0, interface: 0, memory: 0 };
+  for (const [dir, key] of [['core', 'core'], ['team', 'team'], ['interface', 'interface'], ['memory', 'memory']]) {
+    const d = path.join(KINGDOM, 'agent', dir);
+    if (fs.existsSync(d)) dirs[key] = fs.readdirSync(d).filter(f => f.endsWith('.js')).length;
+  }
+
+  // Fix agent file header
+  src = src.replace(
+    /### Agents \(\d+ files — \d+ team \+ \d+ core \+ \d+ interface \+ \d+ memory\)/,
+    `### Agents (${agentFiles} files — ${dirs.team} team + ${dirs.core} core + ${dirs.interface} interface + ${dirs.memory} memory)`
+  );
+
+  // Fix codebase structure line
+  src = src.replace(
+    /Codebase structure: `agent\/core\/` \(\d+\), `agent\/team\/` \(\d+\), `agent\/interface\/` \(\d+\), `agent\/memory\/` \(\d+\) = \d+ files/,
+    `Codebase structure: \`agent/core/\` (${dirs.core}), \`agent/team/\` (${dirs.team}), \`agent/interface/\` (${dirs.interface}), \`agent/memory/\` (${dirs.memory}) = ${agentFiles} files`
+  );
+
+  fs.writeFileSync(claudePath, src);
+  console.log(`Updated: ${claudePath} (${agentFiles} files, ${agents} agents)`);
+}
+
 // --- Main ---
 
 if (doInfra) syncInfra();
 if (doSession) syncSession();
+syncClaudeMd();
 
 console.log('Vault sync complete.');

@@ -98,8 +98,25 @@ class SwarmOrchestrator {
   }
 
   async shutdown() {
+    // SIGTERM first, then SIGKILL after 3s for stragglers
     for (const proc of Array.from(this.children.values())) {
-      try { proc.kill(); } catch {}
+      try { proc.kill('SIGTERM'); } catch {}
+    }
+    if (this.children.size > 0) {
+      await new Promise((resolve) => {
+        const timer = setTimeout(() => {
+          for (const proc of Array.from(this.children.values())) {
+            try { proc.kill('SIGKILL'); } catch {}
+          }
+          resolve();
+        }, 3000);
+        timer.unref();
+        // Resolve early if all children exit
+        let remaining = this.children.size;
+        for (const proc of this.children.values()) {
+          proc.once('exit', () => { if (--remaining <= 0) { clearTimeout(timer); resolve(); } });
+        }
+      });
     }
     this.children.clear();
     if (this.subscriber) await this.subscriber.disconnect();

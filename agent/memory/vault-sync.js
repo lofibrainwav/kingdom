@@ -242,6 +242,7 @@ class VaultAgent {
 
   async shutdown() {
     if (this.subscriber) await this.subscriber.disconnect();
+    if (this.board) await this.board.disconnect();
   }
 }
 

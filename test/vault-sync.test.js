@@ -245,14 +245,16 @@ describe('vault-sync — VaultAgent', () => {
     assert.ok(content.includes('[[ProjY]] - lint failure on T-999. Guardrail: \`no-console\`'));
   });
 
-  it('shutdown disconnects subscriber', async () => {
+  it('shutdown disconnects subscriber and board', async () => {
     let subDisconnected = false;
+    let boardDisconnected = false;
     const mockBoard = {
       createSubscriber: async () => ({
         on: () => {},
         subscribe: async () => {},
         disconnect: async () => { subDisconnected = true; },
-      })
+      }),
+      disconnect: async () => { boardDisconnected = true; },
     };
 
     const agent = new VaultAgent();
@@ -260,6 +262,7 @@ describe('vault-sync — VaultAgent', () => {
     await agent.shutdown();
 
     assert.ok(subDisconnected);
+    assert.ok(boardDisconnected);
   });
 
   it('init wires up Redis subscriber correctly', async () => {

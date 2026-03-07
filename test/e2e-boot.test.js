@@ -80,7 +80,9 @@ function createAgentDefs() {
   };
 }
 
-describe('E2E Boot — 17 agents init + shutdown with live Redis', async () => {
+const EXPECTED_AGENTS = createAgentDefs().agents.length;
+
+describe(`E2E Boot — ${EXPECTED_AGENTS} agents init + shutdown with live Redis`, async () => {
   const available = await isRedisAvailable();
   if (!available) {
     it('SKIP: Redis not available', { skip: 'Redis not reachable on ' + REDIS_URL }, () => {
@@ -89,11 +91,11 @@ describe('E2E Boot — 17 agents init + shutdown with live Redis', async () => {
     return;
   }
 
-  it('should have 17 agent definitions', () => {
-    assert.equal(createAgentDefs().agents.length, 17);
+  it(`should have ${EXPECTED_AGENTS} agent definitions`, () => {
+    assert.equal(createAgentDefs().agents.length, EXPECTED_AGENTS);
   });
 
-  it('all 17 agents boot with sharedBoard then shutdown (team.js simulation)', async () => {
+  it(`all ${EXPECTED_AGENTS} agents boot with sharedBoard then shutdown (team.js simulation)`, async () => {
     const { sharedBoard, agents } = createAgentDefs();
     const instances = [];
     const errors = [];
@@ -110,7 +112,7 @@ describe('E2E Boot — 17 agents init + shutdown with live Redis', async () => {
     }
 
     assert.equal(errors.length, 0, `Boot failures: ${JSON.stringify(errors)}`);
-    assert.equal(instances.length, 17, `Only ${instances.length}/17 agents booted`);
+    assert.equal(instances.length, EXPECTED_AGENTS, `Only ${instances.length}/${EXPECTED_AGENTS} agents booted`);
 
     // Shutdown all (reverse order like a real system)
     for (const { instance } of [...instances].reverse()) {

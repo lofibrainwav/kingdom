@@ -88,7 +88,7 @@ Choose the right pattern for the task at hand:
 
 ### When unsure → `kingdom-orchestrator`
 
-### Agents (28 files — 9 team + 9 core + 3 interface + 7 memory)
+### Agents (34 files — 10 team + 10 core + 3 interface + 11 memory)
 | Agent | One-liner |
 |-------|-----------|
 | `kingdom-orchestrator` | **START HERE** for complex tasks |
@@ -389,8 +389,8 @@ See `~/.claude/skills/{skill-name}/SKILL.md` for details.
 ---
 
 ## Current Operating Focus
-- Phase-5 complete: 522 tests green, 17 agents, 0 dead events, 0 phantom listeners
-- Codebase structure: `agent/core/` (9), `agent/team/` (10), `agent/interface/` (3), `agent/memory/` (9) = 31 files
+- Phase-5 complete: 527 tests green, 17 agents, 0 dead events, 0 phantom listeners
+- Codebase structure: `agent/core/` (10), `agent/team/` (10), `agent/interface/` (3), `agent/memory/` (11) = 34 files
 - Team launcher: 17 agents (10 team + 2 phase-5 + 6 core/memory → but TeamLead is in team/, ResearchAgent is in memory/)
 - Event map: 0 dead events, 0 phantom listeners
 - Completed:
