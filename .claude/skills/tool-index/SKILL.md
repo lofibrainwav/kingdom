@@ -138,7 +138,7 @@ description: Use when you need to decide which Kingdom agent, skill, MCP server,
 |---------|-------------|
 | `npm test` | Run all tests (requires Redis:6380) |
 | `npm run test:blackboard` | Run blackboard.test.js only |
-| `npm run start` | Start dashboard |
+| `npm run start` | Start full stack (team + MCP) |
 | `npm run start:pipeline` | Start PM pipeline agent |
 | `npm run redis:check` | Ping Redis on port 6380 |
 | `npm run status` | Show team status from Redis |
@@ -199,7 +199,7 @@ Use only for origin-story adapter work.
 | `agent/memory/got-reasoner.js` | Knowledge graph reasoning |
 | `agent/memory/skill-zettelkasten.js` | Knowledge persistence layer |
 | `agent/memory/vault-sync.js` | Obsidian sync bridge |
-| `agent/interface/dashboard.js` | Dashboard server |
+| `agent/interface/obsidian-dashboard.js` | Obsidian-native dashboard |
 | `test/*.test.js` | Test suite |
 | `.claude/agents/` | All Claude agents (13) |
 | `.claude/skills/` | Project skills |

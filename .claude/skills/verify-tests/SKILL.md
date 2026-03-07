@@ -58,7 +58,7 @@ Verify that the Kingdom test suite is healthy and all agent files have coverage.
 | Agent File | Expected Test File |
 |---|---|
 | agent/interface/mcp-orchestrator.js | test/mcp-orchestrator.test.js |
-| agent/interface/dashboard.js | test/dashboard-state.test.js |
+| agent/interface/obsidian-dashboard.js | test/obsidian-dashboard.test.js |
 | agent/interface/discord-bot.js | (no dedicated test — exempt, external API) |
 
 ### Memory (agent/memory/) — 7 files

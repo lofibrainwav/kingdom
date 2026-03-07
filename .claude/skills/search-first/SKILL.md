@@ -71,7 +71,7 @@ Read: existing utility files (agent/*.js, config/*.js)
 | Logging | `agent/core/logger.js` |
 | Timeout constants | `config/timeouts.js` |
 | Knowledge layer | `agent/memory/*.js` (GoT, rumination, zettelkasten, vault-sync) |
-| Interfaces | `agent/interface/*.js` (dashboard, discord, MCP, skill-pipeline) |
+| Interfaces | `agent/interface/*.js` (obsidian-dashboard, discord, MCP, skill-pipeline) |
 | Test helpers | `test/*.test.js` (shared mock board pattern) |
 | Legacy adapter | *(removed — OctivBot.js no longer exists)* |
 

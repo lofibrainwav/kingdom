@@ -25,7 +25,7 @@ description: Use when agent runtime files change and you need to verify base-cla
 |-----------|-------|---------|
 | `agent/core/` | blackboard.js, logger.js, ReflexionEngine.js, memory-logger.js | Core infrastructure |
 | `agent/team/` | pm-agent.js, architect.js, coder.js, decomposer.js, deployer.js, failure-agent.js, reviewer.js, swarm-orchestrator.js, watchdog-agent.js | 9 team agents |
-| `agent/interface/` | dashboard.js, discord-bot.js, mcp-orchestrator.js, skill-pipeline.js, zettelkasten-hooks.js | External interfaces |
+| `agent/interface/` | obsidian-dashboard.js, discord-bot.js, mcp-orchestrator.js, skill-pipeline.js, zettelkasten-hooks.js | External interfaces |
 | `agent/memory/` | got-reasoner.js, rumination-engine.js, skill-zettelkasten.js, vault-sync.js | Knowledge layer |
 | `agent/team.js` | (root) | Multi-agent launcher |
 

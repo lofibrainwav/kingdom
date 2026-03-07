@@ -53,7 +53,7 @@ gh run view <id>             # CI run details
 
 ### Node
 ```bash
-node --env-file=.env agent/interface/dashboard.js
+node --env-file=.env start.js
 node --env-file=.env agent/team/pm-agent.js
 npm install                  # install dependencies
 ```
