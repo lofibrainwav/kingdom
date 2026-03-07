@@ -126,6 +126,28 @@ task_redis_clean() {
   fi
 }
 
+task_weekly_research() {
+  log "=== Weekly Research (Obsidian → NLM → Grok query pipeline) ==="
+  cd "$KINGDOM"
+  if [ -f "$BB/mcp-servers/weekly-research.js" ]; then
+    node "$BB/mcp-servers/weekly-research.js" 2>&1 | tee -a "$LOG"
+    log "weekly-research: done"
+  else
+    log "SKIP: weekly-research.js not found"
+  fi
+}
+
+task_pattern_promote() {
+  log "=== Pattern Promoter (02-Research → 03-Skills auto-graduation) ==="
+  cd "$KINGDOM"
+  if [ -f "$BB/mcp-servers/pattern-promoter.js" ]; then
+    node "$BB/mcp-servers/pattern-promoter.js" 2>&1 | tee -a "$LOG"
+    log "pattern-promote: done"
+  else
+    log "SKIP: pattern-promoter.js not found"
+  fi
+}
+
 # ── Modes ──────────────────────────────────────────────
 
 MODE="${1:-morning}"
@@ -153,6 +175,8 @@ case "$MODE" in
     task_vault_health
     task_sync_infra
     task_weekly_review
+    task_weekly_research
+    task_pattern_promote
     task_seed_zettelkasten
     task_vault_digest
     ;;

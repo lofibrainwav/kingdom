@@ -44,7 +44,12 @@
     "dev:ship": "bash scripts/auto-commit.sh --push",
     "dev:debrief": "node scripts/debrief.js --save",
     "redis:clean": "node scripts/redis-clean.js",
-    "redis:clean:force": "node scripts/redis-clean.js --force --backup"
+    "redis:clean:force": "node scripts/redis-clean.js --force --backup",
+    "e2e:live": "node --env-file=.env scripts/e2e-live.js",
+    "e2e:enricher": "node --env-file=.env scripts/e2e-enricher-live.js",
+    "scan:repos": "node scripts/scan-repos.js",
+    "research:weekly": "node --env-file=.env ../mcp-servers/weekly-research.js",
+    "research:promote": "node --env-file=.env ../mcp-servers/pattern-promoter.js"
   },
   "keywords": [],
   "author": "",
