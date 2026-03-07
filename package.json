@@ -20,7 +20,9 @@
     "party": "node --env-file=.env scripts/party-mode.js",
     "redis:check": "redis-cli -p 6380 ping",
     "lint": "eslint agent/ test/",
-    "status": "redis-cli hgetall kingdom:team:status:latest 2>/dev/null || echo \"Redis key not set yet\""
+    "status": "redis-cli hgetall kingdom:team:status:latest 2>/dev/null || echo \"Redis key not set yet\"",
+    "sync": "node scripts/sync-to-vault.js",
+    "sync:quick": "node scripts/sync-to-vault.js --quick"
   },
   "keywords": [],
   "author": "",
