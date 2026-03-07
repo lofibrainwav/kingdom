@@ -31,34 +31,22 @@ scanDirs.forEach(scanSecrets);
 console.log('=== SECRETS SCAN ===');
 console.log(secretHits.length === 0 ? '✅ Clean — no hardcoded secrets' : '⚠️ ' + secretHits.join('\n'));
 
-// ── 2. Event Map Audit ───────────────────────────────
-const pubRe = /publish\(\s*['`]([^'`]+)/g;
-const subRe = /(?:subscribe|_subscribeBroadcast|_subscribePromotionEvent)\(\s*['`]([^'`]+)/g;
-const published = new Set();
-const subscribed = new Set();
-
-function scanEvents(dir) {
-  if (!fs.existsSync(dir)) return;
-  for (const f of fs.readdirSync(dir, { withFileTypes: true })) {
-    const fp = path.join(dir, f.name);
-    if (f.isDirectory()) scanEvents(fp);
-    else if (f.name.endsWith('.js') && !fp.includes('node_modules') && !fp.includes('test/')) {
-      const c = fs.readFileSync(fp, 'utf-8');
-      for (const m of c.matchAll(pubRe)) published.add(m[1]);
-      for (const m of c.matchAll(subRe)) subscribed.add(m[1]);
-    }
-  }
+// ── 2. Event Map Audit (delegates to scan-events.js — single source of truth)
+const { execSync } = require('child_process');
+let dead = [], phantom = [];
+try {
+  const scanOutput = execSync('node scripts/scan-events.js', { encoding: 'utf-8', timeout: 10000 });
+  console.log('\n=== EVENT MAP ===');
+  console.log(scanOutput.trim());
+  const deadMatch = scanOutput.match(/Dead events: (\d+)/);
+  const phantomMatch = scanOutput.match(/Phantom listeners: (\d+)/);
+  dead = deadMatch && deadMatch[1] !== '0' ? Array(parseInt(deadMatch[1])).fill('x') : [];
+  phantom = phantomMatch && phantomMatch[1] !== '0' ? Array(parseInt(phantomMatch[1])).fill('x') : [];
+} catch (err) {
+  console.log('\n=== EVENT MAP ===');
+  console.log('⚠️ scan-events.js failed: ' + err.message);
+  dead = ['scan-failed'];
 }
-scanEvents('agent');
-scanEvents('scripts');
-
-const dead = [...published].filter(e => !subscribed.has(e));
-const phantom = [...subscribed].filter(e => !published.has(e));
-
-console.log('\n=== EVENT MAP ===');
-console.log(`Published: ${published.size} | Subscribed: ${subscribed.size}`);
-console.log(`Dead (pub, no sub): ${dead.length}${dead.length ? ' → ' + dead.join(', ') : ''}`);
-console.log(`Phantom (sub, no pub): ${phantom.length}${phantom.length ? ' → ' + phantom.join(', ') : ''}`);
 
 // ── 3. File Count & Structure ────────────────────────
 const agentDirs = { 'agent/core': 0, 'agent/team': 0, 'agent/memory': 0, 'agent/interface': 0 };
