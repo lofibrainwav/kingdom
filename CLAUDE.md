@@ -372,9 +372,9 @@ See `~/.claude/skills/{skill-name}/SKILL.md` for details.
 
 | MCP | Why Unused | Activation Condition |
 |-----|-----------|---------------------|
-| `supabase` | No web frontend/DB provisioned | When Kingdom dashboard needs persistent storage |
+| `supabase` | No web frontend/DB provisioned | When Kingdom needs persistent storage beyond Redis |
 | `sentry` | No production deployment exists | When bots deploy to cloud (not local Docker) |
-| `vercel` | No web frontend built | When dashboard UI ships |
+| `vercel` | No web frontend built | When web UI ships (dashboard is now Obsidian-native) |
 | `figma` | No design specs created | When UI/UX design phase begins |
 
 > Full mapping: see `capability-registry` skill for Agent↔MCP↔Skill cross-reference.
@@ -390,7 +390,7 @@ See `~/.claude/skills/{skill-name}/SKILL.md` for details.
 
 ## Current Operating Focus
 - Phase-5 complete: 527 tests green, 17 agents, 0 dead events, 0 phantom listeners
-- Codebase structure: `agent/core/` (11), `agent/team/` (10), `agent/interface/` (4), `agent/memory/` (11) = 36 files
+- Codebase structure: `agent/core/` (11), `agent/team/` (10), `agent/interface/` (3), `agent/memory/` (11) = 35 files
 - Team launcher: 17 agents (10 team + 2 phase-5 + 6 core/memory → but TeamLead is in team/, ResearchAgent is in memory/)
 - Event map: 0 dead events, 0 phantom listeners
 - Completed:
@@ -408,8 +408,7 @@ See `~/.claude/skills/{skill-name}/SKILL.md` for details.
 - Next priorities:
   1. E2E runtime validation (`npm run e2e` with live agents + Redis)
   2. ~~Swarm trigger wiring~~ (Decomposer → spawn, Deployer → terminate)
-  3. Dashboard HTTP/SSE test coverage expansion
-  4. Production deployment readiness (Sentry, Vercel, Supabase — blocked on infra)
+  3. Production deployment readiness (Sentry, Vercel, Supabase — blocked on infra)
 
 ---
 

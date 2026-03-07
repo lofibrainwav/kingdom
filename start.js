@@ -1,18 +1,17 @@
 #!/usr/bin/env node
 /**
  * Kingdom Full Stack Starter
- * Launches all services: team (agents) + dashboard + MCP server
- * Usage: node start.js [--no-dashboard] [--no-mcp]
+ * Launches all services: team (agents) + MCP server
+ * Usage: node start.js [--no-mcp]
  *
+ * Dashboard is now Obsidian-native (ObsidianDashboard in team.js).
  * Standalone services are started in the same process.
  * Press Ctrl+C to stop everything gracefully.
  */
-const { DashboardServer } = require('./agent/interface/dashboard');
 const { MCPOrchestrator } = require('./agent/interface/mcp-orchestrator');
 const { spawn } = require('child_process');
 
 const args = process.argv.slice(2);
-const noDashboard = args.includes('--no-dashboard');
 const noMCP = args.includes('--no-mcp');
 
 async function main() {
@@ -21,14 +20,6 @@ async function main() {
   console.log('═══════════════════════════════════════');
 
   const services = [];
-
-  // Start Dashboard (port 3000)
-  if (!noDashboard) {
-    const dashboard = new DashboardServer();
-    await dashboard.start();
-    services.push({ name: 'Dashboard', instance: dashboard, stop: () => dashboard.stop() });
-    console.log('  ✅ Dashboard:  http://localhost:3000');
-  }
 
   // Start MCP Orchestrator (Redis-based agent registry)
   if (!noMCP) {
