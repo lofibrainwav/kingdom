@@ -188,6 +188,10 @@ case "$MODE" in
     task_test_audit
     task_seed_zettelkasten
     task_vault_digest
+    task_redis_clean
+    task_weekly_review
+    task_weekly_research
+    task_pattern_promote
     ;;
   *)
     log "Unknown mode: $MODE (use: morning|evening|weekly|all)"

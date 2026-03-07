@@ -89,7 +89,7 @@ class SwarmOrchestrator {
   }
 
   async updateStatus(state, details) {
-    await this.board.setHashField('agents:status', this.agentId, {
+    await this.board.updateStatus(this.agentId, {
       state,
       task: details,
       health: 20,

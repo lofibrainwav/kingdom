@@ -19,6 +19,7 @@ describe('SwarmOrchestrator — Vibe Coding Parallel Execution', () => {
       connect: async () => {},
       disconnect: async () => {},
       setHashField: async () => {},
+      updateStatus: async () => {},
       createSubscriber: async () => {
         return {
           on: () => {},
@@ -55,8 +56,8 @@ describe('SwarmOrchestrator — Vibe Coding Parallel Execution', () => {
 
   it('Should initialize swarm orchestrator and register as agent', async () => {
     let statusSaved = false;
-    mock.method(mockBoard, 'setHashField', async (key, field, val) => {
-      if (key === 'agents:status' && field === 'Kingdom_Swarm') {
+    mock.method(mockBoard, 'updateStatus', async (agentId, val) => {
+      if (agentId === 'Kingdom_Swarm') {
         assert.equal(val.state, 'idle');
         statusSaved = true;
       }
@@ -69,11 +70,13 @@ describe('SwarmOrchestrator — Vibe Coding Parallel Execution', () => {
   it('handleSpawn should spawn child processes and update swarm status', async () => {
     let swarmSaved = false;
     let orchestratingStatus = false;
-    
-    mock.method(mockBoard, 'setHashField', async (key, field, val) => {
-      if (key === 'agents:status' && field === 'Kingdom_Swarm') {
-        if (val.state === 'orchestrating') orchestratingStatus = true;
+
+    mock.method(mockBoard, 'updateStatus', async (agentId, val) => {
+      if (agentId === 'Kingdom_Swarm' && val.state === 'orchestrating') {
+        orchestratingStatus = true;
       }
+    });
+    mock.method(mockBoard, 'setHashField', async (key, field, val) => {
       if (key === 'swarms' && field === 'test-swarm') {
         assert.equal(val.status, 'active');
         assert.equal(val.agentCount, 2);
