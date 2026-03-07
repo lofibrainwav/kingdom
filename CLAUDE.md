@@ -395,7 +395,7 @@ See `~/.claude/skills/{skill-name}/SKILL.md` for details.
 ---
 
 ## Current Operating Focus
-- Phase-5 complete: 574 tests green, 18 agents, 0 dead events, 0 phantom listeners
+- Phase-5 complete: 576 tests green, 18 agents, 0 dead events, 0 phantom listeners
 - Codebase structure: `agent/core/` (11), `agent/team/` (10), `agent/interface/` (3), `agent/memory/` (11) = 35 files
 - Team launcher: 18 agents (10 team + 2 phase-5 + 6 core/memory)
 - Event map: 0 dead events, 0 phantom listeners
@@ -412,7 +412,7 @@ See `~/.claude/skills/{skill-name}/SKILL.md` for details.
   10. ~~Test gap closure~~ (vault-bridge.test.js, notebooklm-queue.test.js)
   11. ~~Phase-5 TeamLead + ResearchAgent~~ (Claude metacognitive supervisor + Grok→NLM pipeline + Spider Web 진선미)
 - Next priorities:
-  1. E2E runtime validation (`npm run e2e` with live agents + Redis)
+  1. ~~E2E runtime validation~~ (18-agent boot test + drift detection + Blackboard E2E + pub/sub E2E)
   2. ~~Swarm trigger wiring~~ (Decomposer → spawn, Deployer → terminate)
   3. Production deployment readiness (Sentry, Vercel, Supabase — blocked on infra)
 

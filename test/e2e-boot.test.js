@@ -26,6 +26,7 @@ const { NotebookLMQueue } = require('../agent/memory/notebooklm-queue');
 const { TeamLeadAgent } = require('../agent/team/team-lead');
 const { ResearchAgent } = require('../agent/memory/research-agent');
 const { ObsidianDashboard } = require('../agent/interface/obsidian-dashboard');
+const { createMcpClients } = require('../agent/memory/mcp-client-factory');
 
 const REDIS_URL = process.env.BLACKBOARD_REDIS_URL || 'redis://localhost:6380';
 
@@ -47,17 +48,17 @@ const { Blackboard } = require('../agent/core/blackboard');
 function createAgentDefs() {
   const sharedBoard = new Blackboard();
   sharedBoard.markShared();
-  const sharedZK = new SkillZettelkasten();
+  const sharedZK = new SkillZettelkasten({ board: sharedBoard });
   return {
     sharedBoard,
     agents: [
       { name: 'PMAgent', factory: () => new PMAgent({ board: sharedBoard }) },
-      { name: 'Architect', factory: () => new ArchitectAgent({ board: sharedBoard }) },
+      { name: 'Architect', factory: () => new ArchitectAgent({ board: sharedBoard, zk: sharedZK }) },
       { name: 'Decomposer', factory: () => new DecomposerAgent({ board: sharedBoard, zettelkasten: sharedZK }) },
-      { name: 'Coder', factory: () => new CoderAgent({ board: sharedBoard }) },
-      { name: 'Reviewer', factory: () => new ReviewerAgent({ board: sharedBoard }) },
+      { name: 'Coder', factory: () => new CoderAgent({ board: sharedBoard, zk: sharedZK }) },
+      { name: 'Reviewer', factory: () => new ReviewerAgent({ board: sharedBoard, zk: sharedZK }) },
       { name: 'Deployer', factory: () => new DeployerAgent({ board: sharedBoard }) },
-      { name: 'Failure', factory: () => new FailureAgent({ board: sharedBoard }) },
+      { name: 'Failure', factory: () => new FailureAgent({ board: sharedBoard, zk: sharedZK }) },
       { name: 'Swarm', factory: () => new SwarmOrchestrator({ board: sharedBoard }) },
       { name: 'Watchdog', factory: () => new WatchdogAgent({ board: sharedBoard }) },
       { name: 'TaskCloseout', factory: () => new TaskCloseoutOrchestrator({ board: sharedBoard }), postInit: (inst) => inst.start() },
@@ -66,23 +67,40 @@ function createAgentDefs() {
       { name: 'RuminationEngine', factory: () => new RuminationEngine(sharedZK, { board: sharedBoard }), postInit: (inst) => inst.startEventFeed() },
       { name: 'NotebookLMQueue', factory: () => new NotebookLMQueue({ board: sharedBoard }), postInit: (inst) => inst.start() },
       { name: 'TeamLead', factory: () => new TeamLeadAgent({ board: sharedBoard }), postInit: (inst) => inst.start() },
-      { name: 'ResearchAgent', factory: () => new ResearchAgent({ board: sharedBoard }), postInit: (inst) => inst.start() },
+      { name: 'ResearchAgent', factory: () => {
+        const { grokClient, nlmClient } = createMcpClients();
+        return new ResearchAgent({ board: sharedBoard, grokClient, nlmClient });
+      }, postInit: (inst) => inst.start() },
       { name: 'ObsidianDashboard', factory: () => new ObsidianDashboard({ board: sharedBoard }), postInit: (inst) => inst.start() },
-      {
-        name: 'GoTReasoner',
-        factory: () => new GoTReasoner(sharedZK, { board: sharedBoard }),
-        postInit: async (inst) => {
-          const sub = await inst.board.createSubscriber();
-          sub.on('error', () => {});
-          await sub.subscribe('knowledge:rumination:digested', () => {});
-          inst._eventSubscriber = sub;
-        },
-      },
+      { name: 'GoTReasoner', factory: () => new GoTReasoner(sharedZK, { board: sharedBoard }), postInit: (inst) => inst.start() },
     ],
   };
 }
 
 const EXPECTED_AGENTS = createAgentDefs().agents.length;
+
+describe('E2E Boot — drift detection (e2e-boot vs team.js)', () => {
+  it('agent count matches team.js', () => {
+    const teamSrc = require('fs').readFileSync(require('path').join(__dirname, '..', 'agent', 'team.js'), 'utf-8');
+    const teamNames = [...teamSrc.matchAll(/\{\s*name:\s*'([^']+)'/g)].map(m => m[1]);
+    const bootNames = createAgentDefs().agents.map(a => a.name);
+    assert.deepEqual(bootNames.sort(), teamNames.sort(), 'e2e-boot agents must match team.js');
+  });
+
+  it('shared dependencies match team.js (zk injection)', () => {
+    const teamSrc = require('fs').readFileSync(require('path').join(__dirname, '..', 'agent', 'team.js'), 'utf-8');
+    const bootSrc = require('fs').readFileSync(__filename, 'utf-8');
+    // Agents that receive zk in team.js should also receive it in e2e-boot
+    const zkAgents = ['Architect', 'Coder', 'Reviewer', 'Failure'];
+    for (const agent of zkAgents) {
+      const teamHasZk = teamSrc.includes(`name: '${agent}'`) && teamSrc.includes(`new ${agent === 'Failure' ? 'FailureAgent' : agent + 'Agent'}({ board: sharedBoard, zk: sharedZK })`);
+      const bootHasZk = bootSrc.includes(`name: '${agent}'`) && bootSrc.includes(`zk: sharedZK`);
+      if (teamHasZk) {
+        assert.equal(bootHasZk, true, `${agent} should have zk injection in e2e-boot (matches team.js)`);
+      }
+    }
+  });
+});
 
 describe(`E2E Boot — ${EXPECTED_AGENTS} agents init + shutdown with live Redis`, async () => {
   const available = await isRedisAvailable();
