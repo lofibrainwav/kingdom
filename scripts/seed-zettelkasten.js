@@ -102,7 +102,7 @@ async function loadSeeds(board) {
     console.log(`  Loaded: ${note.id} (${note.tier}, XP:${note.xp})`);
   }
 
-  const total = await board.client.hLen(`${ZK_PREFIX}:notes`);
+  const total = await board.client.hLen(`kingdom:${ZK_PREFIX}:notes`);
   console.log(`\nPhase 1 complete: ${loaded} new, ${total} total in Redis`);
   return total;
 }

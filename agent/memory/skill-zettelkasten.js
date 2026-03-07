@@ -25,7 +25,7 @@ const { getLogger } = require('../core/logger');
 const log = getLogger();
 
 const VAULT_DIR = path.join(__dirname, '..', 'vault', '04-Skills');
-const ZK_PREFIX = 'zettelkasten';
+const ZK_PREFIX_DEFAULT = 'zettelkasten';
 
 // XP tiers — RPG progression
 const TIERS = [
@@ -43,11 +43,13 @@ class SkillZettelkasten {
       this.board = boardOrOptions;
       this.vaultDir = vaultDirStr || VAULT_DIR;
       this.logger = null;
+      this.zkPrefix = ZK_PREFIX_DEFAULT;
     } else {
       const options = boardOrOptions || {};
       this.board = options.board || new Blackboard();
       this.vaultDir = options.vaultDir || VAULT_DIR;
       this.logger = options.logger || null;
+      this.zkPrefix = options.zkPrefix || ZK_PREFIX_DEFAULT;
     }
   }
 
@@ -111,7 +113,7 @@ class SkillZettelkasten {
     };
 
     // Save to Redis
-    await this.board.setHashField(`${ZK_PREFIX}:notes`, note.id, note);
+    await this.board.setHashField(`${this.zkPrefix}:notes`, note.id, note);
 
     // Persist to Obsidian vault
     await this._writeVaultNote(note);
@@ -150,7 +152,7 @@ class SkillZettelkasten {
     const tieredUp = oldTier !== note.tier;
 
     // Save
-    await this.board.setHashField(`${ZK_PREFIX}:notes`, note.id, note);
+    await this.board.setHashField(`${this.zkPrefix}:notes`, note.id, note);
     await this._writeVaultNote(note);
 
     if (tieredUp) {
@@ -187,14 +189,14 @@ class SkillZettelkasten {
    * Get a note by ID
    */
   async getNote(skillId) {
-    return await this.board.getHashField(`${ZK_PREFIX}:notes`, skillId);
+    return await this.board.getHashField(`${this.zkPrefix}:notes`, skillId);
   }
 
   /**
    * Get all notes (the full Zettelkasten)
    */
   async getAllNotes() {
-    const raw = await this.board.getHash(`${ZK_PREFIX}:notes`);
+    const raw = await this.board.getHash(`${this.zkPrefix}:notes`);
     const notes = {};
     for (const [id, json] of Object.entries(raw)) {
       try { notes[id] = JSON.parse(json); } catch {}
@@ -213,7 +215,7 @@ class SkillZettelkasten {
       if (coId === skillId) continue;
 
       // Update link weight
-      const linkKey = `${ZK_PREFIX}:links:${this._linkKey(skillId, coId)}`;
+      const linkKey = `${this.zkPrefix}:links:${this._linkKey(skillId, coId)}`;
       const existing = await this.board.getConfig(linkKey);
       const link = existing || {
         a: skillId,
@@ -248,17 +250,45 @@ class SkillZettelkasten {
     if (!note) return;
     if (!note.links.includes(toId)) {
       note.links.push(toId);
-      await this.board.setHashField(`${ZK_PREFIX}:notes`, fromId, note);
+      await this.board.setHashField(`${this.zkPrefix}:notes`, fromId, note);
     }
     // Add backlink
     const target = await this.getNote(toId);
     if (target && !target.backlinks.includes(fromId)) {
       target.backlinks.push(fromId);
-      await this.board.setHashField(`${ZK_PREFIX}:notes`, toId, target);
+      await this.board.setHashField(`${this.zkPrefix}:notes`, toId, target);
     }
   }
 
   // ── Compound Skills (Meta-Notes) ──────────────────────────
+
+  /**
+   * Taste verification — validate compound candidate before creation.
+   * Like a cow's third stomach (겹주름위), filters out unworthy combinations.
+   * Returns { pass, reasons } where reasons lists any failures.
+   */
+  async _tasteVerify(skillIdA, skillIdB, link) {
+    const noteA = await this.getNote(skillIdA);
+    const noteB = await this.getNote(skillIdB);
+    if (!noteA || !noteB) return { pass: false, reasons: ['parent skill missing'] };
+
+    const reasons = [];
+
+    // Check 1: Both parents must have minimum usage (avoid premature fusion)
+    const MIN_USES = 3;
+    if (noteA.uses < MIN_USES) reasons.push(`${skillIdA} underused (${noteA.uses}/${MIN_USES})`);
+    if (noteB.uses < MIN_USES) reasons.push(`${skillIdB} underused (${noteB.uses}/${MIN_USES})`);
+
+    // Check 2: Both parents must have reasonable independent success rate
+    const MIN_RATE = 0.5;
+    if (noteA.uses > 0 && noteA.successRate < MIN_RATE) reasons.push(`${skillIdA} low success rate (${noteA.successRate})`);
+    if (noteB.uses > 0 && noteB.successRate < MIN_RATE) reasons.push(`${skillIdB} low success rate (${noteB.successRate})`);
+
+    // Check 3: Link strength must exceed threshold (already checked at call site, but double-verify)
+    if (link.strength < 0.7) reasons.push(`link strength too low (${link.strength})`);
+
+    return { pass: reasons.length === 0, reasons };
+  }
 
   /**
    * Suggest a compound skill when two atomics consistently succeed together
@@ -270,6 +300,13 @@ class SkillZettelkasten {
     // Check if already exists
     const existing = await this.getNote(compoundId);
     if (existing) return existing;
+
+    // Taste verification — filter unworthy combinations
+    const taste = await this._tasteVerify(skillIdA, skillIdB, link);
+    if (!taste.pass) {
+      log.info('zettelkasten', `TASTE REJECT: ${skillIdA} + ${skillIdB} — ${taste.reasons.join(', ')}`);
+      return null;
+    }
 
     const noteA = await this.getNote(skillIdA);
     const noteB = await this.getNote(skillIdB);
@@ -291,7 +328,7 @@ class SkillZettelkasten {
     compound.xp = Math.floor((noteA.xp + noteB.xp) * 0.5);
     compound.tier = this._calculateTier(compound.xp);
 
-    await this.board.setHashField(`${ZK_PREFIX}:notes`, compound.id, compound);
+    await this.board.setHashField(`${this.zkPrefix}:notes`, compound.id, compound);
     await this._writeVaultNote(compound, 'compound');
 
     // Clean up the atomic/ copy created by createNote()
@@ -326,7 +363,7 @@ class SkillZettelkasten {
     note.deprecatedAt = Date.now();
     note.deprecationReason = reason;
 
-    await this.board.setHashField(`${ZK_PREFIX}:notes`, skillId, note);
+    await this.board.setHashField(`${this.zkPrefix}:notes`, skillId, note);
 
     // Move vault file to deprecated/
     const oldPath = path.join(this.vaultDir,
@@ -365,7 +402,7 @@ class SkillZettelkasten {
 
     for (let i = 0; i < noteIds.length; i++) {
       for (let j = i + 1; j < noteIds.length; j++) {
-        const key = `${ZK_PREFIX}:links:${this._linkKey(noteIds[i], noteIds[j])}`;
+        const key = `${this.zkPrefix}:links:${this._linkKey(noteIds[i], noteIds[j])}`;
         const link = await this.board.getConfig(key);
         if (link && link.strength >= minStrength) {
           links.push(link);

@@ -21,14 +21,15 @@ const { Blackboard } = require('../agent/core/blackboard');
 // Temp vault dir to avoid polluting real vault/
 const TEMP_VAULT = path.join(os.tmpdir(), `kingdom-zk-test-${Date.now()}`);
 
-// Clean up Redis keys used by these tests
+// Test-only prefix to avoid wiping production zettelkasten data
+const TEST_ZK_PREFIX = 'test-zettelkasten';
+
+// Clean up Redis keys used by these tests (test prefix only)
 async function cleanZkKeys(board) {
   const client = board.client;
-  const keys = await client.keys('kingdom:zettelkasten:*');
+  const keys = await client.keys(`kingdom:${TEST_ZK_PREFIX}:*`);
   if (keys.length > 0) await client.del(keys);
-  const linkKeys = await client.keys('kingdom:zettelkasten:links:*');
-  if (linkKeys.length > 0) await client.del(linkKeys);
-  const configKeys = await client.keys('kingdom:config:zettelkasten:*');
+  const configKeys = await client.keys(`kingdom:config:${TEST_ZK_PREFIX}:*`);
   if (configKeys.length > 0) await client.del(configKeys);
 }
 
@@ -42,7 +43,7 @@ describe('SkillZettelkasten — CRUD + XP', () => {
     await cleanupBoard.connect();
     await cleanZkKeys(cleanupBoard);
 
-    zk = new SkillZettelkasten({ vaultDir: path.join(TEMP_VAULT, 'crud') });
+    zk = new SkillZettelkasten({ zkPrefix: TEST_ZK_PREFIX, vaultDir: path.join(TEMP_VAULT, 'crud') });
     await zk.init();
   });
 
@@ -107,7 +108,7 @@ describe('SkillZettelkasten — Full XP Flow (Novice → Apprentice)', () => {
     await cleanupBoard.connect();
     await cleanZkKeys(cleanupBoard);
 
-    zk = new SkillZettelkasten({ vaultDir: path.join(TEMP_VAULT, 'xp-flow') });
+    zk = new SkillZettelkasten({ zkPrefix: TEST_ZK_PREFIX, vaultDir: path.join(TEMP_VAULT, 'xp-flow') });
     await zk.init();
 
     await zk.createNote({
@@ -149,7 +150,7 @@ describe('RuminationEngine — Feed + Digest', () => {
     await cleanupBoard.connect();
     await cleanZkKeys(cleanupBoard);
 
-    zk = new SkillZettelkasten({ vaultDir: path.join(TEMP_VAULT, 'rumination') });
+    zk = new SkillZettelkasten({ zkPrefix: TEST_ZK_PREFIX, vaultDir: path.join(TEMP_VAULT, 'rumination') });
     await zk.init();
     rum = new RuminationEngine(zk);
     await rum.init();
@@ -193,7 +194,7 @@ describe('GoTReasoner — Graph + Synergies', () => {
     await cleanupBoard.connect();
     await cleanZkKeys(cleanupBoard);
 
-    zk = new SkillZettelkasten({ vaultDir: path.join(TEMP_VAULT, 'got') });
+    zk = new SkillZettelkasten({ zkPrefix: TEST_ZK_PREFIX, vaultDir: path.join(TEMP_VAULT, 'got') });
     await zk.init();
     got = new GoTReasoner(zk, { vaultDir: path.join(TEMP_VAULT, 'got', 'reasoning') });
     await got.init();
@@ -238,7 +239,7 @@ describe('ZettelkastenHooks — Wiring', () => {
     await cleanupBoard.connect();
     await cleanZkKeys(cleanupBoard);
 
-    zk = new SkillZettelkasten({ vaultDir: path.join(TEMP_VAULT, 'hooks') });
+    zk = new SkillZettelkasten({ zkPrefix: TEST_ZK_PREFIX, vaultDir: path.join(TEMP_VAULT, 'hooks') });
     await zk.init();
     rum = new RuminationEngine(zk);
     await rum.init();
@@ -370,12 +371,12 @@ describe('SkillZettelkasten — Compound Creation', () => {
     await cleanupBoard.connect();
     await cleanZkKeys(cleanupBoard);
 
-    zk = new SkillZettelkasten({ vaultDir: path.join(TEMP_VAULT, 'compound') });
+    zk = new SkillZettelkasten({ zkPrefix: TEST_ZK_PREFIX, vaultDir: path.join(TEMP_VAULT, 'compound') });
     await zk.init();
 
     // Create two skills
     await zk.createNote({ name: 'dig_down', code: 'dig()', errorType: 'mining', agentId: 'test' });
-    await zk.createNote({ name: 'place_torch', code: 'torch()', errorType: 'mining', agentId: 'test' });
+    await zk.createNote({ name: 'place_torch', code: 'torch()', errorType: 'lighting', agentId: 'test' });
   });
 
   after(async () => {
@@ -385,6 +386,11 @@ describe('SkillZettelkasten — Compound Creation', () => {
   });
 
   it('should create compound note after 5+ co-occurrences with 70%+ strength', async () => {
+    // Build up independent usage first (taste verification requires MIN_USES >= 3)
+    for (let i = 0; i < 3; i++) {
+      await zk.recordUsage('place-torch', true);
+    }
+
     // Simulate 5 successful co-occurrences + 1 failure (5/6 = 83% strength)
     for (let i = 0; i < 5; i++) {
       await zk.recordUsage('dig-down', true, { coSkills: ['place-torch'] });
@@ -404,6 +410,59 @@ describe('SkillZettelkasten — Compound Creation', () => {
   });
 });
 
+// ── Taste Verification ──────────────────────────────────────
+
+describe('SkillZettelkasten — Taste Verification', () => {
+  let zk, cleanupBoard;
+
+  before(async () => {
+    cleanupBoard = new Blackboard();
+    await cleanupBoard.connect();
+    await cleanZkKeys(cleanupBoard);
+
+    zk = new SkillZettelkasten({ zkPrefix: TEST_ZK_PREFIX, vaultDir: path.join(TEMP_VAULT, 'taste') });
+    await zk.init();
+  });
+
+  after(async () => {
+    await cleanZkKeys(cleanupBoard);
+    await zk.shutdown();
+    await cleanupBoard.disconnect();
+  });
+
+  it('should reject compound when parent has insufficient uses', async () => {
+    await zk.createNote({ name: 'taste_a', code: 'a()', errorType: 'test', agentId: 'test' });
+    await zk.createNote({ name: 'taste_b', code: 'b()', errorType: 'test', agentId: 'test' });
+
+    const link = { strength: 0.8, coOccurrences: 5, coSuccesses: 4 };
+    const result = await zk._tasteVerify('taste-a', 'taste-b', link);
+    assert.equal(result.pass, false);
+    assert.ok(result.reasons.some(r => r.includes('underused')));
+  });
+
+  it('should pass when both parents meet all criteria', async () => {
+    await zk.createNote({ name: 'taste_c', code: 'c()', errorType: 'nav', agentId: 'test' });
+    await zk.createNote({ name: 'taste_d', code: 'd()', errorType: 'build', agentId: 'test' });
+
+    for (let i = 0; i < 3; i++) {
+      await zk.recordUsage('taste-c', true);
+      await zk.recordUsage('taste-d', true);
+    }
+
+    const link = { strength: 0.85, coOccurrences: 6, coSuccesses: 5 };
+    const result = await zk._tasteVerify('taste-c', 'taste-d', link);
+    assert.equal(result.pass, true);
+    assert.equal(result.reasons.length, 0);
+  });
+
+  it('should reject when link strength is below threshold', async () => {
+    const link = { strength: 0.5, coOccurrences: 6, coSuccesses: 3 };
+    const result = await zk._tasteVerify('taste-c', 'taste-d', link);
+    assert.equal(result.pass, false);
+    assert.ok(result.reasons.some(r => r.includes('strength')));
+  });
+});
+
 // ── Vault File Persistence ──────────────────────────────────────
 
 describe('SkillZettelkasten — Vault Persistence', () => {
@@ -414,7 +473,7 @@ describe('SkillZettelkasten — Vault Persistence', () => {
     await cleanupBoard.connect();
     await cleanZkKeys(cleanupBoard);
 
-    zk = new SkillZettelkasten({ vaultDir: path.join(TEMP_VAULT, 'vault-persist') });
+    zk = new SkillZettelkasten({ zkPrefix: TEST_ZK_PREFIX, vaultDir: path.join(TEMP_VAULT, 'vault-persist') });
     await zk.init();
   });
 
@@ -462,12 +521,13 @@ describe('SkillZettelkasten — Supplemental Coverage (100% Lines)', () => {
     assert.equal(directZk.board, cleanupBoard);
     assert.equal(directZk.vaultDir, '/tmp/zk-test');
     assert.equal(directZk.logger, null);
+    assert.equal(directZk.zkPrefix, 'zettelkasten');
   });
 
   it('Logger should receive logEvent calls on createNote and recordUsage', async () => {
     let logEvents = [];
     const mockLogger = { logEvent: (sys, data) => logEvents.push(data) };
-    const logZk = new SkillZettelkasten({ board: cleanupBoard, logger: mockLogger, vaultDir: path.join(TEMP_VAULT, 'logger-test') });
+    const logZk = new SkillZettelkasten({ board: cleanupBoard, logger: mockLogger, zkPrefix: TEST_ZK_PREFIX, vaultDir: path.join(TEMP_VAULT, 'logger-test') });
     await logZk.init();
 
     await logZk.createNote({ name: 'log-skill', errorType: 'err', agentId: 'bot' });
@@ -480,7 +540,7 @@ describe('SkillZettelkasten — Supplemental Coverage (100% Lines)', () => {
   });
 
   it('Analytics methods (getStats, getByTier, getStrongestLinks, deprecateNote)', async () => {
-    const aZk = new SkillZettelkasten({ board: cleanupBoard, vaultDir: path.join(TEMP_VAULT, 'analytics') });
+    const aZk = new SkillZettelkasten({ board: cleanupBoard, zkPrefix: TEST_ZK_PREFIX, vaultDir: path.join(TEMP_VAULT, 'analytics') });
     await aZk.init();
 
     await aZk.createNote({ name: 'a1', agentId: 'test' });

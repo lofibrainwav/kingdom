@@ -266,7 +266,7 @@ class RuminationEngine {
                 insight: insight.insight,
                 digestionNumber: this.totalDigestions,
               });
-              await this.zk.board.setHashField('zettelkasten:notes', skillId, note);
+              await this.zk.board.setHashField(`${this.zk.zkPrefix}:notes`, skillId, note);
               await this.zk._writeVaultNote(note);
             }
           }
@@ -278,6 +278,23 @@ class RuminationEngine {
             failureRate: insight.failureRate,
             currentSkills: insight.skills,
           });
+
+          // Auto-extract guardrail from failure pattern
+          const guardrailId = `guardrail-${insight.errorType}`;
+          const existingGuardrail = await this.zk.getNote(guardrailId);
+          if (!existingGuardrail) {
+            try {
+              await this.zk.createNote({
+                name: guardrailId,
+                code: `// Guardrail: auto-extracted from ${insight.sampleSize} failures in ${insight.errorType}`,
+                description: `Auto-guardrail: ${insight.errorType} failures (${(insight.failureRate * 100).toFixed(0)}% fail rate). Skills: ${insight.skills.join(', ')}`,
+                errorType: insight.errorType,
+                agentId: 'rumination-engine',
+              });
+              actions.push({ action: 'guardrail_created', errorType: insight.errorType, guardrailId });
+              log.info('rumination', `GUARDRAIL: ${guardrailId} auto-extracted from failure pattern`);
+            } catch { /* skill creation can fail if name conflicts */ }
+          }
           break;
         }
       }
@@ -360,7 +377,7 @@ class RuminationEngine {
         insight: `Deep rumination #${note.digestCount}: skill has ${note.uses} uses but only ${(note.successRate * 100).toFixed(0)}% success. Consider refactoring.`,
         digestionNumber: this.totalDigestions,
       });
-      await this.zk.board.setHashField('zettelkasten:notes', note.id, note);
+      await this.zk.board.setHashField(`${this.zk.zkPrefix}:notes`, note.id, note);
       await this.zk._writeVaultNote(note);
     }
 
