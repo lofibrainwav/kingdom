@@ -5,9 +5,12 @@
  * relevant knowledge captures into the bb/ Obsidian Vault.
  *
  * Events handled:
- *   governance:task:completed     → 05-Operations/kingdom-tasks/
- *   knowledge:notebooklm:ingested → 02-Research/
- *   knowledge:capture:stored      → 05-Operations/knowledge-captures/
+ *   governance:task:completed          → 05-Operations/kingdom-tasks/
+ *   knowledge:notebooklm:ingested      → 02-Research/
+ *   knowledge:capture:stored           → 05-Operations/knowledge-captures/
+ *   governance:teamlead:reviewed       → 05-Operations/teamlead-reviews/
+ *   governance:teamlead:vibe-translated → 05-Operations/teamlead-vibes/
+ *   knowledge:research:completed       → 02-Research/kingdom-research/
  *
  * Usage:
  *   const { VaultBridge } = require('./vault-bridge');
@@ -65,6 +68,21 @@ class VaultBridge {
     await this.subscriber.subscribe('knowledge:capture:stored', async (message) => {
       try { await this.handleCaptureStored(message); }
       catch (err) { log.error('vault-bridge', 'handleCaptureStored failed', { error: err.message }); }
+    });
+
+    await this.subscriber.subscribe('governance:teamlead:reviewed', async (message) => {
+      try { await this.handleTeamLeadReviewed(message); }
+      catch (err) { log.error('vault-bridge', 'handleTeamLeadReviewed failed', { error: err.message }); }
+    });
+
+    await this.subscriber.subscribe('governance:teamlead:vibe-translated', async (message) => {
+      try { await this.handleVibeTranslated(message); }
+      catch (err) { log.error('vault-bridge', 'handleVibeTranslated failed', { error: err.message }); }
+    });
+
+    await this.subscriber.subscribe('knowledge:research:completed', async (message) => {
+      try { await this.handleResearchCompleted(message); }
+      catch (err) { log.error('vault-bridge', 'handleResearchCompleted failed', { error: err.message }); }
     });
 
     log.info('vault-bridge', 'subscribed to Blackboard events');
@@ -172,6 +190,101 @@ bridged_at: "${timestamp}"
 
     await this._obsidianPut(`05-Operations/knowledge-captures/${slug}.md`, content);
     log.info('vault-bridge', `Capture mirrored: ${slug}`);
+  }
+
+  async handleTeamLeadReviewed(message) {
+    const data = this._parseMessage(message);
+    const timestamp = new Date().toISOString();
+    const taskList = (data.taskIds || []).join(', ');
+    const slug = this._slugify(`review-${data.projectId || 'unknown'}-${Date.now()}`);
+
+    const content = `---
+source: kingdom-blackboard
+event: governance:teamlead:reviewed
+project: "${data.projectId || 'unknown'}"
+verdict: "${data.verdict || 'unknown'}"
+bridged_at: "${timestamp}"
+---
+
+# TeamLead Review: ${data.verdict || 'Unknown'}
+
+**Project**: ${data.projectId || 'unknown'}
+**Tasks**: ${taskList || 'N/A'}
+**Batch Size**: ${data.batchSize || 0}
+**Scores**: Truth=${data.scores?.truth || '?'} Goodness=${data.scores?.goodness || '?'} Beauty=${data.scores?.beauty || '?'}
+**Store Worthy**: ${data.storeWorthy || false}
+
+## Summary
+${data.summary || 'No summary provided.'}
+`;
+
+    await this._obsidianPut(`05-Operations/teamlead-reviews/${slug}.md`, content);
+    log.info('vault-bridge', `TeamLead review mirrored: ${slug}`);
+  }
+
+  async handleVibeTranslated(message) {
+    const data = this._parseMessage(message);
+    const timestamp = new Date().toISOString();
+    const slug = this._slugify(`vibe-${data.projectId || 'unknown'}-${Date.now()}`);
+
+    const patterns = (data.patterns || []).map((p, i) =>
+      `### Pattern ${i + 1}\n- **Intent**: ${p.intent || '?'}\n- **Gap**: ${p.gap || '?'}\n- **Guardrail**: ${p.guardrail || '?'}`
+    ).join('\n\n');
+
+    const content = `---
+source: kingdom-blackboard
+event: governance:teamlead:vibe-translated
+project: "${data.projectId || 'unknown'}"
+bridged_at: "${timestamp}"
+---
+
+# Vibe Translation: ${data.metaInsight || 'Unknown'}
+
+**Project**: ${data.projectId || 'unknown'}
+**Failure Count**: ${data.failureCount || 0}
+**Tasks**: ${(data.taskIds || []).join(', ') || 'N/A'}
+
+## Meta Insight
+${data.metaInsight || 'No insight provided.'}
+
+## Suggested Prompt Patch
+\`\`\`
+${data.suggestedPromptPatch || 'None'}
+\`\`\`
+
+## Failure Patterns
+${patterns || 'No patterns extracted.'}
+`;
+
+    await this._obsidianPut(`05-Operations/teamlead-vibes/${slug}.md`, content);
+    log.info('vault-bridge', `Vibe translation mirrored: ${slug}`);
+  }
+
+  async handleResearchCompleted(message) {
+    const data = this._parseMessage(message);
+    const timestamp = new Date().toISOString();
+    const slug = this._slugify(data.researchId || `research-${Date.now()}`);
+
+    const content = `---
+source: kingdom-blackboard
+event: knowledge:research:completed
+project: "${data.projectId || 'unknown'}"
+bridged_at: "${timestamp}"
+---
+
+# Research: ${(data.question || 'Unknown').slice(0, 80)}
+
+**Project**: ${data.projectId || 'unknown'}
+**Research ID**: ${data.researchId || 'N/A'}
+**Grok Answer**: ${data.hasGrokAnswer ? 'Yes' : 'No'}
+**NLM Answer**: ${data.hasNlmAnswer ? 'Yes' : 'No'}
+
+## Question
+${data.question || 'No question provided.'}
+`;
+
+    await this._obsidianPut(`02-Research/kingdom-research/${slug}.md`, content);
+    log.info('vault-bridge', `Research mirrored: ${slug}`);
   }
 
   // ── Obsidian REST helpers ────────────────────────────────────────

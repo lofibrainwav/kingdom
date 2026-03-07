@@ -276,7 +276,7 @@ describe('VaultBridge — _obsidianAppend', () => {
 // ── Integration: start() subscribes to correct channels ─────
 
 describe('VaultBridge — start() channel subscriptions', () => {
-  it('should subscribe to 3 event channels when enabled', async () => {
+  it('should subscribe to 6 event channels when enabled', async () => {
     const channels = [];
     const bridge = createBridge();
     bridge.board = {
@@ -290,9 +290,90 @@ describe('VaultBridge — start() channel subscriptions', () => {
 
     await bridge.start();
 
-    assert.equal(channels.length, 3);
+    assert.equal(channels.length, 6);
     assert.ok(channels.includes('governance:task:completed'));
     assert.ok(channels.includes('knowledge:notebooklm:ingested'));
     assert.ok(channels.includes('knowledge:capture:stored'));
+    assert.ok(channels.includes('governance:teamlead:reviewed'));
+    assert.ok(channels.includes('governance:teamlead:vibe-translated'));
+    assert.ok(channels.includes('knowledge:research:completed'));
+  });
+});
+
+// ── handleTeamLeadReviewed ────────────────────────────────
+
+describe('VaultBridge — handleTeamLeadReviewed', () => {
+  it('should generate markdown with review scores and call _obsidianPut', async () => {
+    const bridge = createBridge();
+    let putPath = null;
+    let putContent = null;
+    bridge._obsidianPut = async (path, content) => { putPath = path; putContent = content; };
+
+    await bridge.handleTeamLeadReviewed({
+      projectId: 'proj-1',
+      taskIds: ['T1', 'T2'],
+      batchSize: 2,
+      verdict: 'pass',
+      scores: { truth: 4, goodness: 5, beauty: 3 },
+      summary: 'Solid batch',
+      storeWorthy: true,
+    });
+
+    assert.ok(putPath.includes('05-Operations/teamlead-reviews/'));
+    assert.ok(putContent.includes('governance:teamlead:reviewed'));
+    assert.ok(putContent.includes('pass'));
+    assert.ok(putContent.includes('Truth=4'));
+    assert.ok(putContent.includes('Solid batch'));
+  });
+});
+
+// ── handleVibeTranslated ──────────────────────────────────
+
+describe('VaultBridge — handleVibeTranslated', () => {
+  it('should generate markdown with vibe patterns and call _obsidianPut', async () => {
+    const bridge = createBridge();
+    let putPath = null;
+    let putContent = null;
+    bridge._obsidianPut = async (path, content) => { putPath = path; putContent = content; };
+
+    await bridge.handleVibeTranslated({
+      projectId: 'proj-1',
+      taskIds: ['T1'],
+      failureCount: 1,
+      patterns: [{ intent: 'clean code', gap: 'naming', guardrail: 'use camelCase' }],
+      metaInsight: 'Naming is key',
+      suggestedPromptPatch: 'Always use camelCase',
+    });
+
+    assert.ok(putPath.includes('05-Operations/teamlead-vibes/'));
+    assert.ok(putContent.includes('governance:teamlead:vibe-translated'));
+    assert.ok(putContent.includes('Naming is key'));
+    assert.ok(putContent.includes('camelCase'));
+    assert.ok(putContent.includes('clean code'));
+  });
+});
+
+// ── handleResearchCompleted ───────────────────────────────
+
+describe('VaultBridge — handleResearchCompleted', () => {
+  it('should generate markdown with research data and call _obsidianPut', async () => {
+    const bridge = createBridge();
+    let putPath = null;
+    let putContent = null;
+    bridge._obsidianPut = async (path, content) => { putPath = path; putContent = content; };
+
+    await bridge.handleResearchCompleted({
+      projectId: 'proj-1',
+      question: 'How does Redis pub/sub work?',
+      researchId: 'research-12345',
+      hasGrokAnswer: true,
+      hasNlmAnswer: false,
+    });
+
+    assert.ok(putPath.includes('02-Research/kingdom-research/'));
+    assert.ok(putContent.includes('knowledge:research:completed'));
+    assert.ok(putContent.includes('Redis pub/sub'));
+    assert.ok(putContent.includes('Grok Answer**: Yes'));
+    assert.ok(putContent.includes('NLM Answer**: No'));
   });
 });
