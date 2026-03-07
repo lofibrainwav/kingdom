@@ -8,13 +8,15 @@
 const { Blackboard } = require('../core/blackboard');
 const { getLogger } = require('../core/logger');
 const { ReflexionEngine, parseLLMJson } = require('../core/ReflexionEngine');
+const { DedupGuard } = require('../core/dedup');
 const log = getLogger();
 
 class FailureAgent {
-  constructor() {
-    this.board = new Blackboard();
-    this.llm = new ReflexionEngine();
+  constructor(options = {}) {
+    this.board = options.board || new Blackboard();
+    this.llm = new ReflexionEngine(null, { board: this.board });
     this.agentId = 'Kingdom_Failure';
+    this.dedup = new DedupGuard();
   }
 
   async init() {
@@ -35,6 +37,12 @@ class FailureAgent {
   async handleTaskRejection(message) {
     try {
       const { projectId, taskId, file, feedback } = typeof message === 'string' ? JSON.parse(message) : message;
+      const dedupKey = `${projectId}:${taskId}:${file}`;
+      if (!this.dedup.check(dedupKey)) {
+        log.info(this.agentId, `Skipping duplicate failure classification for ${taskId}`);
+        return;
+      }
+
       log.info(this.agentId, `Classifying failure for task ${taskId} in ${file}: ${(feedback ?? '').slice(0, 30)}...`);
       await this.updateStatus('classifying', `Classifying ${taskId}`);
 

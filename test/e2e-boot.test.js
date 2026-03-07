@@ -40,37 +40,44 @@ async function isRedisAvailable() {
   }
 }
 
-// Shared ZK like team.js
+// Shared dependencies — mirrors team.js exactly
+const { Blackboard } = require('../agent/core/blackboard');
+
 function createAgentDefs() {
+  const sharedBoard = new Blackboard();
+  sharedBoard.markShared();
   const sharedZK = new SkillZettelkasten();
-  return [
-    { name: 'PMAgent', factory: () => new PMAgent() },
-    { name: 'Architect', factory: () => new ArchitectAgent() },
-    { name: 'Decomposer', factory: () => new DecomposerAgent() },
-    { name: 'Coder', factory: () => new CoderAgent() },
-    { name: 'Reviewer', factory: () => new ReviewerAgent() },
-    { name: 'Deployer', factory: () => new DeployerAgent() },
-    { name: 'Failure', factory: () => new FailureAgent() },
-    { name: 'Swarm', factory: () => new SwarmOrchestrator() },
-    { name: 'Watchdog', factory: () => new WatchdogAgent() },
-    { name: 'TaskCloseout', factory: () => new TaskCloseoutOrchestrator(), postInit: (inst) => inst.start() },
-    { name: 'KnowledgeOperator', factory: () => new KnowledgeOperator({ zettelkasten: sharedZK }), postInit: (inst) => inst.start() },
-    { name: 'VaultBridge', factory: () => new VaultBridge(), postInit: (inst) => inst.start() },
-    { name: 'RuminationEngine', factory: () => new RuminationEngine(sharedZK), postInit: (inst) => inst.startEventFeed() },
-    { name: 'NotebookLMQueue', factory: () => new NotebookLMQueue(), postInit: (inst) => inst.start() },
-    { name: 'TeamLead', factory: () => new TeamLeadAgent(), postInit: (inst) => inst.start() },
-    { name: 'ResearchAgent', factory: () => new ResearchAgent(), postInit: (inst) => inst.start() },
-    {
-      name: 'GoTReasoner',
-      factory: () => new GoTReasoner(sharedZK),
-      postInit: async (inst) => {
-        const sub = await inst.board.createSubscriber();
-        sub.on('error', () => {});
-        await sub.subscribe('knowledge:rumination:digested', () => {});
-        inst._eventSubscriber = sub;
+  return {
+    sharedBoard,
+    agents: [
+      { name: 'PMAgent', factory: () => new PMAgent({ board: sharedBoard }) },
+      { name: 'Architect', factory: () => new ArchitectAgent({ board: sharedBoard }) },
+      { name: 'Decomposer', factory: () => new DecomposerAgent({ board: sharedBoard, zettelkasten: sharedZK }) },
+      { name: 'Coder', factory: () => new CoderAgent({ board: sharedBoard }) },
+      { name: 'Reviewer', factory: () => new ReviewerAgent({ board: sharedBoard }) },
+      { name: 'Deployer', factory: () => new DeployerAgent({ board: sharedBoard }) },
+      { name: 'Failure', factory: () => new FailureAgent({ board: sharedBoard }) },
+      { name: 'Swarm', factory: () => new SwarmOrchestrator({ board: sharedBoard }) },
+      { name: 'Watchdog', factory: () => new WatchdogAgent({ board: sharedBoard }) },
+      { name: 'TaskCloseout', factory: () => new TaskCloseoutOrchestrator({ board: sharedBoard }), postInit: (inst) => inst.start() },
+      { name: 'KnowledgeOperator', factory: () => new KnowledgeOperator({ board: sharedBoard, zettelkasten: sharedZK }), postInit: (inst) => inst.start() },
+      { name: 'VaultBridge', factory: () => new VaultBridge({ board: sharedBoard }), postInit: (inst) => inst.start() },
+      { name: 'RuminationEngine', factory: () => new RuminationEngine(sharedZK, { board: sharedBoard }), postInit: (inst) => inst.startEventFeed() },
+      { name: 'NotebookLMQueue', factory: () => new NotebookLMQueue({ board: sharedBoard }), postInit: (inst) => inst.start() },
+      { name: 'TeamLead', factory: () => new TeamLeadAgent({ board: sharedBoard }), postInit: (inst) => inst.start() },
+      { name: 'ResearchAgent', factory: () => new ResearchAgent({ board: sharedBoard }), postInit: (inst) => inst.start() },
+      {
+        name: 'GoTReasoner',
+        factory: () => new GoTReasoner(sharedZK, { board: sharedBoard }),
+        postInit: async (inst) => {
+          const sub = await inst.board.createSubscriber();
+          sub.on('error', () => {});
+          await sub.subscribe('knowledge:rumination:digested', () => {});
+          inst._eventSubscriber = sub;
+        },
       },
-    },
-  ];
+    ],
+  };
 }
 
 describe('E2E Boot — 17 agents init + shutdown with live Redis', async () => {
@@ -83,25 +90,15 @@ describe('E2E Boot — 17 agents init + shutdown with live Redis', async () => {
   }
 
   it('should have 17 agent definitions', () => {
-    assert.equal(createAgentDefs().length, 17);
+    assert.equal(createAgentDefs().agents.length, 17);
   });
 
-  const agentDefs = createAgentDefs();
-  for (const agentDef of agentDefs) {
-    it(`${agentDef.name} — init + postInit + shutdown`, async () => {
-      const instance = agentDef.factory();
-      await instance.init();
-      if (agentDef.postInit) await agentDef.postInit(instance);
-      await instance.shutdown();
-    });
-  }
-
-  it('all 17 agents boot sequentially then shutdown (team.js simulation)', async () => {
-    const defs = createAgentDefs();
+  it('all 17 agents boot with sharedBoard then shutdown (team.js simulation)', async () => {
+    const { sharedBoard, agents } = createAgentDefs();
     const instances = [];
     const errors = [];
 
-    for (const agentDef of defs) {
+    for (const agentDef of agents) {
       try {
         const instance = agentDef.factory();
         await instance.init();
@@ -119,5 +116,8 @@ describe('E2E Boot — 17 agents init + shutdown with live Redis', async () => {
     for (const { instance } of [...instances].reverse()) {
       await instance.shutdown();
     }
+
+    // Finally disconnect sharedBoard
+    await sharedBoard.forceDisconnect();
   });
 });

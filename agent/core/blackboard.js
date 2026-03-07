@@ -8,7 +8,9 @@ const { getLogger } = require('./logger');
 const { validateEventPayload } = require('./event-schemas');
 const log = getLogger();
 
-const REDIS_URL = process.env.BLACKBOARD_REDIS_URL || 'redis://localhost:6380';
+function getRedisUrl() {
+  return process.env.BLACKBOARD_REDIS_URL || 'redis://localhost:6380';
+}
 const PREFIX = 'kingdom:';
 
 const CHANNEL_RULES = [
@@ -140,7 +142,7 @@ const CHANNEL_RULES = [
 
 class Blackboard {
   constructor(redisUrl, options = {}) {
-    const url = redisUrl || REDIS_URL;
+    const url = redisUrl || getRedisUrl();
     this.client = createClient({
       url,
       socket: {
@@ -155,11 +157,18 @@ class Blackboard {
   }
 
   async connect() {
+    if (this.client.isOpen) return; // Already connected — safe for shared instances
     await this.client.connect();
-    log.info('blackboard', `Connected: ${REDIS_URL}`);
+    log.info('blackboard', `Connected: ${getRedisUrl()}`);
+  }
+
+  markShared() {
+    this._shared = true;
+    return this;
   }
 
   async disconnect() {
+    if (this._shared) return; // Shared instances are disconnected by the owner (team.js)
     try {
       if (this.client.isOpen) {
         await this.client.quit();
@@ -173,6 +182,11 @@ class Blackboard {
     } catch (err) {
       log.debug('blackboard', `disconnect() already done: ${err.message}`);
     }
+  }
+
+  async forceDisconnect() {
+    this._shared = false; // Allow disconnect
+    await this.disconnect();
   }
 
   _stripPrefix(channel) {

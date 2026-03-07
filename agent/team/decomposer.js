@@ -10,14 +10,16 @@ const { getLogger } = require('../core/logger');
 const { ReflexionEngine, parseLLMJson } = require('../core/ReflexionEngine');
 const { GoTReasoner } = require('../memory/got-reasoner');
 const { SkillZettelkasten } = require('../memory/skill-zettelkasten');
+const { DedupGuard } = require('../core/dedup');
 const log = getLogger();
 
 class DecomposerAgent {
   constructor(options = {}) {
-    this.board = new Blackboard();
-    this.llm = new ReflexionEngine();
-    this.got = new GoTReasoner(options.zettelkasten || new SkillZettelkasten());
+    this.board = options.board || new Blackboard();
+    this.llm = new ReflexionEngine(null, { board: this.board });
+    this.got = new GoTReasoner(options.zettelkasten || new SkillZettelkasten(), { board: this.board });
     this.agentId = 'Kingdom_Decomposer';
+    this.dedup = new DedupGuard();
   }
 
   async init() {
@@ -47,6 +49,12 @@ class DecomposerAgent {
         retryCategory = null,
         retryGuardrail = null,
       } = typeof message === 'string' ? JSON.parse(message) : message;
+      const dedupKey = `${projectId}:${goal}`;
+      if (!this.dedup.check(dedupKey)) {
+        log.info(this.agentId, `Skipping duplicate decomposition for ${projectId}`);
+        return;
+      }
+
       log.info(this.agentId, `Decomposing project ${projectId}: ${goal}`);
       await this.updateStatus('decomposing', `Generating GoT for: ${projectId}`);
 

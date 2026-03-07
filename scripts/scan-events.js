@@ -21,7 +21,7 @@ const subscribes = new Set();
 for (const file of agentFiles) {
   const src = fs.readFileSync(file, 'utf-8');
   const pubRe = /publish\(\s*['"]([^'"]+)['"]/g;
-  const subRe = /subscribe\(\s*['"]([^'"]+)['"]/g;
+  const subRe = /(?:subscribe|_subscribeBroadcast|_subscribeTaskEvent|_subscribePromotionEvent)\(\s*['"]([^'"]+)['"]/g;
   let m;
   while ((m = pubRe.exec(src)) !== null) publishes.add(m[1]);
   while ((m = subRe.exec(src)) !== null) subscribes.add(m[1]);

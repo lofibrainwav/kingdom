@@ -9,14 +9,16 @@ const { Blackboard } = require('../core/blackboard');
 const { getLogger } = require('../core/logger');
 const { ReflexionEngine, parseLLMJson } = require('../core/ReflexionEngine');
 const { RuminationEngine } = require('../memory/rumination-engine');
+const { DedupGuard } = require('../core/dedup');
 const log = getLogger();
 
 class ReviewerAgent {
-  constructor() {
-    this.board = new Blackboard();
-    this.llm = new ReflexionEngine();
-    this.rumination = new RuminationEngine();
+  constructor(options = {}) {
+    this.board = options.board || new Blackboard();
+    this.llm = new ReflexionEngine(null, { board: this.board });
+    this.rumination = new RuminationEngine(null, { board: this.board });
     this.agentId = 'Kingdom_Reviewer';
+    this.dedup = new DedupGuard();
   }
 
   async init() {
@@ -39,6 +41,14 @@ class ReviewerAgent {
     try {
       const parsed = typeof message === 'string' ? JSON.parse(message) : message;
       const { projectId, taskId, file, content } = parsed;
+
+      // Idempotency: skip if already reviewed this project+task+file combo
+      const dedupKey = `${projectId}:${taskId}:${file}`;
+      if (!this.dedup.check(dedupKey)) {
+        log.info(this.agentId, `Skipping duplicate review for ${taskId}`);
+        return;
+      }
+
       log.info(this.agentId, `Reviewing task ${taskId} for project ${projectId} in ${file}`);
       await this.updateStatus('reviewing', `Reviewing ${file}`);
 

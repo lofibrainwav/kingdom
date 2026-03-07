@@ -27,7 +27,7 @@ class ZettelkastenHooks {
     this.zk = zettelkasten;
     this.rumination = rumination;
     this.got = gotReasoner;
-    this.board = new Blackboard();
+    this.board = options.board || new Blackboard();
     this.logger = options.logger || null;
 
     // Auto GoT reasoning after N rumination cycles

@@ -24,14 +24,11 @@ const { getLogger } = require('../core/logger');
 
 const log = getLogger();
 
-const OBSIDIAN_BASE = process.env.OBSIDIAN_BASE_URL || 'http://127.0.0.1:27124';
-const OBSIDIAN_TOKEN = process.env.OBSIDIAN_API_KEY || '';
-
 class VaultBridge {
   constructor(options = {}) {
     this.board = options.board || new Blackboard();
-    this.obsidianBase = options.obsidianBase || OBSIDIAN_BASE;
-    this.obsidianToken = options.obsidianToken || OBSIDIAN_TOKEN;
+    this.obsidianBase = options.obsidianBase || process.env.OBSIDIAN_BASE_URL || 'http://127.0.0.1:27124';
+    this.obsidianToken = options.obsidianToken || process.env.OBSIDIAN_API_KEY || '';
     this.subscriber = null;
     this.enabled = true;
   }

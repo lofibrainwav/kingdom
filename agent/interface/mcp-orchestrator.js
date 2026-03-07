@@ -7,8 +7,8 @@ const { getLogger } = require('../core/logger');
 const log = getLogger();
 
 class MCPOrchestrator {
-  constructor() {
-    this.board = new Blackboard();
+  constructor(options = {}) {
+    this.board = options.board || new Blackboard();
     this.agents = new Map(); // agentId -> { role, status, registeredAt }
   }
 

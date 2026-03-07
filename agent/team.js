@@ -4,6 +4,7 @@
  * Spawned by start.js — initializes all 17 agents with graceful shutdown.
  */
 const { getLogger } = require('./core/logger');
+const { Blackboard } = require('./core/blackboard');
 const T = require('../config/timeouts');
 const log = getLogger();
 
@@ -27,36 +28,38 @@ const { TeamLeadAgent } = require('./team/team-lead');
 const { ResearchAgent } = require('./memory/research-agent');
 const { createMcpClients } = require('./memory/mcp-client-factory');
 
-// Shared SkillZettelkasten for RuminationEngine and GoTReasoner
-const sharedZK = new SkillZettelkasten();
+// Shared dependencies — single Redis connection + single Zettelkasten
+const sharedBoard = new Blackboard();
+sharedBoard.markShared(); // Prevent individual agents from disconnecting
+const sharedZK = new SkillZettelkasten({ board: sharedBoard });
 
 const AGENTS = [
-  { name: 'PMAgent', factory: () => new PMAgent() },
-  { name: 'Architect', factory: () => new ArchitectAgent() },
-  { name: 'Decomposer', factory: () => new DecomposerAgent() },
-  { name: 'Coder', factory: () => new CoderAgent() },
-  { name: 'Reviewer', factory: () => new ReviewerAgent() },
-  { name: 'Deployer', factory: () => new DeployerAgent() },
-  { name: 'Failure', factory: () => new FailureAgent() },
-  { name: 'Swarm', factory: () => new SwarmOrchestrator() },
-  { name: 'Watchdog', factory: () => new WatchdogAgent() },
-  { name: 'TaskCloseout', factory: () => new TaskCloseoutOrchestrator(), postInit: (inst) => inst.start() },
-  { name: 'KnowledgeOperator', factory: () => new KnowledgeOperator({ zettelkasten: sharedZK }), postInit: (inst) => inst.start() },
-  { name: 'VaultBridge', factory: () => new VaultBridge(), postInit: (inst) => inst.start() },
+  { name: 'PMAgent', factory: () => new PMAgent({ board: sharedBoard }) },
+  { name: 'Architect', factory: () => new ArchitectAgent({ board: sharedBoard }) },
+  { name: 'Decomposer', factory: () => new DecomposerAgent({ board: sharedBoard, zettelkasten: sharedZK }) },
+  { name: 'Coder', factory: () => new CoderAgent({ board: sharedBoard }) },
+  { name: 'Reviewer', factory: () => new ReviewerAgent({ board: sharedBoard }) },
+  { name: 'Deployer', factory: () => new DeployerAgent({ board: sharedBoard }) },
+  { name: 'Failure', factory: () => new FailureAgent({ board: sharedBoard }) },
+  { name: 'Swarm', factory: () => new SwarmOrchestrator({ board: sharedBoard }) },
+  { name: 'Watchdog', factory: () => new WatchdogAgent({ board: sharedBoard }) },
+  { name: 'TaskCloseout', factory: () => new TaskCloseoutOrchestrator({ board: sharedBoard }), postInit: (inst) => inst.start() },
+  { name: 'KnowledgeOperator', factory: () => new KnowledgeOperator({ board: sharedBoard, zettelkasten: sharedZK }), postInit: (inst) => inst.start() },
+  { name: 'VaultBridge', factory: () => new VaultBridge({ board: sharedBoard }), postInit: (inst) => inst.start() },
   {
     name: 'RuminationEngine',
-    factory: () => new RuminationEngine(sharedZK),
+    factory: () => new RuminationEngine(sharedZK, { board: sharedBoard }),
     postInit: (inst) => inst.startEventFeed(),
   },
-  { name: 'NotebookLMQueue', factory: () => new NotebookLMQueue(), postInit: (inst) => inst.start() },
-  { name: 'TeamLead', factory: () => new TeamLeadAgent(), postInit: (inst) => inst.start() },
+  { name: 'NotebookLMQueue', factory: () => new NotebookLMQueue({ board: sharedBoard }), postInit: (inst) => inst.start() },
+  { name: 'TeamLead', factory: () => new TeamLeadAgent({ board: sharedBoard }), postInit: (inst) => inst.start() },
   { name: 'ResearchAgent', factory: () => {
     const { grokClient, nlmClient } = createMcpClients();
-    return new ResearchAgent({ grokClient, nlmClient });
+    return new ResearchAgent({ board: sharedBoard, grokClient, nlmClient });
   }, postInit: (inst) => inst.start() },
   {
     name: 'GoTReasoner',
-    factory: () => new GoTReasoner(sharedZK),
+    factory: () => new GoTReasoner(sharedZK, { board: sharedBoard }),
     postInit: async (inst) => {
       const sub = await inst.board.createSubscriber();
       sub.on('error', (err) => log.error('team', 'GoT subscriber error', { error: err.message }));
@@ -115,6 +118,14 @@ async function shutdown(signal) {
     } catch (err) {
       log.error('team', `${name} shutdown error: ${err.message}`);
     }
+  }
+
+  // Disconnect shared Redis last — after all agents have released subscribers
+  try {
+    await sharedBoard.forceDisconnect();
+    log.info('team', 'sharedBoard disconnected');
+  } catch (err) {
+    log.error('team', `sharedBoard disconnect error: ${err.message}`);
   }
 
   process.exit(0);

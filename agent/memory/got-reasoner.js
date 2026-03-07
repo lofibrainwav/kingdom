@@ -31,7 +31,7 @@ const VAULT_DIR = path.join(__dirname, '..', 'vault', '04-Skills', 'reasoning');
 class GoTReasoner {
   constructor(zettelkasten, options = {}) {
     this.zk = zettelkasten;
-    this.board = new Blackboard();
+    this.board = options.board || new Blackboard();
     this.llmClient = options.llmClient || null; // ReflexionEngine
     this.logger = options.logger || null;
     this.vaultDir = options.vaultDir || VAULT_DIR;

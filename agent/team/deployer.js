@@ -12,8 +12,8 @@ const path = require('path');
 const log = getLogger();
 
 class DeployerAgent {
-  constructor() {
-    this.board = new Blackboard();
+  constructor(options = {}) {
+    this.board = options.board || new Blackboard();
     this.agentId = 'Kingdom_Deployer';
     this.projectRoot = path.join(__dirname, '..', '..');
   }

@@ -326,3 +326,35 @@ describe('Blackboard — Supplemental methods', () => {
     await assert.doesNotReject(() => fresh.disconnect());
   });
 });
+
+describe('Blackboard — Shared Instance Safety', () => {
+  it('connect() is idempotent — second call is no-op', async () => {
+    const b = new Blackboard();
+    await b.connect();
+    assert.ok(b.client.isOpen);
+    // Second connect should NOT throw
+    await assert.doesNotReject(() => b.connect());
+    assert.ok(b.client.isOpen);
+    await b.disconnect();
+  });
+
+  it('markShared() prevents disconnect()', async () => {
+    const b = new Blackboard();
+    await b.connect();
+    b.markShared();
+    await b.disconnect(); // should be no-op
+    assert.ok(b.client.isOpen, 'Client should still be open after shared disconnect');
+    // forceDisconnect should actually close it
+    await b.forceDisconnect();
+    assert.ok(!b.client.isOpen, 'Client should be closed after forceDisconnect');
+  });
+
+  it('forceDisconnect() clears shared flag and disconnects', async () => {
+    const b = new Blackboard();
+    await b.connect();
+    b.markShared();
+    assert.ok(b._shared);
+    await b.forceDisconnect();
+    assert.ok(!b._shared);
+  });
+});

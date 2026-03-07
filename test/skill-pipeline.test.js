@@ -1,7 +1,7 @@
 const { describe, it, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
 
-const { SkillPipeline, DAILY_LIMIT } = require('../agent/memory/skill-pipeline');
+const { SkillPipeline, getDailyLimit } = require('../agent/memory/skill-pipeline');
 
 describe('SkillPipeline', () => {
   let configs;
@@ -62,7 +62,7 @@ describe('SkillPipeline', () => {
 
   it('generateFromFailure returns daily_limit_reached when exhausted', async () => {
     createPipeline();
-    pipeline.dailyCount = DAILY_LIMIT;
+    pipeline.dailyCount = getDailyLimit();
     const result = await pipeline.generateFromFailure({ error: 'test' });
     assert.equal(result.success, false);
     assert.equal(result.reason, 'daily_limit_reached');

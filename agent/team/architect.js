@@ -8,13 +8,15 @@
 const { Blackboard } = require('../core/blackboard');
 const { getLogger } = require('../core/logger');
 const { ReflexionEngine } = require('../core/ReflexionEngine');
+const { DedupGuard } = require('../core/dedup');
 const log = getLogger();
 
 class ArchitectAgent {
-  constructor() {
-    this.board = new Blackboard();
-    this.llm = new ReflexionEngine();
+  constructor(options = {}) {
+    this.board = options.board || new Blackboard();
+    this.llm = new ReflexionEngine(null, { board: this.board });
     this.agentId = 'Kingdom_Architect';
+    this.dedup = new DedupGuard();
   }
 
   async init() {
@@ -42,6 +44,12 @@ class ArchitectAgent {
         retryCategory = null,
         retryGuardrail = null,
       } = typeof message === 'string' ? JSON.parse(message) : message;
+      const dedupKey = `${projectId}:${goal}`;
+      if (!this.dedup.check(dedupKey)) {
+        log.info(this.agentId, `Skipping duplicate design for ${projectId}`);
+        return;
+      }
+
       log.info(this.agentId, `Architecting project ${projectId}: ${goal}`);
       await this.updateStatus('designing', `Architecting: ${projectId}`);
 

@@ -10,7 +10,7 @@ const { getLogger } = require('../core/logger');
 const { TaskRunner } = require('../core/task-runner');
 const log = getLogger();
 
-const PORT = process.env.DASHBOARD_PORT || 3000;
+function getPort() { return process.env.DASHBOARD_PORT || 3000; }
 
 function _sanitizeParam(val) {
   if (!val || typeof val !== 'string') return null;
@@ -113,9 +113,9 @@ function buildDashboardStateUrl(basePath, { filter = 'all', drilldown = null } =
 }
 
 class DashboardServer {
-  constructor(port = PORT) {
-    this.port = port;
-    this.board = new Blackboard();
+  constructor(options = {}) {
+    this.port = options.port !== undefined ? options.port : getPort();
+    this.board = options.board || new Blackboard();
     this.server = null;
     this.sseClients = [];
     this.subscriber = null;
@@ -139,12 +139,19 @@ class DashboardServer {
   }
 
   async start() {
+    this._draining = false;
+    this._startedAt = Date.now();
     await this.board.connect();
     this.subscriber = await this.board.createSubscriber();
     this.subscriber.on('error', (err) => log.error('dashboard', 'Redis sub error', { error: err.message }));
     this._subscribeUpdates();
 
     this.server = http.createServer((req, res) => {
+      if (this._draining) {
+        res.writeHead(503, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ status: 'draining' }));
+        return;
+      }
       void this._handleRequest(req, res);
     });
     return new Promise((resolve) => {
@@ -156,6 +163,7 @@ class DashboardServer {
   }
 
   async stop() {
+    this._draining = true;
     for (const client of this.sseClients) {
       client.end();
     }
@@ -169,6 +177,45 @@ class DashboardServer {
       await new Promise((resolve) => this.server.close(resolve));
     }
     await this.board.disconnect();
+  }
+
+  _subscribeBroadcast(channel, type) {
+    this.subscriber.subscribe(channel, (message) => {
+      try {
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
+        this._broadcast({ type, channel, data });
+      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
+    });
+  }
+
+  _subscribeTaskEvent(channel, type, outcomeLabel, detailField) {
+    this.subscriber.subscribe(channel, (message) => {
+      try {
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
+        this._rememberTaskEvent({
+          type,
+          title: data.taskId,
+          outcome: outcomeLabel,
+          detail: data[detailField],
+        });
+        this._broadcast({ type: 'task-closeout', channel, data });
+      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
+    });
+  }
+
+  _subscribePromotionEvent(channel, type, detailValue) {
+    this.subscriber.subscribe(channel, (message) => {
+      try {
+        const data = typeof message === 'string' ? JSON.parse(message) : message;
+        this._rememberPromotionEvent({
+          type,
+          title: data.taskId,
+          outcome: data.queueType || data.promotedTo || data.promotionType,
+          detail: detailValue || data.retryCategory || data.taskId,
+        });
+        this._broadcast({ type, channel, data });
+      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
+    });
   }
 
   _subscribeUpdates() {
@@ -196,57 +243,10 @@ class DashboardServer {
       } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
     });
 
-    this.subscriber.subscribe('governance:task:completed', (message) => {
-      try {
-        const data = typeof message === 'string' ? JSON.parse(message) : message;
-        this._rememberTaskEvent({
-          type: 'task-completed',
-          title: data.taskId,
-          outcome: 'completed',
-          detail: data.projectId,
-        });
-        this._broadcast({ type: 'task-closeout', channel: 'governance:task:completed', data });
-      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
-    });
-
-    this.subscriber.subscribe('governance:review:requested', (message) => {
-      try {
-        const data = typeof message === 'string' ? JSON.parse(message) : message;
-        this._rememberTaskEvent({
-          type: 'review-requested',
-          title: data.taskId,
-          outcome: 'requested',
-          detail: data.file,
-        });
-        this._broadcast({ type: 'task-closeout', channel: 'governance:review:requested', data });
-      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
-    });
-
-    this.subscriber.subscribe('governance:review:approved', (message) => {
-      try {
-        const data = typeof message === 'string' ? JSON.parse(message) : message;
-        this._rememberTaskEvent({
-          type: 'review-approved',
-          title: data.taskId,
-          outcome: 'approved',
-          detail: data.file,
-        });
-        this._broadcast({ type: 'task-closeout', channel: 'governance:review:approved', data });
-      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
-    });
-
-    this.subscriber.subscribe('governance:review:rejected', (message) => {
-      try {
-        const data = typeof message === 'string' ? JSON.parse(message) : message;
-        this._rememberTaskEvent({
-          type: 'review-rejected',
-          title: data.taskId,
-          outcome: 'rejected',
-          detail: data.file,
-        });
-        this._broadcast({ type: 'task-closeout', channel: 'governance:review:rejected', data });
-      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
-    });
+    this._subscribeTaskEvent('governance:task:completed', 'task-completed', 'completed', 'projectId');
+    this._subscribeTaskEvent('governance:review:requested', 'review-requested', 'requested', 'file');
+    this._subscribeTaskEvent('governance:review:approved', 'review-approved', 'approved', 'file');
+    this._subscribeTaskEvent('governance:review:rejected', 'review-rejected', 'rejected', 'file');
 
     this.subscriber.subscribe('governance:failure:retry-requested', (message) => {
       try {
@@ -266,96 +266,26 @@ class DashboardServer {
     });
 
     // Work plane — pipeline progress visibility
-    this.subscriber.subscribe('work:intake', (message) => {
-      try {
-        const data = typeof message === 'string' ? JSON.parse(message) : message;
-        this._broadcast({ type: 'work-intake', channel: 'work:intake', data });
-      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
-    });
-    this.subscriber.subscribe('work:planning:init', (message) => {
-      try {
-        const data = typeof message === 'string' ? JSON.parse(message) : message;
-        this._broadcast({ type: 'work-planning-init', channel: 'work:planning:init', data });
-      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
-    });
-    this.subscriber.subscribe('work:planning:designed', (message) => {
-      try {
-        const data = typeof message === 'string' ? JSON.parse(message) : message;
-        this._broadcast({ type: 'work-planning-designed', channel: 'work:planning:designed', data });
-      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
-    });
-    this.subscriber.subscribe('work:planning:decomposed', (message) => {
-      try {
-        const data = typeof message === 'string' ? JSON.parse(message) : message;
-        this._broadcast({ type: 'work-planning-decomposed', channel: 'work:planning:decomposed', data });
-      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
-    });
+    this._subscribeBroadcast('work:intake', 'work-intake');
+    this._subscribeBroadcast('work:planning:init', 'work-planning-init');
+    this._subscribeBroadcast('work:planning:designed', 'work-planning-designed');
+    this._subscribeBroadcast('work:planning:decomposed', 'work-planning-decomposed');
 
     // Execution plane — deployment + watchdog visibility
-    this.subscriber.subscribe('execution:deployment:completed', (message) => {
-      try {
-        const data = typeof message === 'string' ? JSON.parse(message) : message;
-        this._broadcast({ type: 'deployment-completed', channel: 'execution:deployment:completed', data });
-      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
-    });
-    this.subscriber.subscribe('governance:watchdog:recovery', (message) => {
-      try {
-        const data = typeof message === 'string' ? JSON.parse(message) : message;
-        this._broadcast({ type: 'watchdog-recovery', channel: 'governance:watchdog:recovery', data });
-      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
-    });
+    this._subscribeBroadcast('execution:deployment:completed', 'deployment-completed');
+    this._subscribeBroadcast('governance:watchdog:recovery', 'watchdog-recovery');
 
     // Phase-4: formerly dead events — now visible on dashboard
-    this.subscriber.subscribe('work:dry-run:recorded', (message) => {
-      try {
-        const data = typeof message === 'string' ? JSON.parse(message) : message;
-        this._broadcast({ type: 'dry-run-recorded', channel: 'work:dry-run:recorded', data });
-      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
-    });
-    this.subscriber.subscribe('team:celebration', (message) => {
-      try {
-        const data = typeof message === 'string' ? JSON.parse(message) : message;
-        this._broadcast({ type: 'team-celebration', channel: 'team:celebration', data });
-      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
-    });
-    this.subscriber.subscribe('orchestrator:registered', (message) => {
-      try {
-        const data = typeof message === 'string' ? JSON.parse(message) : message;
-        this._broadcast({ type: 'orchestrator-registered', channel: 'orchestrator:registered', data });
-      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
-    });
-    this.subscriber.subscribe('orchestrator:deregistered', (message) => {
-      try {
-        const data = typeof message === 'string' ? JSON.parse(message) : message;
-        this._broadcast({ type: 'orchestrator-deregistered', channel: 'orchestrator:deregistered', data });
-      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
-    });
-    this.subscriber.subscribe('config:llm:updated', (message) => {
-      try {
-        const data = typeof message === 'string' ? JSON.parse(message) : message;
-        this._broadcast({ type: 'llm-config-updated', channel: 'config:llm:updated', data });
-      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
-    });
+    this._subscribeBroadcast('work:dry-run:recorded', 'dry-run-recorded');
+    this._subscribeBroadcast('team:celebration', 'team-celebration');
+    this._subscribeBroadcast('orchestrator:registered', 'orchestrator-registered');
+    this._subscribeBroadcast('orchestrator:deregistered', 'orchestrator-deregistered');
+    this._subscribeBroadcast('config:llm:updated', 'llm-config-updated');
 
     // Phase-5: TeamLead events → dashboard visibility
-    this.subscriber.subscribe('governance:teamlead:reviewed', (message) => {
-      try {
-        const data = typeof message === 'string' ? JSON.parse(message) : message;
-        this._broadcast({ type: 'teamlead-reviewed', channel: 'governance:teamlead:reviewed', data });
-      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
-    });
-    this.subscriber.subscribe('governance:teamlead:vibe-translated', (message) => {
-      try {
-        const data = typeof message === 'string' ? JSON.parse(message) : message;
-        this._broadcast({ type: 'teamlead-vibe', channel: 'governance:teamlead:vibe-translated', data });
-      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
-    });
-    this.subscriber.subscribe('knowledge:research:completed', (message) => {
-      try {
-        const data = typeof message === 'string' ? JSON.parse(message) : message;
-        this._broadcast({ type: 'research-completed', channel: 'knowledge:research:completed', data });
-      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
-    });
+    this._subscribeBroadcast('governance:teamlead:reviewed', 'teamlead-reviewed');
+    this._subscribeBroadcast('governance:teamlead:vibe-translated', 'teamlead-vibe');
+    this._subscribeBroadcast('knowledge:research:completed', 'research-completed');
 
     this.subscriber.pSubscribe('knowledge:reflexion:*', (message, channel) => {
       try {
@@ -405,70 +335,11 @@ class DashboardServer {
       } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
     });
 
-    this.subscriber.subscribe('knowledge:promotion:candidate', (message) => {
-      try {
-        const data = typeof message === 'string' ? JSON.parse(message) : message;
-        this._rememberPromotionEvent({
-          type: 'candidate',
-          title: data.title,
-          outcome: data.promotionType,
-          detail: data.retryCategory || data.taskId,
-        });
-        this._broadcast({ type: 'promotion-candidate', channel: 'knowledge:promotion:candidate', data });
-      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
-    });
-
-    this.subscriber.subscribe('knowledge:promotion:applied', (message) => {
-      try {
-        const data = typeof message === 'string' ? JSON.parse(message) : message;
-        this._rememberPromotionEvent({
-          type: 'applied',
-          title: data.taskId,
-          outcome: data.promotedTo,
-          detail: data.promotionType,
-        });
-        this._broadcast({ type: 'promotion-applied', channel: 'knowledge:promotion:applied', data });
-      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
-    });
-
-    this.subscriber.subscribe('knowledge:notebooklm:claimed', (message) => {
-      try {
-        const data = typeof message === 'string' ? JSON.parse(message) : message;
-        this._rememberPromotionEvent({
-          type: 'notebooklm-claimed',
-          title: data.taskId,
-          outcome: data.queueType,
-          detail: 'claimed',
-        });
-        this._broadcast({ type: 'notebooklm-claimed', channel: 'knowledge:notebooklm:claimed', data });
-      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
-    });
-
-    this.subscriber.subscribe('knowledge:notebooklm:prepared', (message) => {
-      try {
-        const data = typeof message === 'string' ? JSON.parse(message) : message;
-        this._rememberPromotionEvent({
-          type: 'notebooklm-prepared',
-          title: data.taskId,
-          outcome: data.queueType,
-          detail: 'prepared',
-        });
-        this._broadcast({ type: 'notebooklm-prepared', channel: 'knowledge:notebooklm:prepared', data });
-      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
-    });
-
-    this.subscriber.subscribe('knowledge:notebooklm:ingested', (message) => {
-      try {
-        const data = typeof message === 'string' ? JSON.parse(message) : message;
-        this._rememberPromotionEvent({
-          type: 'notebooklm-ingested',
-          title: data.taskId,
-          outcome: data.queueType,
-          detail: 'ingested',
-        });
-        this._broadcast({ type: 'notebooklm-ingested', channel: 'knowledge:notebooklm:ingested', data });
-      } catch (err) { log.warn('dashboard', 'subscriber error', { error: err.message }); }
-    });
+    this._subscribePromotionEvent('knowledge:promotion:candidate', 'promotion-candidate');
+    this._subscribePromotionEvent('knowledge:promotion:applied', 'promotion-applied');
+    this._subscribePromotionEvent('knowledge:notebooklm:claimed', 'notebooklm-claimed', 'claimed');
+    this._subscribePromotionEvent('knowledge:notebooklm:prepared', 'notebooklm-prepared', 'prepared');
+    this._subscribePromotionEvent('knowledge:notebooklm:ingested', 'notebooklm-ingested', 'ingested');
   }
 
   _rememberKnowledgeEvent(event) {
@@ -527,11 +398,28 @@ class DashboardServer {
     if (requestUrl.pathname === '/api/state') {
       return this._handleAPIState(req, res, requestUrl);
     }
+    if (requestUrl.pathname === '/health') {
+      return this._handleHealth(req, res);
+    }
     if (requestUrl.pathname === '/' || requestUrl.pathname === '/index.html') {
       return this._serveDashboard(req, res);
     }
     res.writeHead(404);
     res.end('Not found');
+  }
+
+  _handleHealth(req, res) {
+    const redisOk = this.board.client && this.board.client.isReady;
+    const status = redisOk ? 'healthy' : 'degraded';
+    const code = redisOk ? 200 : 503;
+    res.writeHead(code, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      status,
+      uptime: Date.now() - (this._startedAt || Date.now()),
+      redis: redisOk ? 'connected' : 'disconnected',
+      sseClients: this.sseClients.length,
+      agentCount: Object.keys(this.agentState).length,
+    }));
   }
 
   _handleSSE(req, res) {

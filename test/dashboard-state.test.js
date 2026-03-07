@@ -11,7 +11,7 @@ const {
 
 describe('DashboardServer state API', () => {
   it('joins latest task knowledge summaries onto task payloads', async () => {
-    const dashboard = new DashboardServer(0);
+    const dashboard = new DashboardServer({ port: 0 });
     dashboard.taskRunner = {
       listTasks: async () => ([
         {
@@ -74,7 +74,7 @@ describe('DashboardServer state API', () => {
   });
 
   it('passes API query filters into task listing', async () => {
-    const dashboard = new DashboardServer(0);
+    const dashboard = new DashboardServer({ port: 0 });
     let filters = null;
     dashboard.taskRunner = {
       listTasks: async (params) => {
@@ -107,7 +107,7 @@ describe('DashboardServer state API', () => {
   });
 
   it('derives project and task recovery rates from retry and resolved metrics', async () => {
-    const dashboard = new DashboardServer(0);
+    const dashboard = new DashboardServer({ port: 0 });
     dashboard.taskRunner = {
       listTasks: async () => [],
     };
@@ -217,7 +217,7 @@ describe('DashboardServer state API', () => {
   });
 
   it('derives dry-run coverage and success rates from task state', async () => {
-    const dashboard = new DashboardServer(0);
+    const dashboard = new DashboardServer({ port: 0 });
     dashboard.taskRunner = {
       listTasks: async () => ([
         {
@@ -265,7 +265,7 @@ describe('DashboardServer state API', () => {
   });
 
   it('derives project recovery comparison between dry-run and non-dry-run tasks', async () => {
-    const dashboard = new DashboardServer(0);
+    const dashboard = new DashboardServer({ port: 0 });
     dashboard.taskRunner = {
       listTasks: async () => ([
         {
@@ -336,7 +336,7 @@ describe('DashboardServer state API', () => {
   });
 
   it('derives retry-category dry-run summary win rates', async () => {
-    const dashboard = new DashboardServer(0);
+    const dashboard = new DashboardServer({ port: 0 });
     dashboard.taskRunner = {
       listTasks: async () => ([
         {
@@ -398,7 +398,7 @@ describe('DashboardServer state API', () => {
   });
 
   it('includes promotion queue metrics and candidates from stored configs', async () => {
-    const dashboard = new DashboardServer(0);
+    const dashboard = new DashboardServer({ port: 0 });
     dashboard.taskRunner = {
       listTasks: async () => [],
     };
@@ -510,7 +510,7 @@ describe('DashboardServer state API', () => {
 
 describe('DashboardServer — teamleadHealth in API state', () => {
   it('includes teamleadHealth from Redis when getConfig is available', async () => {
-    const dashboard = new DashboardServer(0);
+    const dashboard = new DashboardServer({ port: 0 });
     dashboard.taskRunner = { listTasks: async () => [] };
     const healthData = {
       timestamp: 1700000000000,
@@ -537,7 +537,7 @@ describe('DashboardServer — teamleadHealth in API state', () => {
   });
 
   it('returns null teamleadHealth when getConfig is not available', async () => {
-    const dashboard = new DashboardServer(0);
+    const dashboard = new DashboardServer({ port: 0 });
     dashboard.taskRunner = { listTasks: async () => [] };
     dashboard.board = { listConfigs: async () => [] };
 
@@ -594,20 +594,20 @@ describe('_sanitizeParam — input validation', () => {
 
 describe('DashboardServer — _incrementMetricBucket', () => {
   it('increments a new key from 0 to 1', () => {
-    const dashboard = new DashboardServer(0);
+    const dashboard = new DashboardServer({ port: 0 });
     dashboard._incrementMetricBucket('retryByCategory', 'review');
     assert.equal(dashboard.metrics.retryByCategory.review, 1);
   });
 
   it('increments an existing key', () => {
-    const dashboard = new DashboardServer(0);
+    const dashboard = new DashboardServer({ port: 0 });
     dashboard.metrics.retryByCategory.review = 5;
     dashboard._incrementMetricBucket('retryByCategory', 'review');
     assert.equal(dashboard.metrics.retryByCategory.review, 6);
   });
 
   it('prunes to 100 entries when exceeding limit', () => {
-    const dashboard = new DashboardServer(0);
+    const dashboard = new DashboardServer({ port: 0 });
     // Fill with 100 entries (counts 1..100)
     for (let i = 0; i < 100; i++) {
       dashboard.metrics.retryByCategory[`key-${i}`] = i + 1;
@@ -625,7 +625,7 @@ describe('DashboardServer — _incrementMetricBucket', () => {
 
 describe('DashboardServer — _remember* event memory', () => {
   it('_rememberKnowledgeEvent stores up to 6 events (FIFO)', () => {
-    const dashboard = new DashboardServer(0);
+    const dashboard = new DashboardServer({ port: 0 });
     for (let i = 0; i < 8; i++) {
       dashboard._rememberKnowledgeEvent({ type: 'capture', title: `event-${i}` });
     }
@@ -635,7 +635,7 @@ describe('DashboardServer — _remember* event memory', () => {
   });
 
   it('_rememberTaskEvent stores up to 6 events with timestamps', () => {
-    const dashboard = new DashboardServer(0);
+    const dashboard = new DashboardServer({ port: 0 });
     dashboard._rememberTaskEvent({ type: 'task-completed', title: 'TASK-1' });
     assert.equal(dashboard.metrics.recentTasks.length, 1);
     assert.ok(dashboard.metrics.recentTasks[0].timestamp > 0);
@@ -643,7 +643,7 @@ describe('DashboardServer — _remember* event memory', () => {
   });
 
   it('_rememberPromotionEvent stores up to 6 events', () => {
-    const dashboard = new DashboardServer(0);
+    const dashboard = new DashboardServer({ port: 0 });
     for (let i = 0; i < 7; i++) {
       dashboard._rememberPromotionEvent({ type: 'candidate', title: `promo-${i}` });
     }
@@ -654,7 +654,7 @@ describe('DashboardServer — _remember* event memory', () => {
 
 describe('DashboardServer — _broadcast', () => {
   it('writes SSE payload to connected clients', () => {
-    const dashboard = new DashboardServer(0);
+    const dashboard = new DashboardServer({ port: 0 });
     const written = [];
     const mockClient = { write: (data) => { written.push(data); return true; } };
     dashboard.sseClients.push(mockClient);
@@ -666,7 +666,7 @@ describe('DashboardServer — _broadcast', () => {
   });
 
   it('removes clients that throw on write', () => {
-    const dashboard = new DashboardServer(0);
+    const dashboard = new DashboardServer({ port: 0 });
     const goodWrites = [];
     const goodClient = { write: (data) => { goodWrites.push(data); return true; } };
     const badClient = { write: () => { throw new Error('closed'); } };
@@ -679,12 +679,12 @@ describe('DashboardServer — _broadcast', () => {
 
 describe('DashboardServer — _taskMetricKey', () => {
   it('returns projectId/taskId format', () => {
-    const dashboard = new DashboardServer(0);
+    const dashboard = new DashboardServer({ port: 0 });
     assert.equal(dashboard._taskMetricKey({ projectId: 'kingdom', taskId: 'TASK-1' }), 'kingdom/TASK-1');
   });
 
   it('handles missing fields with defaults', () => {
-    const dashboard = new DashboardServer(0);
+    const dashboard = new DashboardServer({ port: 0 });
     assert.equal(dashboard._taskMetricKey({}), 'unknown-project/unknown-task');
     assert.equal(dashboard._taskMetricKey(null), 'unknown-project/unknown-task');
     assert.equal(dashboard._taskMetricKey(undefined), 'unknown-project/unknown-task');
@@ -693,7 +693,7 @@ describe('DashboardServer — _taskMetricKey', () => {
 
 describe('DashboardServer — _deriveDryRunImpact', () => {
   it('returns "dry-run helped recovery" for retry+dryRun+resolved', () => {
-    const dashboard = new DashboardServer(0);
+    const dashboard = new DashboardServer({ port: 0 });
     const result = dashboard._deriveDryRunImpact({
       retry: { guardrail: 'test' },
       dryRuns: [{ summary: 'rehearsed' }],
@@ -703,7 +703,7 @@ describe('DashboardServer — _deriveDryRunImpact', () => {
   });
 
   it('returns "dry-run rehearsed, recovery pending" for retry+dryRun but not resolved', () => {
-    const dashboard = new DashboardServer(0);
+    const dashboard = new DashboardServer({ port: 0 });
     const result = dashboard._deriveDryRunImpact({
       retry: { guardrail: 'test' },
       dryRuns: [{ summary: 'rehearsed' }],
@@ -713,7 +713,7 @@ describe('DashboardServer — _deriveDryRunImpact', () => {
   });
 
   it('returns "recovered without dry-run" for retry+resolved but no dryRun', () => {
-    const dashboard = new DashboardServer(0);
+    const dashboard = new DashboardServer({ port: 0 });
     const result = dashboard._deriveDryRunImpact({
       retry: { guardrail: 'test' },
       dryRuns: [],
@@ -723,7 +723,7 @@ describe('DashboardServer — _deriveDryRunImpact', () => {
   });
 
   it('returns "no dry-run signal" for plain task', () => {
-    const dashboard = new DashboardServer(0);
+    const dashboard = new DashboardServer({ port: 0 });
     assert.equal(dashboard._deriveDryRunImpact({}), 'no dry-run signal');
     assert.equal(dashboard._deriveDryRunImpact(), 'no dry-run signal');
   });
@@ -731,26 +731,26 @@ describe('DashboardServer — _deriveDryRunImpact', () => {
 
 describe('DashboardServer — _derivePromotionSignal', () => {
   it('returns "ready to promote" when dry-run helped and knowledge exists', () => {
-    const dashboard = new DashboardServer(0);
+    const dashboard = new DashboardServer({ port: 0 });
     const task = { retry: { guardrail: 'g' }, dryRuns: [{ summary: 's' }], status: 'approved' };
     const knowledge = { title: 'Completed task' };
     assert.equal(dashboard._derivePromotionSignal(task, knowledge), 'ready to promote');
   });
 
   it('returns "knowledge captured" when knowledge exists but no dry-run recovery', () => {
-    const dashboard = new DashboardServer(0);
+    const dashboard = new DashboardServer({ port: 0 });
     assert.equal(dashboard._derivePromotionSignal({}, { title: 'Captured' }), 'knowledge captured');
   });
 
   it('returns "awaiting capture" when no knowledge', () => {
-    const dashboard = new DashboardServer(0);
+    const dashboard = new DashboardServer({ port: 0 });
     assert.equal(dashboard._derivePromotionSignal({}, null), 'awaiting capture');
   });
 });
 
 describe('DashboardServer — getState', () => {
   it('returns a copy of agentState', () => {
-    const dashboard = new DashboardServer(0);
+    const dashboard = new DashboardServer({ port: 0 });
     dashboard.agentState.Kingdom_PM = { status: { state: 'idle' } };
     const state = dashboard.getState();
     assert.deepEqual(state, { Kingdom_PM: { status: { state: 'idle' } } });
@@ -762,7 +762,7 @@ describe('DashboardServer — getState', () => {
 
 describe('DashboardServer — HTTP routing', () => {
   it('returns 404 for unknown paths', async () => {
-    const dashboard = new DashboardServer(0);
+    const dashboard = new DashboardServer({ port: 0 });
     let statusCode = 0;
     let body = '';
     const res = {
@@ -778,7 +778,7 @@ describe('DashboardServer — HTTP routing', () => {
   });
 
   it('serves HTML for / path', async () => {
-    const dashboard = new DashboardServer(0);
+    const dashboard = new DashboardServer({ port: 0 });
     let statusCode = 0;
     let headers = {};
     let body = '';
@@ -796,7 +796,7 @@ describe('DashboardServer — HTTP routing', () => {
   });
 
   it('sets up SSE for /events path', async () => {
-    const dashboard = new DashboardServer(0);
+    const dashboard = new DashboardServer({ port: 0 });
     let statusCode = 0;
     let headers = {};
     const written = [];
@@ -823,7 +823,7 @@ describe('DashboardServer — HTTP routing', () => {
 
 describe('DashboardServer — _derivePromotionQueueCounts', () => {
   it('counts candidates by status', () => {
-    const dashboard = new DashboardServer(0);
+    const dashboard = new DashboardServer({ port: 0 });
     const candidates = [
       { status: 'queued' },
       { status: 'queued' },
@@ -833,14 +833,14 @@ describe('DashboardServer — _derivePromotionQueueCounts', () => {
   });
 
   it('defaults missing status to "queued"', () => {
-    const dashboard = new DashboardServer(0);
+    const dashboard = new DashboardServer({ port: 0 });
     assert.deepEqual(dashboard._derivePromotionQueueCounts([{}]), { queued: 1 });
   });
 });
 
 describe('DashboardServer — _derivePromotionConversionCounts', () => {
   it('counts only promoted candidates by promotedTo type', () => {
-    const dashboard = new DashboardServer(0);
+    const dashboard = new DashboardServer({ port: 0 });
     const candidates = [
       { status: 'promoted', promotedTo: 'obsidian-pattern' },
       { status: 'promoted', promotedTo: 'obsidian-pattern' },

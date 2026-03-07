@@ -13,8 +13,8 @@ const path = require('path');
 const log = getLogger();
 
 class WatchdogAgent {
-  constructor() {
-    this.board = new Blackboard();
+  constructor(options = {}) {
+    this.board = options.board || new Blackboard();
     this.agentId = 'Kingdom_Watchdog';
     this.checkInterval = T.WATCHDOG_CHECK_INTERVAL_MS;
     this.unresponsiveThreshold = T.WATCHDOG_UNRESPONSIVE_THRESHOLD_MS;
@@ -100,6 +100,7 @@ class WatchdogAgent {
 
   async shutdown() {
     if (this.timer) clearInterval(this.timer);
+    if (this.subscriber) await this.subscriber.disconnect();
     await this.board.disconnect();
   }
 }

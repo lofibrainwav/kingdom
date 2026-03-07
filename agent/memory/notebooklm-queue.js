@@ -21,16 +21,14 @@ const { getLogger } = require('../core/logger');
 
 const log = getLogger();
 
-const OBSIDIAN_BASE = process.env.OBSIDIAN_BASE_URL || 'http://127.0.0.1:27124';
-const OBSIDIAN_TOKEN = process.env.OBSIDIAN_API_KEY || '';
-const PACKET_DIR = path.join(__dirname, '..', 'vault', '02-Research', 'notebooklm-packets');
+const DEFAULT_PACKET_DIR = path.join(__dirname, '..', 'vault', '02-Research', 'notebooklm-packets');
 
 class NotebookLMQueue {
   constructor(options = {}) {
     this.board = options.board || new Blackboard();
-    this.obsidianBase = options.obsidianBase || OBSIDIAN_BASE;
-    this.obsidianToken = options.obsidianToken || OBSIDIAN_TOKEN;
-    this.packetDir = options.packetDir || PACKET_DIR;
+    this.obsidianBase = options.obsidianBase || process.env.OBSIDIAN_BASE_URL || 'http://127.0.0.1:27124';
+    this.obsidianToken = options.obsidianToken || process.env.OBSIDIAN_API_KEY || '';
+    this.packetDir = options.packetDir || DEFAULT_PACKET_DIR;
     this.subscriber = null;
     this.enabled = true;
     this.processed = 0;

@@ -12,8 +12,8 @@ const { TaskRunner } = require('../core/task-runner');
 const log = getLogger();
 
 class PMAgent {
-  constructor() {
-    this.board = new Blackboard();
+  constructor(options = {}) {
+    this.board = options.board || new Blackboard();
     this.agentId = 'Kingdom_PM';
     this.taskRunner = new TaskRunner({ board: this.board });
   }

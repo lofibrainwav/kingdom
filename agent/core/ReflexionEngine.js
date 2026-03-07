@@ -9,23 +9,27 @@ const { getLogger } = require('./logger');
 const T = require('../../config/timeouts');
 const log = getLogger();
 
-// Resolve primary model — prefer env override, then LM Studio, then Claude
-const _primaryModel = process.env.LLM_PRIMARY_MODEL || 'local:qwen/qwen3-8b';
+function _getPrimaryModel() {
+  return process.env.LLM_PRIMARY_MODEL || 'local:qwen/qwen3-8b';
+}
 
-const DEFAULT_CONFIG = {
-  model: _primaryModel,
-  escalationModel: _primaryModel,     // LM Studio handles all tiers locally
-  fallbackModel: 'groq:llama-3.3-70b-versatile', // cloud fallback if LM Studio down
-  temperature: 0.7,
-  maxTokens: T.LLM_MAX_TOKENS,
-  costPerAttempt: 0.00,   // local = free
-  maxCostPerDay: 0.00,    // no cost limit for local
-};
+function _getDefaultConfig() {
+  const model = _getPrimaryModel();
+  return {
+    model,
+    escalationModel: model,     // LM Studio handles all tiers locally
+    fallbackModel: 'groq:llama-3.3-70b-versatile', // cloud fallback if LM Studio down
+    temperature: 0.7,
+    maxTokens: T.LLM_MAX_TOKENS,
+    costPerAttempt: 0.00,   // local = free
+    maxCostPerDay: 0.00,    // no cost limit for local
+  };
+}
 
 class ReflexionEngine {
-  constructor(apiClients) {
-    this.board = new Blackboard();
-    this.config = { ...DEFAULT_CONFIG };
+  constructor(apiClients, options = {}) {
+    this.board = options.board || new Blackboard();
+    this.config = _getDefaultConfig();
     // Auto-create API clients if none injected
     this.apiClients = apiClients || require('./api-clients').createApiClients();
     this.dailyCost = 0;
@@ -156,4 +160,4 @@ function parseLLMJson(response) {
   return null;
 }
 
-module.exports = { ReflexionEngine, DEFAULT_CONFIG, parseLLMJson };
+module.exports = { ReflexionEngine, _getDefaultConfig, parseLLMJson };

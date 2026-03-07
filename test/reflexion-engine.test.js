@@ -1,7 +1,7 @@
 const { describe, it, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
 
-const { ReflexionEngine, DEFAULT_CONFIG, parseLLMJson } = require('../agent/core/ReflexionEngine');
+const { ReflexionEngine, _getDefaultConfig, parseLLMJson } = require('../agent/core/ReflexionEngine');
 
 describe('ReflexionEngine', () => {
   let configs;
@@ -25,7 +25,7 @@ describe('ReflexionEngine', () => {
   it('initializes with default config', () => {
     engine = new ReflexionEngine({});
     engine.board = board;
-    assert.deepStrictEqual(engine.config, DEFAULT_CONFIG);
+    assert.deepStrictEqual(engine.config, _getDefaultConfig());
     assert.equal(engine.dailyCost, 0);
     assert.equal(engine.totalCalls, 0);
   });
@@ -37,7 +37,7 @@ describe('ReflexionEngine', () => {
     await engine.reloadConfig();
     assert.equal(engine.config.temperature, 0.9);
     // Original fields preserved
-    assert.equal(engine.config.maxTokens, DEFAULT_CONFIG.maxTokens);
+    assert.equal(engine.config.maxTokens, _getDefaultConfig().maxTokens);
   });
 
   it('saveConfig persists and publishes', async () => {

@@ -11,12 +11,12 @@ const { getLogger } = require('../core/logger');
 const vm = require('node:vm');
 const log = getLogger();
 
-const DAILY_LIMIT = parseInt(process.env.SKILL_DAILY_LIMIT) || 5;
-const MIN_SUCCESS_RATE = parseFloat(process.env.SKILL_MIN_SUCCESS_RATE) || 0.7;
+function getDailyLimit() { return parseInt(process.env.SKILL_DAILY_LIMIT) || 5; }
+function getMinSuccessRate() { return parseFloat(process.env.SKILL_MIN_SUCCESS_RATE) || 0.7; }
 
 class SkillPipeline {
-  constructor(llmClient = null) {
-    this.board = new Blackboard();
+  constructor(llmClient = null, options = {}) {
+    this.board = options.board || new Blackboard();
     this.llmClient = llmClient; // injected LLM client (ReflexionEngine)
     this.dailyCount = 0;
     this.dailyResetAt = Date.now() + T.SKILL_DAILY_RESET_MS;
@@ -30,13 +30,13 @@ class SkillPipeline {
       this.dailyCount = parsed.count;
       this.dailyResetAt = parsed.resetAt;
     }
-    log.info('skill-pipeline', `initialized, daily: ${this.dailyCount}/${DAILY_LIMIT}`);
+    log.info('skill-pipeline', `initialized, daily: ${this.dailyCount}/${getDailyLimit()}`);
   }
 
   // 4.1: Full pipeline — failure → generate → validate → deploy
   async generateFromFailure(failureContext) {
     this._checkDailyReset();
-    if (this.dailyCount >= DAILY_LIMIT) {
+    if (this.dailyCount >= getDailyLimit()) {
       return { success: false, reason: 'daily_limit_reached' };
     }
 
@@ -71,7 +71,7 @@ class SkillPipeline {
       trigger: failureContext.error,
     });
 
-    log.info('skill-pipeline', `deployed: ${skillJson.name} (${this.dailyCount}/${DAILY_LIMIT})`);
+    log.info('skill-pipeline', `deployed: ${skillJson.name} (${this.dailyCount}/${getDailyLimit()})`);
     return { success: true, skill: skillJson.name };
   }
 
@@ -128,7 +128,7 @@ class SkillPipeline {
     skill.successRate = skill.uses > 0 ? skill.successes / skill.uses : 0;
 
     // Discard if success rate drops below threshold
-    if (skill.uses >= 3 && skill.successRate < MIN_SUCCESS_RATE) {
+    if (skill.uses >= 3 && skill.successRate < getMinSuccessRate()) {
       await this.board.deleteHashField('skills:library', skillName);
       log.info('skill-pipeline', `discarded: ${skillName} (rate: ${skill.successRate.toFixed(2)})`);
       return { discarded: true, skill: skillName, rate: skill.successRate };
@@ -176,4 +176,4 @@ class SkillPipeline {
   }
 }
 
-module.exports = { SkillPipeline, DAILY_LIMIT, MIN_SUCCESS_RATE };
+module.exports = { SkillPipeline, getDailyLimit, getMinSuccessRate };

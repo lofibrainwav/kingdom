@@ -10,19 +10,21 @@
 const { Blackboard } = require('../core/blackboard');
 const { getLogger } = require('../core/logger');
 const { ReflexionEngine } = require('../core/ReflexionEngine');
+const { DedupGuard } = require('../core/dedup');
 const fsp = require('fs').promises;
 const path = require('path');
 const log = getLogger();
 
 class CoderAgent {
-  constructor() {
-    this.board = new Blackboard();
-    this.llm = new ReflexionEngine();
+  constructor(options = {}) {
+    this.board = options.board || new Blackboard();
+    this.llm = new ReflexionEngine(null, { board: this.board });
     this.agentId = 'Kingdom_Coder';
     this.baseWorkspace = path.join(__dirname, '..', '..', 'workspace');
     // Feedback loop state — accumulated from TeamLead and GoTReasoner
     this.vibePatches = [];
     this.skillSynergies = [];
+    this.dedup = new DedupGuard();
   }
 
   async init() {
@@ -61,6 +63,14 @@ class CoderAgent {
         retryCategory = null,
         retryGuardrail = null,
       } = typeof message === 'string' ? JSON.parse(message) : message;
+
+      // Idempotency: skip if already processed this project+goal combo
+      const dedupKey = `${projectId}:${goal}`;
+      if (!this.dedup.check(dedupKey)) {
+        log.info(this.agentId, `Skipping duplicate build for ${projectId}`);
+        return;
+      }
+
       log.info(this.agentId, `Starting build for project ${projectId}: ${goal}`);
       
       const projectPath = path.join(this.baseWorkspace, projectId.replace(/:/g, '_'));

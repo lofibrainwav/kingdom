@@ -12,8 +12,8 @@ const path = require('path');
 const log = getLogger();
 
 class SwarmOrchestrator {
-  constructor() {
-    this.board = new Blackboard();
+  constructor(options = {}) {
+    this.board = options.board || new Blackboard();
     this.agentId = 'Kingdom_Swarm';
     this.children = new Map(); // childId -> process
   }

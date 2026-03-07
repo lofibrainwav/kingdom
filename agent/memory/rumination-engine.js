@@ -28,7 +28,7 @@ const MIN_EXPERIENCES_TO_DIGEST = 3;
 class RuminationEngine {
   constructor(zettelkasten, options = {}) {
     this.zk = zettelkasten;  // SkillZettelkasten instance
-    this.board = new Blackboard();
+    this.board = options.board || new Blackboard();
     this.logger = options.logger || null;
 
     // Experience buffer (Stomach 1: raw intake)
