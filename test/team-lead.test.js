@@ -16,6 +16,7 @@ describe('TeamLeadAgent', () => {
     published = [];
     statuses = [];
     configs = new Map();
+    hashFields = [];
 
     board = {
       connect: async () => {},
@@ -29,6 +30,7 @@ describe('TeamLeadAgent', () => {
       setConfig: async (key, value) => configs.set(key, value),
       publish: async (channel, data) => published.push({ channel, data }),
       updateStatus: async (agentId, status) => statuses.push({ agentId, status }),
+      setHashField: async (key, field, data) => hashFields.push({ key, field, data }),
       getAllStatuses: async () => ({
         Kingdom_PM: { state: 'idle', lastUpdate: Date.now() },
         Kingdom_Coder: { state: 'coding', lastUpdate: Date.now() },
@@ -139,6 +141,48 @@ describe('TeamLeadAgent', () => {
     assert.equal(result.goodness.score, 5);
     assert.equal(result.beauty.score, 3);
     assert.equal(result.verdict, 'pass');
+  });
+
+  // ── EROS V6 Integration ──────────────────────────────────────────
+
+  it('batchReview includes EROS V6 scores in reviewed event', async () => {
+    await agent.init();
+    await agent.batchReview([{ projectId: 'p1', taskId: 'T1', file: 'a.js' }]);
+
+    const reviewed = published.find(p => p.channel === 'governance:teamlead:reviewed');
+    assert.ok(reviewed.data.eros, 'should include eros field');
+    assert.equal(typeof reviewed.data.eros.sScore, 'number');
+    assert.equal(typeof reviewed.data.eros.fScore, 'number');
+    assert.ok(['AUTO_RUN', 'ASK_COMMANDER', 'BLOCK'].includes(reviewed.data.eros.decision));
+    assert.ok(reviewed.data.eros.pillars, 'should include 6-pillar breakdown');
+    assert.equal(typeof reviewed.data.eros.pillars.benevolence, 'number');
+  });
+
+  it('batchReview accumulates EROS history in Redis', async () => {
+    await agent.init();
+    await agent.batchReview([{ projectId: 'p1', taskId: 'T1', file: 'a.js' }]);
+
+    const erosEntry = hashFields.find(h => h.key === 'eros:reviews');
+    assert.ok(erosEntry, 'should store EROS review in Redis');
+    assert.equal(typeof erosEntry.data.sScore, 'number');
+    assert.equal(erosEntry.data.projectId, 'p1');
+    assert.ok(erosEntry.field.startsWith('review-'));
+  });
+
+  it('EROS maps mock Spider Web (T:4, G:5, B:3) to correct pillars', async () => {
+    await agent.init();
+    await agent.batchReview([{ projectId: 'p1', taskId: 'T1', file: 'a.js' }]);
+
+    const reviewed = published.find(p => p.channel === 'governance:teamlead:reviewed');
+    const p = reviewed.data.eros.pillars;
+    // truth=4*2=8, goodness=5*2=10, beauty=3*2=6
+    assert.equal(p.truth, 8);
+    assert.equal(p.goodness, 10);
+    assert.equal(p.beauty, 6);
+    // benevolence=(4+5)/2*2=9, loyalty=(4+3)/2*2=7, eternity=(4+5+3)/3*2=8
+    assert.equal(p.benevolence, 9);
+    assert.equal(p.loyalty, 7);
+    assert.equal(p.eternity, 8);
   });
 
   it('batchReview triggers research pipeline when storeWorthy', async () => {

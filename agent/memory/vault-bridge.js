@@ -218,7 +218,12 @@ bridged_at: "${timestamp}"
 **Batch Size**: ${data.batchSize || 0}
 **Scores**: Truth=${data.scores?.truth || '?'} Goodness=${data.scores?.goodness || '?'} Beauty=${data.scores?.beauty || '?'}
 **Store Worthy**: ${data.storeWorthy || false}
-
+${data.eros ? `
+## EROS V6
+**S-Score**: ${data.eros.sScore?.toFixed(2) || '?'} → **${data.eros.decision || '?'}**
+**F-Score**: ${data.eros.fScore?.toFixed(2) || '?'}
+**Pillars**: 仁${data.eros.pillars?.benevolence?.toFixed(1) || '?'} 眞${data.eros.pillars?.truth?.toFixed(1) || '?'} 善${data.eros.pillars?.goodness?.toFixed(1) || '?'} 美${data.eros.pillars?.beauty?.toFixed(1) || '?'} 忠${data.eros.pillars?.loyalty?.toFixed(1) || '?'} 永${data.eros.pillars?.eternity?.toFixed(1) || '?'}
+` : ''}
 ## Summary
 ${data.summary || 'No summary provided.'}
 `;

@@ -312,6 +312,17 @@ class TeamLeadAgent {
 
       log.info(this.agentId, `batch review complete: ${result.verdict} (T:${result.truth?.score} G:${result.goodness?.score} B:${result.beauty?.score}) EROS S:${eros.sScore.toFixed(2)} → ${eros.decision}`);
 
+      // EROS V6: accumulate history for baseline analysis (Phase 2 prerequisite)
+      await this.board.setHashField('eros:reviews', `review-${Date.now()}`, {
+        sScore: eros.sScore,
+        fScore: eros.fScore,
+        decision: eros.decision,
+        verdict: result.verdict,
+        projectId: batch[0]?.projectId,
+        taskIds: batch.map(b => b.taskId),
+        timestamp: Date.now(),
+      });
+
       // Quality gate: TeamLead takes responsibility for output quality
       if (result.verdict === 'fail') {
         // Hard reject — send ALL tasks back for rework
