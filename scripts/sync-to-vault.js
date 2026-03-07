@@ -248,14 +248,22 @@ function syncClaudeMd() {
   }
 
   // Fix test count in phase status line
+  // --quick: read cached count from .test-count; full: run tests and cache
+  const countCachePath = path.join(KINGDOM, '.test-count');
   if (!args.includes('--quick')) {
     const tests = countTests();
     if (typeof tests === 'number') {
-      src = src.replace(
-        /\d+ tests green/,
-        `${tests} tests green`
-      );
+      src = src.replace(/\d+ tests green/, `${tests} tests green`);
+      try { fs.writeFileSync(countCachePath, String(tests)); } catch {}
     }
+  } else {
+    // --quick: use cached test count if available
+    try {
+      const cached = parseInt(fs.readFileSync(countCachePath, 'utf-8').trim());
+      if (cached > 0) {
+        src = src.replace(/\d+ tests green/, `${cached} tests green`);
+      }
+    } catch {} // no cache yet — leave unchanged
   }
 
   // Fix agent file header

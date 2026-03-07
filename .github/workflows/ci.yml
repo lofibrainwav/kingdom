@@ -38,10 +38,17 @@ jobs:
       - name: 🔍 Lint
         run: npm run lint
 
-      - name: 🧪 Test (560+ required)
+      - name: 🧪 Test (576+ required)
         run: npm test
         env:
           BLACKBOARD_REDIS_URL: redis://localhost:6380
+
+      - name: 📡 Event Map (0 dead, 0 phantom required)
+        run: |
+          OUTPUT=$(node scripts/scan-events.js)
+          echo "$OUTPUT"
+          echo "$OUTPUT" | grep -q 'Dead events: 0' || (echo "::error::Dead events detected" && exit 1)
+          echo "$OUTPUT" | grep -q 'Phantom listeners: 0' || (echo "::error::Phantom listeners detected" && exit 1)
 
       - name: 🔍 Quality Check (secrets, events, DI, coverage)
         run: node scripts/quality-check.js

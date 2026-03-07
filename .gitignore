@@ -68,3 +68,4 @@ logs/
 .env*.local
 .mcp.json.future
 workspace/
+.test-count
