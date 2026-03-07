@@ -42,7 +42,9 @@
     "dev:preflight:quick": "node scripts/preflight.js --quick",
     "dev:research": "node --env-file=.env scripts/dev-research.js",
     "dev:ship": "bash scripts/auto-commit.sh --push",
-    "dev:debrief": "node scripts/debrief.js --save"
+    "dev:debrief": "node scripts/debrief.js --save",
+    "redis:clean": "node scripts/redis-clean.js",
+    "redis:clean:force": "node scripts/redis-clean.js --force --backup"
   },
   "keywords": [],
   "author": "",

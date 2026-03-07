@@ -115,6 +115,17 @@ task_seed_zettelkasten() {
   fi
 }
 
+task_redis_clean() {
+  log "=== Redis Clean (preserve zettelkasten, purge test waste) ==="
+  cd "$KINGDOM"
+  if check_redis; then
+    node scripts/redis-clean.js --backup --force 2>&1 | tee -a "$LOG"
+    log "redis-clean: done"
+  else
+    log "SKIP: redis-clean requires Redis"
+  fi
+}
+
 # ── Modes ──────────────────────────────────────────────
 
 MODE="${1:-morning}"
@@ -136,6 +147,7 @@ case "$MODE" in
     task_sync_session
     task_test_audit
     task_seed_zettelkasten
+    task_redis_clean
     ;;
   weekly)
     task_vault_health
