@@ -403,7 +403,7 @@ function collectEternityMetrics() {
   const dailyDir = path.join(BB, '04-Daily');
   if (fs.existsSync(dailyDir)) {
     const files = fs.readdirSync(dailyDir)
-      .filter(f => f.startsWith('session-log'))
+      .filter(f => f.includes('session-log'))
       .sort()
       .reverse();
     if (files.length > 0) {
