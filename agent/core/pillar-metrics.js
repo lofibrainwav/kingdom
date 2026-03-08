@@ -272,10 +272,20 @@ function collectGoodnessMetrics() {
     } catch { /* parse failed */ }
   }
 
-  // Bare catch
+  // Bare catch — distinguish dangerous (swallow errors) from safe (JSON.parse fallback)
+  // Uses -B1 to check the line before catch for JSON.parse context
   let bareCatchCount = 0;
-  const catchResult = run("grep -rn 'catch\\s*{' agent/ --include='*.js' 2>/dev/null | wc -l");
-  if (catchResult) bareCatchCount = parseInt(catchResult.trim()) || 0;
+  const catchResult = run("grep -rn -B1 'catch\\s*{' agent/ --include='*.js' 2>/dev/null");
+  if (catchResult) {
+    // Split into groups of (context + catch line) separated by --
+    const groups = catchResult.split('--\n').filter(Boolean);
+    for (const group of groups) {
+      const block = group.trim();
+      // Safe patterns: JSON.parse fallback, process kill, file unlink, git command
+      const isSafe = /JSON\.parse|return null|\.kill\(|\.unlink\(|git\s/.test(block);
+      if (!isSafe) bareCatchCount++;
+    }
+  }
 
   return { secretsFound, auditCritical, bareCatchCount };
 }
