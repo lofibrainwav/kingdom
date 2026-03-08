@@ -10,6 +10,11 @@ const {
   routeDecision,
   calibrate,
   calibratedEros,
+  objectiveEros,
+  getProfile,
+  interpretScore,
+  calculateWithProfile,
+  PROFILES,
   DEFAULT_WEIGHTS,
   PILLAR_ORDER,
   THRESHOLD_AUTO_RUN,
@@ -315,5 +320,147 @@ describe('EROS V6 — calibratedEros (full pipeline)', () => {
       { retryCount: 0, testsPassed: true, rejectRatio: 0, filesChanged: 3 },
     );
     assert.equal(best.calibration.confidence, 1.0);
+  });
+});
+
+// ── objectiveEros (Pillar Metrics → EROS, no LLM) ───────────
+
+describe('EROS V6 — objectiveEros', () => {
+  it('should compute EROS from raw tool metrics', () => {
+    const result = objectiveEros({
+      truth: { syntaxErrors: 0, testPassRate: 1.0, testWeakPct: 5, testEmptyCount: 0 },
+      goodness: { secretsFound: 0, auditCritical: 0, bareCatchCount: 2 },
+      beauty: { longFiles: 1, consoleLogFiles: 3, testEmptyPct: 0 },
+      benevolence: { avgFileLines: 120, errorClarityScore: 0.8, totalAgentFiles: 36 },
+      loyalty: { deadEvents: 0, phantomListeners: 0, testFlakyRate: 0, dependencyDrift: 1 },
+      eternity: { vaultOrphans: 1, missingFrontmatter: 0, memoryPresent: true, sessionLogRecent: true },
+    });
+
+    assert.ok(result.sScore > 0, 'sScore should be positive');
+    assert.ok(result.decision, 'should have a decision');
+    assert.ok(result.objective, 'should have objective metadata');
+    assert.equal(result.objective.method, 'pillar-metrics');
+    assert.equal(result.objective.confidence, 1.0);
+  });
+
+  it('should produce AUTO_RUN for perfect metrics', () => {
+    const result = objectiveEros({
+      truth: { syntaxErrors: 0, testPassRate: 1.0, testWeakPct: 0, testEmptyCount: 0 },
+      goodness: { secretsFound: 0, auditCritical: 0, bareCatchCount: 0 },
+      beauty: { longFiles: 0, consoleLogFiles: 0, testEmptyPct: 0 },
+      benevolence: { avgFileLines: 100, errorClarityScore: 1.0, totalAgentFiles: 30 },
+      loyalty: { deadEvents: 0, phantomListeners: 0, testFlakyRate: 0, dependencyDrift: 0 },
+      eternity: { vaultOrphans: 0, missingFrontmatter: 0, memoryPresent: true, sessionLogRecent: true },
+    });
+
+    assertClose(result.sScore, 10, 1e-6, 'perfect objective sScore');
+    assert.equal(result.decision, 'AUTO_RUN');
+  });
+
+  it('should BLOCK when secrets found', () => {
+    const result = objectiveEros({
+      truth: { syntaxErrors: 0, testPassRate: 1.0 },
+      goodness: { secretsFound: 2 },
+      beauty: {},
+      benevolence: {},
+      loyalty: {},
+      eternity: { memoryPresent: false },
+    });
+
+    // Secrets drop goodness to 1, which drops S-score dramatically
+    assert.ok(result.sScore < 8.6, `sScore should be <8.6 with secrets, got ${result.sScore}`);
+  });
+
+  it('should include pillar scores in objective metadata', () => {
+    const result = objectiveEros({
+      truth: { syntaxErrors: 1 },
+      goodness: {},
+    });
+    assert.ok(result.objective.scores.truth < 10, 'truth should be penalized');
+    assert.ok(result.objective.rawMetrics, 'should preserve raw metrics');
+  });
+});
+
+// ── Interpretation Profiles (same clock, different timezone) ─
+
+describe('EROS V6 — Interpretation Profiles', () => {
+  const goodScores = { benevolence: 9, truth: 9, goodness: 9, beauty: 9, loyalty: 9, eternity: 9 };
+  const borderlineScores = { benevolence: 9, truth: 9, goodness: 9, beauty: 8.5, loyalty: 8.5, eternity: 8.5 };
+
+  it('all profiles have weights summing to 1.0', () => {
+    for (const [name, profile] of Object.entries(PROFILES)) {
+      const sum = Object.values(profile.weights).reduce((a, b) => a + b, 0);
+      assertClose(sum, 1.0, 1e-6, `profile ${name} weights`);
+    }
+  });
+
+  it('all profiles have required fields', () => {
+    for (const [name, profile] of Object.entries(PROFILES)) {
+      assert.ok(profile.name, `${name} should have name`);
+      assert.ok(profile.weights, `${name} should have weights`);
+      assert.ok(profile.thresholds, `${name} should have thresholds`);
+      assert.equal(typeof profile.thresholds.autoRun, 'number', `${name} should have autoRun threshold`);
+      assert.equal(typeof profile.thresholds.ask, 'number', `${name} should have ask threshold`);
+      assert.ok(profile.thresholds.autoRun > profile.thresholds.ask, `${name}: autoRun should be > ask`);
+    }
+  });
+
+  it('getProfile returns kingdom by default', () => {
+    const profile = getProfile('kingdom');
+    assert.equal(profile.name, 'Kingdom');
+    assert.deepEqual(profile.weights, DEFAULT_WEIGHTS);
+  });
+
+  it('getProfile falls back to kingdom for unknown names', () => {
+    const profile = getProfile('nonexistent');
+    assert.equal(profile.name, 'Kingdom');
+  });
+
+  it('same score, different profile → different decision', () => {
+    // borderline scores: ~8.8 S-score
+    const result = calculateEros(borderlineScores);
+    const sScore = result.sScore;
+
+    const kingdom = interpretScore(sScore, 'kingdom');
+    const relaxed = interpretScore(sScore, 'relaxed');
+    const strict = interpretScore(sScore, 'strict');
+
+    // Relaxed should be more permissive than kingdom, strict more restrictive
+    assert.equal(relaxed.profile, 'Relaxed');
+    assert.equal(strict.profile, 'Strict');
+    assert.equal(kingdom.profile, 'Kingdom');
+
+    // With S~8.8: kingdom=ASK, relaxed=AUTO_RUN (threshold 8.5), strict=BLOCK (threshold 9.0)
+    assert.equal(kingdom.decision, 'ASK_COMMANDER');
+    assert.equal(relaxed.decision, 'AUTO_RUN');
+    assert.equal(strict.decision, 'BLOCK');
+  });
+
+  it('calculateWithProfile uses profile weights and thresholds', () => {
+    const kingdom = calculateWithProfile(goodScores, 'kingdom');
+    const strict = calculateWithProfile(goodScores, 'strict');
+
+    assert.ok(kingdom.sScore > 0, 'kingdom sScore should be positive');
+    assert.ok(strict.sScore > 0, 'strict sScore should be positive');
+    assert.ok(kingdom.interpretation, 'should include interpretation metadata');
+    assert.equal(kingdom.interpretation.profile, 'Kingdom');
+    assert.equal(strict.interpretation.profile, 'Strict');
+  });
+
+  it('strict profile requires higher score for AUTO_RUN', () => {
+    // Scores that pass kingdom but fail strict
+    const scores = { benevolence: 9.3, truth: 9.3, goodness: 9.3, beauty: 9.3, loyalty: 9.3, eternity: 9.3 };
+    const kingdom = calculateWithProfile(scores, 'kingdom');
+    const strict = calculateWithProfile(scores, 'strict');
+
+    assert.equal(kingdom.decision, 'AUTO_RUN');
+    // strict has higher bar (9.5), same scores may not pass
+    assert.ok(strict.interpretation.thresholds.autoRun > kingdom.interpretation.thresholds.autoRun);
+  });
+
+  it('aesthetic profile weighs beauty 30%', () => {
+    const profile = getProfile('aesthetic');
+    assert.equal(profile.weights.beauty, 0.30);
+    assert.ok(profile.weights.beauty > DEFAULT_WEIGHTS.beauty, 'aesthetic beauty > kingdom beauty');
   });
 });

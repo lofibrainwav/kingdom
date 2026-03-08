@@ -40,6 +40,118 @@ const THRESHOLD_ASK = 8.6;
 const FLOOR = 0.01; // Prevent log(0)
 
 /**
+ * Interpretation Profiles — Same clock, different timezones.
+ *
+ * The EROS calculator (clock mechanism) is identical everywhere.
+ * But S=8.7 means different things in different contexts:
+ *   - Kingdom internal → ASK_COMMANDER (our bar is high)
+ *   - Open source project → AUTO_RUN (world standard is lower)
+ *   - Mission-critical → BLOCK (NASA-grade strictness)
+ *
+ * Each profile defines: weights + thresholds + name.
+ * The clock stays the same — only the interpretation changes.
+ */
+const PROFILES = {
+  // Kingdom default — our internal standard
+  kingdom: {
+    name: 'Kingdom',
+    weights: DEFAULT_WEIGHTS,
+    thresholds: { autoRun: 9.25, ask: 8.6 },
+    description: 'Kingdom internal governance standard',
+  },
+  // Strict mode — for security-sensitive or production-critical work
+  strict: {
+    name: 'Strict',
+    weights: {
+      benevolence: 0.20,
+      truth: 0.30,
+      goodness: 0.30,
+      beauty: 0.10,
+      loyalty: 0.08,
+      eternity: 0.02,
+    },
+    thresholds: { autoRun: 9.5, ask: 9.0 },
+    description: 'Mission-critical: higher truth+goodness weight, tighter thresholds',
+  },
+  // Relaxed — for experimental or prototype work
+  relaxed: {
+    name: 'Relaxed',
+    weights: {
+      benevolence: 0.25,
+      truth: 0.25,
+      goodness: 0.20,
+      beauty: 0.20,
+      loyalty: 0.05,
+      eternity: 0.05,
+    },
+    thresholds: { autoRun: 8.5, ask: 7.5 },
+    description: 'Experimental: more beauty/eternity weight, looser thresholds',
+  },
+  // Beauty-first — for UI/UX or design-heavy projects
+  aesthetic: {
+    name: 'Aesthetic',
+    weights: {
+      benevolence: 0.20,
+      truth: 0.20,
+      goodness: 0.15,
+      beauty: 0.30,
+      loyalty: 0.05,
+      eternity: 0.10,
+    },
+    thresholds: { autoRun: 9.0, ask: 8.0 },
+    description: 'Design-focused: beauty is primary virtue',
+  },
+};
+
+/**
+ * Get an interpretation profile by name.
+ * @param {string} name — profile name (kingdom, strict, relaxed, aesthetic)
+ * @returns {Object} profile with weights, thresholds, name, description
+ */
+function getProfile(name) {
+  return PROFILES[name] || PROFILES.kingdom;
+}
+
+/**
+ * Interpret an S-score using a named profile's thresholds.
+ * Same score, different timezone → different decision.
+ * @param {number} sScore — the raw S-score from calculateEros
+ * @param {string} [profileName='kingdom'] — interpretation profile
+ * @returns {{ decision: string, profile: string, thresholds: Object }}
+ */
+function interpretScore(sScore, profileName = 'kingdom') {
+  const profile = getProfile(profileName);
+  const { autoRun, ask } = profile.thresholds;
+  let decision;
+  if (sScore >= autoRun) decision = 'AUTO_RUN';
+  else if (sScore >= ask) decision = 'ASK_COMMANDER';
+  else decision = 'BLOCK';
+
+  return {
+    decision,
+    profile: profile.name,
+    thresholds: profile.thresholds,
+  };
+}
+
+/**
+ * Calculate EROS using a specific interpretation profile.
+ * @param {Object} scores — 6-pillar scores (0-10)
+ * @param {string} [profileName='kingdom'] — profile name
+ * @returns {Object} — EROS result with profile-aware routing
+ */
+function calculateWithProfile(scores, profileName = 'kingdom') {
+  const profile = getProfile(profileName);
+  const result = calculateEros(scores, profile.weights);
+  const interpretation = interpretScore(result.sScore, profileName);
+  return {
+    ...result,
+    decision: interpretation.decision,
+    interpretation,
+  };
+}
+
+/**
  * Calculate EROS V6 S-score from 6 pillar scores.
  * @param {Object} scores — { benevolence, truth, goodness, beauty, loyalty, eternity } each 0-10
  * @param {Object} [weights] — custom weights (must sum to 1.0)
@@ -221,12 +333,41 @@ function calibratedEros(spiderWeb, signals = {}) {
   };
 }
 
+/**
+ * Full objective EROS pipeline: Pillar Metrics → calculate.
+ * Bypasses LLM opinion entirely — scores derived from tool output.
+ *
+ * @param {Object} rawMetrics — { truth, goodness, beauty, benevolence, loyalty, eternity }
+ *   Each key contains tool-measured values (see pillar-metrics.js for schema).
+ * @returns {Object} — EROS result with objective measurement metadata
+ */
+function objectiveEros(rawMetrics) {
+  const { fromRawMetrics } = require('./pillar-metrics');
+  const { scores, raw } = fromRawMetrics(rawMetrics);
+  const result = calculateEros(scores);
+
+  return {
+    ...result,
+    objective: {
+      method: 'pillar-metrics',
+      scores,
+      rawMetrics: raw,
+      confidence: 1.0, // fully evidence-backed, no LLM opinion
+    },
+  };
+}
+
 module.exports = {
   calculateEros,
   spiderWebToEros,
   routeDecision,
   calibrate,
   calibratedEros,
+  objectiveEros,
+  getProfile,
+  interpretScore,
+  calculateWithProfile,
+  PROFILES,
   DEFAULT_WEIGHTS,
   PILLAR_ORDER,
   THRESHOLD_AUTO_RUN,

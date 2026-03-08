@@ -18,7 +18,7 @@
 const { Blackboard } = require('../core/blackboard');
 const { getLogger } = require('../core/logger');
 const { createApiClients } = require('../core/api-clients');
-const { calibratedEros } = require('../core/eros');
+const { calibratedEros, objectiveEros } = require('../core/eros');
 const log = getLogger();
 
 const SPIDER_WEB_PROMPT = `Evaluate this code batch from 3 axes and their intersections:
@@ -528,6 +528,31 @@ class TeamLeadAgent {
       model: this.model,
       trackedProjects: Object.keys(this.pipelineFlow).length,
     };
+  }
+
+  /**
+   * Run objective EROS health check using pillar-metrics.
+   * No LLM needed — scores derived entirely from Kingdom tool output.
+   * @param {Object} [rawMetrics] — pre-collected metrics (or collects live if omitted)
+   * @returns {Object} — objectiveEros result with sScore, decision, pillar scores
+   */
+  async objectiveHealthCheck(rawMetrics) {
+    if (rawMetrics) {
+      return objectiveEros(rawMetrics);
+    }
+    const { collectAndScore } = require('../core/pillar-metrics');
+    const { scores, raw, duration } = await collectAndScore();
+    const result = objectiveEros(raw);
+    log.info(this.agentId, `objective health: S=${result.sScore.toFixed(2)} → ${result.decision} (${duration}ms)`);
+    await this.board.publish('governance:teamlead:health-checked', {
+      author: this.agentId,
+      sScore: result.sScore,
+      fScore: result.fScore,
+      decision: result.decision,
+      scores,
+      timestamp: new Date().toISOString(),
+    });
+    return result;
   }
 
   async shutdown() {

@@ -521,4 +521,22 @@ describe('TeamLeadAgent', () => {
     assert.equal(PIPELINE_STAGES[0], 'work:intake');
     assert.ok(PIPELINE_STAGES.includes('governance:project:approved'));
   });
+
+  it('objectiveHealthCheck computes EROS from raw metrics without LLM', async () => {
+    await agent.init();
+    const result = await agent.objectiveHealthCheck({
+      truth: { syntaxErrors: 0, testPassRate: 1.0, testWeakPct: 5, testEmptyCount: 0 },
+      goodness: { secretsFound: 0, auditCritical: 0, bareCatchCount: 2 },
+      beauty: { longFiles: 1, consoleLogFiles: 3, testEmptyPct: 0 },
+      benevolence: { avgFileLines: 120, errorClarityScore: 0.8, totalAgentFiles: 36 },
+      loyalty: { deadEvents: 0, phantomListeners: 0, testFlakyRate: 0, dependencyDrift: 1 },
+      eternity: { vaultOrphans: 1, missingFrontmatter: 0, memoryPresent: true, sessionLogRecent: true },
+    });
+
+    assert.ok(result.sScore > 0, 'sScore should be positive');
+    assert.ok(result.objective, 'should have objective metadata');
+    assert.equal(result.objective.method, 'pillar-metrics');
+    assert.equal(result.objective.confidence, 1.0);
+    assert.ok(result.decision, 'should have routing decision');
+  });
 });

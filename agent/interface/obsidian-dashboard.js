@@ -161,6 +161,7 @@ class ObsidianDashboard {
     const govChannels = [
       'governance:teamlead:reviewed',
       'governance:teamlead:vibe-translated',
+      'governance:teamlead:health-checked',
       'governance:watchdog:recovery',
       'orchestrator:registered',
       'orchestrator:deregistered',

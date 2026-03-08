@@ -115,6 +115,7 @@ const CHANNEL_RULES = [
   { canonical: 'orchestrator:deregistered', aliases: [] },
   { canonical: 'governance:teamlead:reviewed', aliases: [] },
   { canonical: 'governance:teamlead:vibe-translated', aliases: [] },
+  { canonical: 'governance:teamlead:health-checked', aliases: [] },
   { canonical: 'knowledge:research:trigger', aliases: [] },
   { canonical: 'knowledge:research:completed', aliases: [] },
   { canonical: 'team:celebration', aliases: [] },
